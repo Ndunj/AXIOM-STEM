@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mitosis vs. Meiosis Interactive Simulation with Diagram Labels</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        canvas {
+            touch-action: manipulation;
+        }
+        .modal-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .modal-scroll::-webkit-scrollbar-thumb {
+            background-color: #475569;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <!-- Header & Navigation -->
+    <header class="bg-slate-800 border-b border-slate-700 p-4 shadow-lg">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-sky-400">Cell Division Suite: Mitosis vs. Meiosis</h1>
+                <p class="text-xs text-slate-400">Interactive High School Cytology & Genetics Laboratory</p>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- Mode View Selectors -->
+                <div class="bg-slate-900 p-1 rounded-lg border border-slate-700 flex gap-1">
+                    <button id="view-mitosis" onclick="setViewMode('mitosis')" class="px-3 py-1.5 rounded text-xs font-semibold bg-sky-600 text-white shadow">Mitosis</button>
+                    <button id="view-meiosis" onclick="setViewMode('meiosis')" class="px-3 py-1.5 rounded text-xs font-semibold text-slate-300 hover:text-white">Meiosis (I & II)</button>
+                    <button id="view-sidebyside" onclick="setViewMode('sidebyside')" class="px-3 py-1.5 rounded text-xs font-semibold text-slate-300 hover:text-white">Side-by-Side</button>
+                </div>
+
+                <!-- Explanatory Notes Button -->
+                <button onclick="toggleNotesModal()" class="bg-amber-600 hover:bg-amber-500 text-white font-semibold px-3 py-1.5 rounded-lg text-xs shadow transition flex items-center gap-1">
+                    <span>📖</span> Explanatory Notes
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="max-w-7xl mx-auto w-full flex-1 p-4 flex flex-col gap-4">
+        
+        <!-- Controls & Speed Toolbar -->
+        <div class="bg-slate-800 border border-slate-700 p-3 rounded-xl flex flex-wrap justify-between items-center gap-4 shadow">
+            
+            <!-- Timeline & Playback Buttons -->
+            <div class="flex flex-wrap items-center gap-2">
+                <button onclick="prevStage()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold px-3 py-1.5 rounded-lg text-xs transition">&larr; Prev Stage</button>
+                <button id="play-btn" onclick="togglePlay()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-1.5 rounded-lg text-xs shadow transition">Play</button>
+                <button onclick="nextStage()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold px-3 py-1.5 rounded-lg text-xs transition">Next Stage &rarr;</button>
+                <button onclick="resetSimulation()" class="bg-slate-700 hover:bg-slate-600 text-slate-400 hover:text-white px-2.5 py-1.5 rounded-lg text-xs transition">Reset</button>
+                
+                <!-- Diagram Labels Toggle Button -->
+                <button id="labels-btn" onclick="toggleLabels()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow transition border border-indigo-400">
+                    🏷️ Diagram Labels: ON
+                </button>
+            </div>
+
+            <!-- Crossing Over Trigger (Active in Prophase I) -->
+            <div id="crossing-over-container" class="hidden items-center gap-2 bg-indigo-950/80 border border-indigo-700/60 px-3 py-1 rounded-lg">
+                <span class="text-xs text-indigo-300 font-semibold">Meiosis I Mechanic:</span>
+                <button id="crossing-btn" onclick="triggerCrossingOver()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-1 rounded text-xs shadow transition animate-pulse">
+                    🧬 Trigger Crossing Over (Tetrad)
+                </button>
+            </div>
+
+            <!-- Speed Controls -->
+            <div class="flex items-center gap-2 text-xs">
+                <span class="text-slate-400 font-medium">Speed:</span>
+                <button id="speed-slow" onclick="setSpeed(0.003)" class="px-2 py-1 bg-slate-700 rounded text-slate-300">Slow</button>
+                <button id="speed-normal" onclick="setSpeed(0.008)" class="px-2 py-1 bg-sky-600 rounded text-white font-bold">Normal</button>
+                <button id="speed-fast" onclick="setSpeed(0.018)" class="px-2 py-1 bg-slate-700 rounded text-slate-300">Fast</button>
+            </div>
+        </div>
+
+        <!-- Canvas Display Area -->
+        <div id="canvas-container" class="relative bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow-2xl flex-1 min-h-[460px]">
+            <canvas id="simCanvas" class="w-full h-full block"></canvas>
+        </div>
+
+        <!-- Dynamic Stage Info Panel & Ploidy Tracker -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            <!-- Stage Title & Cellular Events -->
+            <div class="md:col-span-2 bg-slate-800 border border-slate-700 p-4 rounded-xl shadow">
+                <div class="flex justify-between items-center mb-2">
+                    <span id="current-stage-title" class="text-base font-bold text-sky-400 uppercase tracking-wider">Interphase (G₁ / S / G₂)</span>
+                    <span id="progress-indicator" class="text-xs font-mono bg-slate-900 border border-slate-700 px-2 py-1 rounded text-slate-400">Step 1 / 5</span>
+                </div>
+                <p id="stage-description" class="text-xs text-slate-300 leading-relaxed">
+                    The cell grows and replicates its DNA (2n &rarr; 4n chromatids). Chromatin is loosely coiled inside an intact nuclear envelope.
+                </p>
+            </div>
+
+            <!-- Cytological & Genetics Stats -->
+            <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow flex flex-col justify-between">
+                <div>
+                    <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2">Genetic Status & Ploidy</h4>
+                    <div class="space-y-1 text-xs">
+                        <div class="flex justify-between text-slate-300">
+                            <span>Ploidy Level:</span>
+                            <span id="ploidy-display" class="font-bold text-emerald-400">Diploid (2n = 4)</span>
+                        </div>
+                        <div class="flex justify-between text-slate-300">
+                            <span>Daughter Cell Yield:</span>
+                            <span id="daughter-display" class="font-bold text-sky-400">2 Identical Diploid Cells</span>
+                        </div>
+                        <div class="flex justify-between text-slate-300">
+                            <span>Recombination:</span>
+                            <span id="recomb-status" class="font-bold text-slate-400">None (Mitotic Clones)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Student Explanatory Notes & Guide Modal -->
+    <div id="notes-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl max-w-3xl w-full p-6 max-h-[90vh] overflow-y-auto modal-scroll shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h2 class="text-xl font-bold text-amber-400 flex items-center gap-2">
+                    <span>📚</span> Mitosis vs. Meiosis: High School Study Guide
+                </h2>
+                <button onclick="toggleNotesModal()" class="text-slate-400 hover:text-white font-bold text-xl">&times;</button>
+            </div>
+
+            <div class="space-y-4 text-xs text-slate-300 leading-relaxed">
+                <!-- Section 1 -->
+                <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-700">
+                    <h3 class="text-sm font-bold text-sky-400 uppercase tracking-wide mb-1">1. Purpose & Cell Types</h3>
+                    <p>
+                        • <strong>Mitosis:</strong> Used for growth, tissue repair, and asexual reproduction in somatic (body) cells. Produces <strong>2 genetically identical diploid (2n) daughter cells</strong>.<br>
+                        • <strong>Meiosis:</strong> Used to form gametes (sperm and egg cells) for sexual reproduction. Involves two rounds of division to produce <strong>4 genetically unique haploid (n) daughter cells</strong>.
+                    </p>
+                </div>
+
+                <!-- Section 2 -->
+                <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-700">
+                    <h3 class="text-sm font-bold text-indigo-400 uppercase tracking-wide mb-1">2. Diagram Structure Reference Key</h3>
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li><strong>Cell Membrane:</strong> Outer boundary that pinches (cleavage furrow) during cytokinesis.</li>
+                        <li><strong>Nuclear Envelope:</strong> Dashed yellow boundary enclosing chromatin during interphase; dissolves in prophase.</li>
+                        <li><strong>Centrosome & Spindle Fibers:</strong> Yellow structures at poles generating microtubule fibers that move chromosomes.</li>
+                        <li><strong>Chromosomes:</strong> Color-coded blue (paternal origin) and red (maternal origin) with white central centromeres.</li>
+                    </ul>
+                </div>
+
+                <!-- Section 3 -->
+                <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-700">
+                    <h3 class="text-sm font-bold text-emerald-400 uppercase tracking-wide mb-1">3. Key Differences in Division Phases</h3>
+                    <div class="overflow-x-auto mt-2">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-700 text-slate-400">
+                                    <th class="p-1">Feature</th>
+                                    <th class="p-1 text-sky-400">Mitosis</th>
+                                    <th class="p-1 text-indigo-400">Meiosis</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800">
+                                <tr>
+                                    <td class="p-1 font-semibold">Rounds of Division</td>
+                                    <td class="p-1">1 Division</td>
+                                    <td class="p-1">2 Divisions (Meiosis I & II)</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-1 font-semibold">Metaphase Alignment</td>
+                                    <td class="p-1">Individual chromosomes line up single file</td>
+                                    <td class="p-1">Meiosis I: Homologous pairs (tetrads) line up double file</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-1 font-semibold">Anaphase Separation</td>
+                                    <td class="p-1">Sister chromatids separate</td>
+                                    <td class="p-1">Meiosis I: Homologous pairs separate<br>Meiosis II: Sister chromatids separate</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 flex justify-end border-t border-slate-700 pt-3">
+                <button onclick="toggleNotesModal()" class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-1.5 px-4 rounded transition text-xs">Close Guide</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simulation Script Logic -->
+    <script>
+        // --- GLOBAL STATE & STAGE DEFINITIONS ---
+        let viewMode = 'mitosis'; // 'mitosis', 'meiosis', 'sidebyside'
+        let currentStageIndex = 0;
+        let isPlaying = false;
+        let showLabels = true;
+        let animProgress = 0;
+        let animSpeed = 0.008;
+        let hasCrossedOver = false;
+
+        // Stage Definitions
+        const mitosisStages = [
+            { name: "Interphase", desc: "DNA replicates (2n &rarr; 4n chromatids). Chromatin is uncoiled inside an intact nuclear envelope.", ploidy: "Diploid (2n = 4)", daughter: "2 Identical Diploid Cells", recomb: "None" },
+            { name: "Prophase", desc: "Chromatin condenses into visible chromosomes (blue = paternal, red = maternal). Nuclear envelope dissolves; spindle fibers emerge.", ploidy: "Diploid (2n = 4)", daughter: "2 Identical Diploid Cells", recomb: "None" },
+            { name: "Metaphase", desc: "Chromosomes line up single-file along the cell equator (Metaphase Plate). Spindle fibers attach to centromeres.", ploidy: "Diploid (2n = 4)", daughter: "2 Identical Diploid Cells", recomb: "None" },
+            { name: "Anaphase", desc: "Spindle fibers shorten, pulling sister chromatids apart to opposite cell poles.", ploidy: "Diploid (2n = 4)", daughter: "2 Identical Diploid Cells", recomb: "None" },
+            { name: "Telophase & Cytokinesis", desc: "Nuclear envelopes reform around separated chromatids. Cleavage furrow pinches cell into 2 identical daughter cells.", ploidy: "Diploid (2n = 4)", daughter: "2 Identical Diploid Cells", recomb: "None" }
+        ];
+
+        const meiosisStages = [
+            { name: "Interphase I", desc: "Chromosomes replicate in parent germ cell prior to meiotic division.", ploidy: "Diploid (2n = 4)", daughter: "4 Unique Haploid Gametes", recomb: "Pending" },
+            { name: "Prophase I (Synapsis)", desc: "Homologous chromosomes pair up to form tetrads. Click 'Trigger Crossing Over' to exchange DNA segments between chromatids!", ploidy: "Diploid (2n = 4)", daughter: "4 Unique Haploid Gametes", recomb: "Optional Synapsis" },
+            { name: "Metaphase I", desc: "Homologous pairs line up double-file at the equator. Independent assortment occurs depending on pair alignment.", ploidy: "Diploid (2n = 4)", daughter: "4 Unique Haploid Gametes", recomb: hasCrossedOver ? "Recombinant Tetrads" : "Independent Assortment" },
+            { name: "Anaphase I", desc: "Homologous pairs are pulled apart to opposite poles (Sister chromatids remain attached at centromeres!).", ploidy: "Diploid (2n = 4)", daughter: "4 Unique Haploid Gametes", recomb: hasCrossedOver ? "Recombinant" : "Standard" },
+            { name: "Telophase I & Cytokinesis I", desc: "Cell divides into 2 haploid intermediate cells (n = 2 double-stranded chromosomes each).", ploidy: "Haploid (n = 2 double)", daughter: "2 Intermediate Haploid Cells", recomb: hasCrossedOver ? "Recombinant" : "Standard" },
+            { name: "Prophase II", desc: "Chromosomes condense again in both daughter cells. Spindle apparatus reforms.", ploidy: "Haploid (n = 2 double)", daughter: "4 Unique Haploid Gametes", recomb: hasCrossedOver ? "Recombinant" : "Standard" },
+            { name: "Metaphase II", desc: "Chromosomes line up single-file along equators of both cells.", ploidy: "Haploid (n = 2 double)", daughter: "4 Unique Haploid Gametes", recomb: hasCrossedOver ? "Recombinant" : "Standard" },
+            { name: "Anaphase II", desc: "Sister chromatids are pulled apart to opposite poles of both cells.", ploidy: "Haploid (n = 2 single)", daughter: "4 Unique Haploid Gametes", recomb: hasCrossedOver ? "Recombinant" : "Standard" },
+            { name: "Telophase II & Cytokinesis II", desc: "Nuclear membranes reform; cleavage furrows divide both cells into 4 genetically distinct haploid gametes (n = 2).", ploidy: "Haploid (n = 2)", daughter: "4 Unique Haploid Gametes", recomb: hasCrossedOver ? "Recombinant Alleles" : "Non-recombinant" }
+        ];
+
+        // Canvas Setup
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            render();
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        // --- INTERACTION CONTROLS ---
+        function setViewMode(mode) {
+            viewMode = mode;
+            currentStageIndex = 0;
+            animProgress = 0;
+            isPlaying = false;
+            
+            ['mitosis', 'meiosis', 'sidebyside'].forEach(m => {
+                const btn = document.getElementById(`view-${m}`);
+                if (m === mode) {
+                    btn.className = "px-3 py-1.5 rounded text-xs font-semibold bg-sky-600 text-white shadow";
+                } else {
+                    btn.className = "px-3 py-1.5 rounded text-xs font-semibold text-slate-300 hover:text-white";
+                }
+            });
+
+            updateUI();
+            render();
+        }
+
+        function toggleLabels() {
+            showLabels = !showLabels;
+            const btn = document.getElementById('labels-btn');
+            if (showLabels) {
+                btn.textContent = "🏷️ Diagram Labels: ON";
+                btn.className = "bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow transition border border-indigo-400";
+            } else {
+                btn.textContent = "🏷️ Diagram Labels: OFF";
+                btn.className = "bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold px-3 py-1.5 rounded-lg text-xs transition";
+            }
+            render();
+        }
+
+        function setSpeed(val) {
+            animSpeed = val;
+            ['slow', 'normal', 'fast'].forEach(s => {
+                const btn = document.getElementById(`speed-${s}`);
+                if ((s === 'slow' && val < 0.005) || (s === 'normal' && val >= 0.005 && val <= 0.01) || (s === 'fast' && val > 0.01)) {
+                    btn.className = "px-2 py-1 bg-sky-600 rounded text-white font-bold";
+                } else {
+                    btn.className = "px-2 py-1 bg-slate-700 rounded text-slate-300";
+                }
+            });
+        }
+
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            document.getElementById('play-btn').textContent = isPlaying ? "Pause" : "Play";
+            document.getElementById('play-btn').className = isPlaying ? "bg-amber-600 hover:bg-amber-500 text-white font-bold px-4 py-1.5 rounded-lg text-xs shadow transition" : "bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-1.5 rounded-lg text-xs shadow transition";
+            if (isPlaying) animate();
+        }
+
+        function prevStage() {
+            const maxStages = viewMode === 'mitosis' ? mitosisStages.length : meiosisStages.length;
+            currentStageIndex = (currentStageIndex - 1 + maxStages) % maxStages;
+            animProgress = 0;
+            updateUI();
+            render();
+        }
+
+        function nextStage() {
+            const maxStages = viewMode === 'mitosis' ? mitosisStages.length : meiosisStages.length;
+            currentStageIndex = (currentStageIndex + 1) % maxStages;
+            animProgress = 0;
+            updateUI();
+            render();
+        }
+
+        function resetSimulation() {
+            currentStageIndex = 0;
+            animProgress = 0;
+            isPlaying = false;
+            hasCrossedOver = false;
+            document.getElementById('play-btn').textContent = "Play";
+            document.getElementById('play-btn').className = "bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-1.5 rounded-lg text-xs shadow transition";
+            updateUI();
+            render();
+        }
+
+        function triggerCrossingOver() {
+            hasCrossedOver = !hasCrossedOver;
+            const btn = document.getElementById('crossing-btn');
+            if (hasCrossedOver) {
+                btn.textContent = "✓ Recombinant DNA Swapped!";
+                btn.className = "bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1 rounded text-xs shadow transition";
+            } else {
+                btn.textContent = "🧬 Trigger Crossing Over (Tetrad)";
+                btn.className = "bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-1 rounded text-xs shadow transition animate-pulse";
+            }
+            updateUI();
+            render();
+        }
+
+        function toggleNotesModal() {
+            document.getElementById('notes-modal').classList.toggle('hidden');
+        }
+
+        function updateUI() {
+            const stages = viewMode === 'mitosis' ? mitosisStages : meiosisStages;
+            const current = stages[Math.min(currentStageIndex, stages.length - 1)];
+
+            document.getElementById('current-stage-title').textContent = `${viewMode.toUpperCase()}: ${current.name}`;
+            document.getElementById('progress-indicator').textContent = `Step ${currentStageIndex + 1} / ${stages.length}`;
+            document.getElementById('stage-description').innerHTML = current.desc;
+            document.getElementById('ploidy-display').textContent = current.ploidy;
+            document.getElementById('daughter-display').textContent = current.daughter;
+            document.getElementById('recomb-status').textContent = hasCrossedOver ? "Recombinant (Crossing Over Active)" : current.recomb;
+
+            const crossingContainer = document.getElementById('crossing-over-container');
+            if (viewMode === 'meiosis' && currentStageIndex === 1) { // Prophase I
+                crossingContainer.classList.remove('hidden');
+                crossingContainer.classList.add('flex');
+            } else {
+                crossingContainer.classList.add('hidden');
+                crossingContainer.classList.remove('flex');
+            }
+        }
+
+        // --- MAIN CANVAS RENDERING ENGINE ---
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (viewMode === 'sidebyside') {
+                renderCellView(canvas.width * 0.25, canvas.height * 0.5, canvas.width * 0.45, canvas.height * 0.8, 'mitosis', currentStageIndex);
+                renderCellView(canvas.width * 0.75, canvas.height * 0.5, canvas.width * 0.45, canvas.height * 0.8, 'meiosis', currentStageIndex);
+
+                ctx.fillStyle = '#38bdf8';
+                ctx.font = 'bold 16px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('MITOSIS', canvas.width * 0.25, 30);
+
+                ctx.fillStyle = '#818cf8';
+                ctx.fillText('MEIOSIS', canvas.width * 0.75, 30);
+            } else {
+                renderCellView(canvas.width * 0.5, canvas.height * 0.5, canvas.width * 0.85, canvas.height * 0.85, viewMode, currentStageIndex);
+            }
+        }
+
+        function renderCellView(centerX, centerY, width, height, mode, stageIdx) {
+            ctx.save();
+            ctx.translate(centerX, centerY);
+
+            const isMitosis = mode === 'mitosis';
+            const stageName = isMitosis ? mitosisStages[Math.min(stageIdx, 4)].name : meiosisStages[Math.min(stageIdx, 8)].name;
+
+            // 1. Cell Membrane
+            let cellR = Math.min(width, height) * 0.42;
+            let pinch = 0;
+
+            if (stageName.includes('Telophase') || stageName.includes('Cytokinesis')) {
+                pinch = animProgress * (cellR * 0.6);
+            }
+
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 3;
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.6)';
+
+            ctx.beginPath();
+            if (pinch > 0) {
+                ctx.ellipse(0, -cellR * 0.4, cellR, cellR * 0.5 - pinch * 0.3, 0, 0, Math.PI * 2);
+                ctx.ellipse(0, cellR * 0.4, cellR, cellR * 0.5 - pinch * 0.3, 0, 0, Math.PI * 2);
+            } else {
+                ctx.arc(0, 0, cellR, 0, Math.PI * 2);
+            }
+            ctx.fill();
+            ctx.stroke();
+
+            // 2. Nuclear Envelope
+            let nuclearAlpha = 0;
+            if (stageName.includes('Interphase')) nuclearAlpha = 1;
+            else if (stageName.includes('Prophase')) nuclearAlpha = 1 - animProgress;
+            else if (stageName.includes('Telophase')) nuclearAlpha = animProgress;
+
+            if (nuclearAlpha > 0) {
+                ctx.save();
+                ctx.globalAlpha = nuclearAlpha;
+                ctx.strokeStyle = '#f59e0b';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([6, 6]);
+                ctx.beginPath();
+                ctx.arc(0, 0, cellR * 0.5, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // 3. Centrosomes & Spindle Fibers
+            const poleOffset = cellR * 0.8;
+            if (!stageName.includes('Interphase')) {
+                ctx.fillStyle = '#facc15';
+                ctx.beginPath();
+                ctx.arc(-poleOffset, 0, 8, 0, Math.PI * 2);
+                ctx.arc(poleOffset, 0, 8, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = 'rgba(250, 204, 21, 0.35)';
+                ctx.lineWidth = 1.5;
+                for (let i = -4; i <= 4; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(-poleOffset, 0);
+                    ctx.quadraticCurveTo(0, i * 25, poleOffset, 0);
+                    ctx.stroke();
+                }
+            }
+
+            // 4. Render Chromosomes
+            renderChromosomes(cellR, stageName, isMitosis);
+
+            // 5. Render Callout Diagram Labels (If Toggled ON)
+            if (showLabels) {
+                drawDiagramLabels(cellR, poleOffset, stageName, nuclearAlpha);
+            }
+
+            ctx.restore();
+        }
+
+        function renderChromosomes(cellR, stageName, isMitosis) {
+            const blue = '#3b82f6';
+            const red = '#ef4444';
+
+            if (stageName.includes('Interphase')) {
+                ctx.strokeStyle = blue;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(-15, -10, 20, 0, Math.PI);
+                ctx.stroke();
+
+                ctx.strokeStyle = red;
+                ctx.beginPath();
+                ctx.arc(15, 10, 22, Math.PI, Math.PI * 2);
+                ctx.stroke();
+                return;
+            }
+
+            let sep = 0;
+            if (stageName.includes('Anaphase')) {
+                sep = animProgress * (cellR * 0.45);
+            } else if (stageName.includes('Telophase')) {
+                sep = cellR * 0.45;
+            }
+
+            if (isMitosis || stageName.includes('II')) {
+                drawChromosomePair(-sep, -35, blue, red, hasCrossedOver, false);
+                drawChromosomePair(-sep, 35, red, blue, hasCrossedOver, false);
+                if (sep > 0) {
+                    drawChromosomePair(sep, -35, blue, red, hasCrossedOver, true);
+                    drawChromosomePair(sep, 35, red, blue, hasCrossedOver, true);
+                }
+            } else {
+                let tetradSpacing = stageName.includes('Prophase') ? 12 : 30;
+                drawChromosomePair(-sep, -tetradSpacing, blue, hasCrossedOver ? red : blue, hasCrossedOver, false);
+                drawChromosomePair(sep, tetradSpacing, red, hasCrossedOver ? blue : red, hasCrossedOver, false);
+            }
+        }
+
+        function drawChromosomePair(x, y, mainColor, tipColor, recombinant, isSeparated) {
+            ctx.save();
+            ctx.translate(x, y);
+
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'round';
+
+            if (!isSeparated) {
+                ctx.strokeStyle = mainColor;
+                ctx.beginPath();
+                ctx.moveTo(-12, -18); ctx.lineTo(0, 0); ctx.lineTo(-12, 18);
+                ctx.stroke();
+
+                ctx.strokeStyle = recombinant ? tipColor : mainColor;
+                ctx.beginPath();
+                ctx.moveTo(12, -18); ctx.lineTo(0, 0); ctx.lineTo(12, 18);
+                ctx.stroke();
+            } else {
+                ctx.strokeStyle = mainColor;
+                ctx.beginPath();
+                ctx.moveTo(-10, -14); ctx.lineTo(0, 0); ctx.lineTo(-10, 14);
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(0, 0, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // --- DIAGRAM LABEL CALLOUT DRAWING ENGINE ---
+        function drawDiagramLabels(cellR, poleOffset, stageName, nuclearAlpha) {
+            ctx.font = '10px sans-serif';
+
+            // Helper function for pointer lines with text badges
+            const drawCallout = (targetX, targetY, labelX, labelY, text, color) => {
+                ctx.strokeStyle = color;
+                ctx.fillStyle = color;
+                ctx.lineWidth = 1;
+
+                // Line
+                ctx.beginPath();
+                ctx.moveTo(targetX, targetY);
+                ctx.lineTo(labelX, labelY);
+                ctx.stroke();
+
+                // Point dot
+                ctx.beginPath();
+                ctx.arc(targetX, targetY, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Text background box
+                const txtWidth = ctx.measureText(text).width;
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+                ctx.fillRect(labelX - (labelX < 0 ? txtWidth + 6 : 0), labelY - 10, txtWidth + 6, 14);
+
+                // Label Text
+                ctx.fillStyle = color;
+                ctx.textAlign = labelX < 0 ? 'right' : 'left';
+                ctx.fillText(text, labelX < 0 ? labelX - 3 : labelX + 3, labelY);
+            };
+
+            // 1. Cell Membrane Label
+            drawCallout(0, -cellR, -cellR * 0.7, -cellR * 1.05, "Cell Membrane", "#38bdf8");
+
+            // 2. Nuclear Envelope Label (Only when present)
+            if (nuclearAlpha > 0.2) {
+                drawCallout(-cellR * 0.35, -cellR * 0.35, -cellR * 0.9, -cellR * 0.5, "Nuclear Envelope", "#f59e0b");
+            }
+
+            // 3. Centrosomes & Spindle Fibers (When visible)
+            if (!stageName.includes('Interphase')) {
+                drawCallout(-poleOffset, 0, -poleOffset - 20, 45, "Centrosome / Pole", "#facc15");
+                drawCallout(poleOffset * 0.4, 15, poleOffset * 0.5, 60, "Spindle Fibers", "#eab308");
+            }
+
+            // 4. Chromosomes & Centromere Labels
+            if (!stageName.includes('Interphase')) {
+                drawCallout(-5, -35, 45, -55, "Paternal Chromosome", "#60a5fa");
+                drawCallout(5, 35, 45, 55, "Maternal Chromosome", "#f87171");
+                drawCallout(0, -35, -50, -45, "Centromere", "#ffffff");
+            } else {
+                drawCallout(0, 0, 45, -20, "Uncoiled Chromatin", "#60a5fa");
+            }
+        }
+
+        // --- ANIMATION LOOP ---
+        function animate() {
+            if (!isPlaying) return;
+
+            animProgress += animSpeed;
+            if (animProgress >= 1) {
+                animProgress = 0;
+                const stages = viewMode === 'mitosis' ? mitosisStages : meiosisStages;
+                currentStageIndex = (currentStageIndex + 1) % stages.length;
+                updateUI();
+            }
+
+            render();
+            requestAnimationFrame(animate);
+        }
+
+        window.onload = () => {
+            resizeCanvas();
+            updateUI();
+        };
+    </script>
+</body>
+</html>

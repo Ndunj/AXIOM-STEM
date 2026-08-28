@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Natural Selection & Population Genetics Simulator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        canvas {
+            touch-action: manipulation;
+        }
+        .bg-birch { background-color: #f1f5f9; }
+        .bg-sand { background-color: #fde68a; }
+        .bg-forest { background-color: #1e293b; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <!-- Header -->
+    <header class="bg-slate-800 border-b border-slate-700 p-4">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-emerald-400">Natural Selection & Allele Frequency Simulator</h1>
+                <p class="text-xs text-slate-400">Peppered Moth (Biston betularia) Evolution Lab</p>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div class="text-right">
+                    <span class="text-xs text-slate-400 block">Generation</span>
+                    <span id="gen-count" class="text-xl font-bold text-amber-400">1</span>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs text-slate-400 block">Allele Frequencies</span>
+                    <span id="allele-display" class="text-sm font-mono text-emerald-300">p(D)=0.50 | q(d)=0.50</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto w-full flex-1 p-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+        
+        <!-- Left Column: Simulation Canvas & Active Controls -->
+        <div class="lg:col-span-2 flex flex-col gap-4">
+            
+            <!-- Canvas Container -->
+            <div id="env-container" class="relative bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-2xl h-[400px] flex items-center justify-center transition-colors duration-500">
+                <canvas id="simCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+                
+                <!-- Overlay HUD for Interactive Hunting -->
+                <div id="hunt-hud" class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-700 text-xs flex gap-4 hidden">
+                    <div>Timer: <span id="timer-display" class="font-bold text-amber-400">15s</span></div>
+                    <div>Caught: <span id="eaten-display" class="font-bold text-rose-400">0</span></div>
+                </div>
+
+                <div id="status-msg" class="absolute bottom-3 left-3 right-3 bg-slate-900/90 backdrop-blur px-3 py-2 rounded-lg border border-slate-700 text-xs text-slate-300">
+                    Select an environment and click <strong>Start Interactive Hunt</strong> (or run <strong>Automated Predation</strong>) to begin selection.
+                </div>
+            </div>
+
+            <!-- Simulation Controls -->
+            <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex flex-wrap gap-3 items-center justify-between">
+                <div class="flex flex-wrap gap-2">
+                    <button id="btn-user-hunt" onclick="startUserHunt()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg shadow transition text-sm">
+                        Start Interactive Hunt (15s)
+                    </button>
+                    <button id="btn-auto-hunt" onclick="runAutoPredation()" class="bg-sky-600 hover:bg-sky-500 text-white font-bold py-2 px-4 rounded-lg shadow transition text-sm">
+                        Automated Predation
+                    </button>
+                    <button id="btn-next-gen" onclick="reproduceNextGen()" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-4 rounded-lg shadow transition text-sm">
+                        Next Generation
+                    </button>
+                </div>
+                
+                <button onclick="resetSimulation()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium py-2 px-3 rounded-lg transition text-sm">
+                    Reset All
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Column: Settings & Data Graphs -->
+        <div class="flex flex-col gap-4">
+            
+            <!-- Environmental & Disaster Events Controls -->
+            <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex flex-col gap-3">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-sky-400">Environment & Genetics</h3>
+                
+                <div>
+                    <label class="text-xs text-slate-400 block mb-1">Habitat Background Color</label>
+                    <select id="bg-select" onchange="changeEnvironment()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-slate-200 focus:outline-none focus:border-sky-500">
+                        <option value="birch">Light Birch Forest (Light Camo Advantage)</option>
+                        <option value="forest">Dark Sooty Forest (Dark Camo Advantage)</option>
+                        <option value="sand">Desert Sand (Medium Camo Advantage)</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-xs text-slate-400 block mb-1">Mutation Rate</label>
+                        <select id="mutation-rate" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-slate-200">
+                            <option value="0">0% (None)</option>
+                            <option value="0.02" selected>2% (Standard)</option>
+                            <option value="0.08">8% (High)</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="triggerBottleneck()" class="w-full bg-rose-700 hover:bg-rose-600 text-white font-semibold py-2 px-2 rounded-lg transition text-xs">
+                            Natural Disaster (Bottleneck)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Real-time Allele Frequency Line Graph -->
+            <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex-1 flex flex-col">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-amber-400 mb-2">Allele Frequency Over Time</h3>
+                <div class="relative flex-1 min-h-[180px]">
+                    <canvas id="chartCanvas" class="w-full h-full block bg-slate-950 rounded-lg border border-slate-800"></canvas>
+                </div>
+                <div class="flex justify-between items-center text-[11px] text-slate-400 mt-2">
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"></span> p (Dominant - Dark)</span>
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-sky-400 inline-block"></span> q (Recessive - Light)</span>
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span> Total Pop</span>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Simulation Script -->
+    <script>
+        // Simulation Parameters & State
+        const INITIAL_POPULATION = 50;
+        let generation = 1;
+        let moths = [];
+        let history = []; // Data structure: [{gen, p, q, count}]
+
+        let isInteractiveHunting = false;
+        let huntTimer = 15;
+        let timerInterval = null;
+        let eatenCount = 0;
+
+        // Background Color Map (RGB values for contrast calculations)
+        const envColors = {
+            birch: { name: 'Light Birch', bg: '#f1f5f9', rgb: [241, 245, 249] },
+            forest: { name: 'Dark Forest', bg: '#1e293b', rgb: [30, 41, 59] },
+            sand: { name: 'Desert Sand', bg: '#fde68a', rgb: [253, 230, 138] }
+        };
+        let currentEnvKey = 'birch';
+
+        // Canvas Elements
+        const simCanvas = document.getElementById('simCanvas');
+        const simCtx = simCanvas.getContext('2d');
+        const chartCanvas = document.getElementById('chartCanvas');
+        const chartCtx = chartCanvas.getContext('2d');
+
+        // Resize Canvas dynamically
+        function resizeCanvases() {
+            const simRect = simCanvas.parentElement.getBoundingClientRect();
+            simCanvas.width = simRect.width;
+            simCanvas.height = simRect.height;
+
+            const chartRect = chartCanvas.parentElement.getBoundingClientRect();
+            chartCanvas.width = chartRect.width;
+            chartCanvas.height = chartRect.height;
+
+            render();
+            renderChart();
+        }
+        window.addEventListener('resize', resizeCanvases);
+
+        // --- MOTH ORGANISM CLASS ---
+        class Moth {
+            constructor(x, y, genotype) {
+                this.x = x || Math.random() * (simCanvas.width - 40) + 20;
+                this.y = y || Math.random() * (simCanvas.height - 40) + 20;
+                this.genotype = genotype; // 'DD', 'Dd', or 'dd'
+                this.vx = (Math.random() - 0.5) * 1.5;
+                this.vy = (Math.random() - 0.5) * 1.5;
+                this.radius = 12;
+
+                // Determine Phenotype shade (0 = White, 255 = Black)
+                // D is dominant (Dark), d is recessive (Light)
+                if (this.genotype === 'DD') this.shade = 30;
+                else if (this.genotype === 'Dd') this.shade = 90;
+                else this.shade = 220; // 'dd'
+            }
+
+            move() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Bounce off canvas boundaries
+                if (this.x < 20 || this.x > simCanvas.width - 20) this.vx *= -1;
+                if (this.y < 20 || this.y > simCanvas.height - 20) this.vy *= -1;
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+
+                // Moth Body & Wings Visual
+                ctx.fillStyle = `rgb(${this.shade}, ${this.shade}, ${this.shade})`;
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1;
+
+                // Left Wing
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.quadraticCurveTo(-18, -15, -15, 5);
+                ctx.quadraticCurveTo(-10, 15, 0, 0);
+                ctx.fill();
+                ctx.stroke();
+
+                // Right Wing
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.quadraticCurveTo(18, -15, 15, 5);
+                ctx.quadraticCurveTo(10, 15, 0, 0);
+                ctx.fill();
+                ctx.stroke();
+
+                // Body Center
+                ctx.fillStyle = '#475569';
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 3, 10, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+
+            // Calculate color contrast against current background
+            getContrast() {
+                const envRgb = envColors[currentEnvKey].rgb[0]; // Greyscale approximate
+                return Math.abs(this.shade - envRgb);
+            }
+        }
+
+        // --- SIMULATION INITIALIZATION ---
+        function initSimulation() {
+            generation = 1;
+            moths = [];
+            history = [];
+
+            // Initial Hardy-Weinberg Population (p=0.5, q=0.5 -> 25% DD, 50% Dd, 25% dd)
+            for (let i = 0; i < INITIAL_POPULATION; i++) {
+                let rand = Math.random();
+                let genotype = rand < 0.25 ? 'DD' : rand < 0.75 ? 'Dd' : 'dd';
+                moths.push(new Moth(null, null, genotype));
+            }
+
+            recordStats();
+            resizeCanvases();
+        }
+
+        function changeEnvironment() {
+            currentEnvKey = document.getElementById('bg-select').value;
+            document.getElementById('env-container').style.backgroundColor = envColors[currentEnvKey].bg;
+            render();
+        }
+
+        // --- HARDY-WEINBERG DATA TRACKING ---
+        function recordStats() {
+            let countD = 0;
+            let countd = 0;
+
+            moths.forEach(m => {
+                if (m.genotype === 'DD') { countD += 2; }
+                else if (m.genotype === 'Dd') { countD += 1; countd += 1; }
+                else if (m.genotype === 'dd') { countd += 2; }
+            });
+
+            let totalAlleles = countD + countd;
+            let p = totalAlleles > 0 ? (countD / totalAlleles) : 0;
+            let q = totalAlleles > 0 ? (countd / totalAlleles) : 0;
+
+            history.push({ gen: generation, p: p, q: q, count: moths.length });
+
+            document.getElementById('gen-count').textContent = generation;
+            document.getElementById('allele-display').textContent = `p(D)=${p.toFixed(2)} | q(d)=${q.toFixed(2)}`;
+            renderChart();
+        }
+
+        // --- PREDATION MECHANICS ---
+
+        // 1. Automated Hunt based on Camouflage Contrast
+        function runAutoPredation() {
+            if (isInteractiveHunting || moths.length === 0) return;
+
+            // Sort moths by contrast against background (higher contrast = easier to spot)
+            moths.sort((a, b) => b.getContrast() - a.getContrast());
+
+            // Predators remove 40% of the most visible moths
+            let killCount = Math.floor(moths.length * 0.4);
+            moths.splice(0, killCount);
+
+            document.getElementById('status-msg').innerHTML = 
+                `Automated predation complete! Removed <strong>${killCount}</strong> highly visible moths based on camouflage contrast. Click <strong>Next Generation</strong> to reproduce.`;
+            
+            render();
+        }
+
+        // 2. Interactive User Hunt
+        function startUserHunt() {
+            if (isInteractiveHunting) return;
+            isInteractiveHunting = true;
+            huntTimer = 15;
+            eatenCount = 0;
+
+            document.getElementById('hunt-hud').classList.remove('hidden');
+            document.getElementById('timer-display').textContent = `${huntTimer}s`;
+            document.getElementById('eaten-display').textContent = eatenCount;
+            document.getElementById('status-msg').textContent = "Click on moths to catch them before time runs out!";
+
+            timerInterval = setInterval(() => {
+                huntTimer--;
+                document.getElementById('timer-display').textContent = `${huntTimer}s`;
+
+                if (huntTimer <= 0 || moths.length === 0) {
+                    endUserHunt();
+                }
+            }, 1000);
+        }
+
+        function endUserHunt() {
+            clearInterval(timerInterval);
+            isInteractiveHunting = false;
+            document.getElementById('hunt-hud').classList.add('hidden');
+            document.getElementById('status-msg').innerHTML = 
+                `Hunt finished! You caught <strong>${eatenCount}</strong> moths. Click <strong>Next Generation</strong> to allow survivors to reproduce.`;
+        }
+
+        // User Click Event Handler for Hunting
+        simCanvas.addEventListener('click', (e) => {
+            if (!isInteractiveHunting) return;
+
+            const rect = simCanvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            for (let i = moths.length - 1; i >= 0; i--) {
+                let dist = Math.hypot(moths[i].x - mouseX, moths[i].y - mouseY);
+                if (dist < moths[i].radius + 8) {
+                    moths.splice(i, 1);
+                    eatenCount++;
+                    document.getElementById('eaten-display').textContent = eatenCount;
+                    render();
+                    break;
+                }
+            }
+        });
+
+        // --- REPRODUCTION & BOTTLENECK EVENTS ---
+
+        function reproduceNextGen() {
+            if (moths.length < 2) {
+                document.getElementById('status-msg').textContent = "Population extinct or too small to reproduce! Click 'Reset All'.";
+                return;
+            }
+
+            const mutationRate = parseFloat(document.getElementById('mutation-rate').value);
+            let nextGenMoths = [];
+            
+            // Generate next generation back to INITIAL_POPULATION capacity
+            while (nextGenMoths.length < INITIAL_POPULATION) {
+                // Randomly select 2 parent survivors
+                let parentA = moths[Math.floor(Math.random() * moths.length)];
+                let parentB = moths[Math.floor(Math.random() * moths.length)];
+
+                // Get 1 allele from each parent
+                let alleleA = parentA.genotype[Math.floor(Math.random() * 2)];
+                let alleleB = parentB.genotype[Math.floor(Math.random() * 2)];
+
+                // Apply Mutation
+                if (Math.random() < mutationRate) alleleA = alleleA === 'D' ? 'd' : 'D';
+                if (Math.random() < mutationRate) alleleB = alleleB === 'D' ? 'd' : 'D';
+
+                let childGenotype = [alleleA, alleleB].sort().join(''); // Standardize 'Dd'
+                nextGenMoths.push(new Moth(null, null, childGenotype));
+            }
+
+            moths = nextGenMoths;
+            generation++;
+            recordStats();
+
+            document.getElementById('status-msg').innerHTML = 
+                `Generation ${generation} produced! Offspring inherited alleles based on surviving parents (with Hardy-Weinberg assortment).`;
+            
+            render();
+        }
+
+        function triggerBottleneck() {
+            if (moths.length === 0) return;
+            // Randomly wipe out 80% of population regardless of phenotype
+            let numToKeep = Math.max(2, Math.floor(moths.length * 0.2));
+            moths = moths.sort(() => Math.random() - 0.5).slice(0, numToKeep);
+            
+            document.getElementById('status-msg').innerHTML = 
+                `<strong>Natural Disaster (Genetic Drift/Bottleneck)</strong> wiped out 80% of the population randomly!`;
+            
+            render();
+        }
+
+        function resetSimulation() {
+            if (isInteractiveHunting) endUserHunt();
+            initSimulation();
+            document.getElementById('status-msg').textContent = "Simulation reset to initial Hardy-Weinberg equilibrium state.";
+        }
+
+        // --- RENDERING FUNCTIONS ---
+
+        function render() {
+            simCtx.clearRect(0, 0, simCanvas.width, simCanvas.height);
+
+            // Move and draw moths
+            moths.forEach(m => {
+                m.move();
+                m.draw(simCtx);
+            });
+
+            if (isInteractiveHunting || moths.length > 0) {
+                requestAnimationFrame(render);
+            }
+        }
+
+        function renderChart() {
+            chartCtx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
+
+            if (history.length < 1) return;
+
+            const w = chartCanvas.width;
+            const h = chartCanvas.height;
+            const padding = 25;
+
+            // Draw Axes
+            chartCtx.strokeStyle = '#334155';
+            chartCtx.lineWidth = 1;
+            chartCtx.beginPath();
+            chartCtx.moveTo(padding, 10);
+            chartCtx.lineTo(padding, h - padding);
+            chartCtx.lineTo(w - 10, h - padding);
+            chartCtx.stroke();
+
+            const stepX = (w - padding - 15) / Math.max(10, history.length - 1);
+
+            // Plot p (Dominant Allele Frequency) - Emerald Line
+            chartCtx.strokeStyle = '#34d399';
+            chartCtx.lineWidth = 2;
+            chartCtx.beginPath();
+            history.forEach((pt, idx) => {
+                let x = padding + idx * stepX;
+                let y = (h - padding) - (pt.p * (h - padding - 15));
+                if (idx === 0) chartCtx.moveTo(x, y);
+                else chartCtx.lineTo(x, y);
+            });
+            chartCtx.stroke();
+
+            // Plot q (Recessive Allele Frequency) - Sky Blue Line
+            chartCtx.strokeStyle = '#38bdf8';
+            chartCtx.lineWidth = 2;
+            chartCtx.beginPath();
+            history.forEach((pt, idx) => {
+                let x = padding + idx * stepX;
+                let y = (h - padding) - (pt.q * (h - padding - 15));
+                if (idx === 0) chartCtx.moveTo(x, y);
+                else chartCtx.lineTo(x, y);
+            });
+            chartCtx.stroke();
+        }
+
+        // --- START SIMULATION ---
+        initSimulation();
+    </script>
+</body>
+</html>

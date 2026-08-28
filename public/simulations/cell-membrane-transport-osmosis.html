@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cell Membrane & Transport Simulator with Explanatory Notes</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        canvas {
+            touch-action: manipulation;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <!-- Header -->
+    <header class="bg-slate-800 border-b border-slate-700 p-4">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-sky-400">Cell Transport & Osmosis Simulator</h1>
+                <p class="text-xs text-slate-400">Interactive Membrane Transport, Passive/Active Dynamics & Tonicity</p>
+            </div>
+            
+            <!-- Real-time Status / Cell State Badge -->
+            <div class="flex items-center gap-3">
+                <button onclick="toggleNotesModal()" class="bg-amber-600 hover:bg-amber-500 text-white font-semibold px-3 py-2 rounded-lg text-xs transition">
+                    📖 Explanatory Notes & Guide
+                </button>
+                <div class="bg-slate-900 border border-slate-700 px-4 py-2 rounded-xl text-right">
+                    <span class="text-[10px] uppercase text-slate-400 font-bold block">Cell Status</span>
+                    <span id="cell-status" class="text-sm font-bold text-emerald-400">Normal (Isotonic State)</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="max-w-7xl mx-auto w-full flex-1 p-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+        
+        <!-- Left 2 Columns: Canvas Simulation Area -->
+        <div class="lg:col-span-2 flex flex-col gap-4">
+            <div id="canvas-container" class="relative bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow-2xl h-[480px] flex items-center justify-center">
+                <canvas id="simCanvas" class="w-full h-full block"></canvas>
+                
+                <!-- On-Canvas Directional Flow Indicator -->
+                <div id="flow-indicator" class="absolute top-4 left-4 bg-slate-900/80 backdrop-blur px-3 py-2 rounded-lg border border-slate-700 text-xs flex items-center gap-2">
+                    <span class="text-slate-400">Net Water Movement:</span>
+                    <span id="flow-arrow" class="font-bold text-sky-400">&harr; Equilibrium</span>
+                </div>
+
+                <!-- Particle Counters Badge -->
+                <div class="absolute bottom-4 left-4 right-4 bg-slate-900/80 backdrop-blur px-4 py-2 rounded-lg border border-slate-700 text-xs grid grid-cols-2 md:grid-cols-4 gap-2 text-center">
+                    <div><span class="text-sky-400 font-bold">H₂O Out:</span> <span id="count-h2o-out">0</span> | <span class="text-sky-400 font-bold">In:</span> <span id="count-h2o-in">0</span></div>
+                    <div><span class="text-amber-400 font-bold">Solute Out:</span> <span id="count-sol-out">0</span> | <span class="text-amber-400 font-bold">In:</span> <span id="count-sol-in">0</span></div>
+                    <div><span class="text-emerald-400 font-bold">Large Out:</span> <span id="count-lrg-out">0</span> | <span class="text-emerald-400 font-bold">In:</span> <span id="count-lrg-in">0</span></div>
+                    <div><span class="text-purple-400 font-bold">ATP Used:</span> <span id="count-atp">0</span></div>
+                </div>
+            </div>
+
+            <!-- Inline Key Concept Guide (Bottom Banner) -->
+            <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl text-xs space-y-2">
+                <h4 class="font-bold text-sky-400 uppercase tracking-wider">Quick Reference Notes:</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-slate-300">
+                    <div class="bg-slate-900 p-2.5 rounded border border-slate-700">
+                        <strong class="text-indigo-400 block mb-1">Hypotonic Solution</strong>
+                        Lower solute concentration outside. Water moves <em>into</em> the cell via osmosis, causing it to swell or burst (lysis).
+                    </div>
+                    <div class="bg-slate-900 p-2.5 rounded border border-slate-700">
+                        <strong class="text-emerald-400 block mb-1">Isotonic Solution</strong>
+                        Equal solute concentration inside and outside. Water enters and leaves at equal rates (dynamic equilibrium).
+                    </div>
+                    <div class="bg-slate-900 p-2.5 rounded border border-slate-700">
+                        <strong class="text-rose-400 block mb-1">Hypertonic Solution</strong>
+                        Higher solute concentration outside. Water moves <em>out of</em> the cell, causing it to shrink (crenation/plasmolysis).
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Interactive Controls -->
+        <div class="flex flex-col gap-4">
+            
+            <!-- 1. Tonicity Quick-Presets -->
+            <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex flex-col gap-3">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-sky-400">1. External Tonicity Preset</h3>
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="setTonicity('hypotonic')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-2 px-2 rounded-lg transition">Hypotonic</button>
+                    <button onclick="setTonicity('isotonic')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold py-2 px-2 rounded-lg transition">Isotonic</button>
+                    <button onclick="setTonicity('hypertonic')" class="bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold py-2 px-2 rounded-lg transition">Hypertonic</button>
+                </div>
+            </div>
+
+            <!-- 2. Transport Mechanism Toggles -->
+            <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex flex-col gap-3">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400">2. Transport Mechanisms</h3>
+                
+                <label class="flex items-center justify-between bg-slate-900 p-2.5 rounded-lg border border-slate-700 cursor-pointer">
+                    <span class="text-xs font-semibold text-slate-200">Simple Diffusion (H₂O & Small Particles)</span>
+                    <input type="checkbox" id="mode-simple" checked class="w-4 h-4 accent-sky-500">
+                </label>
+
+                <label class="flex items-center justify-between bg-slate-900 p-2.5 rounded-lg border border-slate-700 cursor-pointer">
+                    <span class="text-xs font-semibold text-slate-200">Facilitated Diffusion (Protein Channels)</span>
+                    <input type="checkbox" id="mode-facilitated" checked class="w-4 h-4 accent-amber-500">
+                </label>
+
+                <label class="flex items-center justify-between bg-slate-900 p-2.5 rounded-lg border border-slate-700 cursor-pointer">
+                    <span class="text-xs font-semibold text-slate-200">Active Transport (Na⁺/K⁺ ATP Pump)</span>
+                    <input type="checkbox" id="mode-active" class="w-4 h-4 accent-purple-500">
+                </label>
+            </div>
+
+            <!-- 3. Dynamic Concentration Sliders -->
+            <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex flex-col gap-3">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400">3. Extracellular Concentrations</h3>
+                
+                <div>
+                    <div class="flex justify-between text-xs text-slate-300 mb-1">
+                        <span>Solute Concentration (Salt/Glucose):</span>
+                        <span id="val-solute" class="font-bold text-amber-400">50</span>
+                    </div>
+                    <input type="range" id="slider-solute" min="10" max="150" value="50" oninput="updateConcentrations()" class="w-full accent-amber-400">
+                </div>
+
+                <div>
+                    <div class="flex justify-between text-xs text-slate-300 mb-1">
+                        <span>Water Volume (H₂O):</span>
+                        <span id="val-water" class="font-bold text-sky-400">100</span>
+                    </div>
+                    <input type="range" id="slider-water" min="40" max="200" value="100" oninput="updateConcentrations()" class="w-full accent-sky-400">
+                </div>
+
+                <div class="pt-2 flex justify-between gap-2">
+                    <button onclick="resetSimulation()" class="w-full bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold py-2 rounded-lg text-xs transition">Reset Default State</button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Detailed Explanatory Notes Modal -->
+    <div id="notes-modal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl max-w-3xl w-full p-6 max-h-[90vh] overflow-y-auto shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h2 class="text-xl font-bold text-amber-400">Detailed Explanatory Notes: Cell Transport & Tonicity</h2>
+                <button onclick="toggleNotesModal()" class="text-slate-400 hover:text-white font-bold text-lg">&times;</button>
+            </div>
+
+            <div class="space-y-4 text-xs text-slate-300 leading-relaxed">
+                <!-- Section 1 -->
+                <div>
+                    <h3 class="text-sm font-bold text-sky-400 uppercase tracking-wide mb-1">1. Structure of the Cell Membrane</h3>
+                    <p>
+                        The cell membrane is composed of a <strong>phospholipid bilayer</strong> with hydrophilic (water-loving) heads facing outward and hydrophobic (water-fearing) tails facing inward. Embedded within this bilayer are <strong>transmembrane protein channels</strong> that allow specific ions and polar molecules to pass through.
+                    </p>
+                </div>
+
+                <!-- Section 2 -->
+                <div>
+                    <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wide mb-1">2. Passive Transport (No Energy Required)</h3>
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li><strong>Simple Diffusion:</strong> Movement of small, nonpolar particles (and water molecules) directly through the lipid bilayer from an area of high concentration to low concentration.</li>
+                        <li><strong>Facilitated Diffusion:</strong> Transport of larger or charged molecules (such as glucose or ions) across the membrane using specific protein channels down their concentration gradient.</li>
+                        <li><strong>Osmosis:</strong> The net movement of water molecules across a semi-permeable membrane from a region of lower solute concentration (higher water potential) to a region of higher solute concentration.</li>
+                    </ul>
+                </div>
+
+                <!-- Section 3 -->
+                <div>
+                    <h3 class="text-sm font-bold text-purple-400 uppercase tracking-wide mb-1">3. Active Transport (Requires ATP Energy)</h3>
+                    <p>
+                        Active transport moves ions or molecules <em>against</em> their concentration gradient (from low concentration to high concentration). This process requires cellular energy in the form of <strong>ATP</strong> and relies on specialized protein pumps (e.g., the Sodium-Potassium Pump $\text{Na}^+/\text{K}^+$ ATPase).
+                    </p>
+                </div>
+
+                <!-- Section 4 -->
+                <div>
+                    <h3 class="text-sm font-bold text-emerald-400 uppercase tracking-wide mb-1">4. Solutions & Cell Tonicity</h3>
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li><strong>Hypotonic Environment:</strong> Low solute concentration outside the cell. Water enters the cell by osmosis, causing animal cells to swell and potentially lyse (burst), while plant cells become turgid.</li>
+                        <li><strong>Isotonic Environment:</strong> Equal solute concentrations inside and outside the cell. Water moves in and out at equal rates, maintaining equilibrium.</li>
+                        <li><strong>Hypertonic Environment:</strong> High solute concentration outside the cell. Water moves out of the cell, causing the cell to shrink (crenation in red blood cells, plasmolysis in plant cells).</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end border-t border-slate-700 pt-3">
+                <button onclick="toggleNotesModal()" class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-1.5 px-4 rounded transition text-xs">Close Guide</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simulation Engine JavaScript -->
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Cell & Geometry Parameters
+        let cellRadius = 140; // Default baseline radius
+        let targetCellRadius = 140;
+        let atpCount = 0;
+
+        // Particle Arrays
+        let particles = [];
+
+        // Resize Canvas
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Particle Class definition
+        class Particle {
+            constructor(type, isInside) {
+                this.type = type; // 'h2o', 'solute', 'large'
+                this.isInside = isInside;
+                this.radius = type === 'h2o' ? 3 : type === 'solute' ? 5 : 9;
+                this.color = type === 'h2o' ? '#38bdf8' : type === 'solute' ? '#fbbf24' : '#34d399';
+                
+                this.resetPosition();
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+            }
+
+            resetPosition() {
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+
+                if (this.isInside) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const r = Math.random() * (cellRadius - 25);
+                    this.x = centerX + Math.cos(angle) * r;
+                    this.y = centerY + Math.sin(angle) * r;
+                } else {
+                    let r;
+                    do {
+                        this.x = Math.random() * canvas.width;
+                        this.y = Math.random() * canvas.height;
+                        r = Math.hypot(this.x - centerX, this.y - centerY);
+                    } while (r < cellRadius + 25);
+                }
+            }
+
+            move() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const dist = Math.hypot(this.x - centerX, this.y - centerY);
+
+                // Boundary bounce inside canvas edges
+                if (this.x < 10 || this.x > canvas.width - 10) this.vx *= -1;
+                if (this.y < 10 || this.y > canvas.height - 10) this.vy *= -1;
+
+                // Transport Controls State
+                const simpleEnabled = document.getElementById('mode-simple').checked;
+                const facilitatedEnabled = document.getElementById('mode-facilitated').checked;
+                const activeEnabled = document.getElementById('mode-active').checked;
+
+                // Membrane interaction distance threshold
+                const minBoundary = cellRadius - 12;
+                const maxBoundary = cellRadius + 12;
+
+                if (dist > minBoundary && dist < maxBoundary) {
+                    const angle = Math.atan2(this.y - centerY, this.x - centerX);
+                    const channelAngleSpan = Math.PI / 8; // Protein channel locations
+
+                    // Check if passing through a channel (top, bottom, left, right)
+                    const isNearChannel = Math.abs(angle % (Math.PI / 2)) < channelAngleSpan;
+
+                    if (this.type === 'h2o' && simpleEnabled) {
+                        // Water freely diffuses (Osmosis)
+                        this.isInside = dist < cellRadius;
+                    } else if (this.type === 'solute' && facilitatedEnabled && isNearChannel) {
+                        // Solutes pass through channels via Facilitated Diffusion
+                        this.isInside = dist < cellRadius;
+                    } else if (this.type === 'solute' && activeEnabled && isNearChannel && !this.isInside) {
+                        // Active Transport pumps solute inside against concentration gradient
+                        this.x = centerX + Math.cos(angle) * (cellRadius - 20);
+                        this.y = centerY + Math.sin(angle) * (cellRadius - 20);
+                        this.isInside = true;
+                        atpCount++;
+                    } else if (this.type === 'large') {
+                        // Large molecules cannot cross membrane without specialized mechanisms
+                        if (this.isInside) {
+                            this.x = centerX + Math.cos(angle) * (cellRadius - 20);
+                            this.y = centerY + Math.sin(angle) * (cellRadius - 20);
+                        } else {
+                            this.x = centerX + Math.cos(angle) * (cellRadius + 20);
+                            this.y = centerY + Math.sin(angle) * (cellRadius + 20);
+                        }
+                        this.vx *= -1;
+                        this.vy *= -1;
+                    } else {
+                        // Bounce off lipid bilayer
+                        if (this.isInside) {
+                            this.x = centerX + Math.cos(angle) * (cellRadius - 18);
+                            this.y = centerY + Math.sin(angle) * (cellRadius - 18);
+                        } else {
+                            this.x = centerX + Math.cos(angle) * (cellRadius + 18);
+                            this.y = centerY + Math.sin(angle) * (cellRadius + 18);
+                        }
+                        this.vx *= -1;
+                        this.vy *= -1;
+                    }
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Initialize Simulation Particles
+        function initParticles(soluteOut, waterOut) {
+            particles = [];
+            
+            // Fixed Intracellular (Inside) Environment
+            for (let i = 0; i < 60; i++) particles.push(new Particle('h2o', true));
+            for (let i = 0; i < 35; i++) particles.push(new Particle('solute', true));
+            for (let i = 0; i < 10; i++) particles.push(new Particle('large', true));
+
+            // Extracellular (Outside) Environment based on sliders
+            for (let i = 0; i < waterOut; i++) particles.push(new Particle('h2o', false));
+            for (let i = 0; i < soluteOut; i++) particles.push(new Particle('solute', false));
+            for (let i = 0; i < 10; i++) particles.push(new Particle('large', false));
+        }
+
+        function updateConcentrations() {
+            const solOut = parseInt(document.getElementById('slider-solute').value);
+            const waterOut = parseInt(document.getElementById('slider-water').value);
+
+            document.getElementById('val-solute').textContent = solOut;
+            document.getElementById('val-water').textContent = waterOut;
+
+            initParticles(solOut, waterOut);
+            recalculateOsmosisState();
+        }
+
+        function setTonicity(type) {
+            const solSlider = document.getElementById('slider-solute');
+            const waterSlider = document.getElementById('slider-water');
+
+            if (type === 'hypotonic') {
+                solSlider.value = 15;
+                waterSlider.value = 140;
+            } else if (type === 'isotonic') {
+                solSlider.value = 50;
+                waterSlider.value = 100;
+            } else if (type === 'hypertonic') {
+                solSlider.value = 130;
+                waterSlider.value = 60;
+            }
+            updateConcentrations();
+        }
+
+        function recalculateOsmosisState() {
+            const solOut = parseInt(document.getElementById('slider-solute').value);
+            const statusBadge = document.getElementById('cell-status');
+            const flowArrow = document.getElementById('flow-arrow');
+
+            if (solOut < 35) {
+                // Hypotonic: Water enters cell -> Swells/Lyses
+                targetCellRadius = 180;
+                statusBadge.textContent = "Swollen / Turgid (Hypotonic Outer Solution)";
+                statusBadge.className = "text-sm font-bold text-indigo-400";
+                flowArrow.innerHTML = "&rarr; Inward Osmosis (Swell)";
+                flowArrow.className = "font-bold text-indigo-400";
+            } else if (solOut > 70) {
+                // Hypertonic: Water leaves cell -> Shrinks/Plasmolyzes
+                targetCellRadius = 90;
+                statusBadge.textContent = "Shrunk / Plasmolyzed (Hypertonic Outer Solution)";
+                statusBadge.className = "text-sm font-bold text-rose-400";
+                flowArrow.innerHTML = "&larr; Outward Osmosis (Shrink)";
+                flowArrow.className = "font-bold text-rose-400";
+            } else {
+                // Isotonic: Equilibrium
+                targetCellRadius = 140;
+                statusBadge.textContent = "Normal / Isotonic (Dynamic Equilibrium)";
+                statusBadge.className = "text-sm font-bold text-emerald-400";
+                flowArrow.innerHTML = "&harr; Equilibrium";
+                flowArrow.className = "font-bold text-emerald-400";
+            }
+        }
+
+        function resetSimulation() {
+            atpCount = 0;
+            setTonicity('isotonic');
+            document.getElementById('mode-simple').checked = true;
+            document.getElementById('mode-facilitated').checked = true;
+            document.getElementById('mode-active').checked = false;
+        }
+
+        // --- DRAW MEMBRANE & PROTEIN CHANNELS ---
+        function drawMembrane() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            // Smooth cell radius transition for realistic osmotic swelling/shrinking
+            cellRadius += (targetCellRadius - cellRadius) * 0.05;
+
+            // Phospholipid Bilayer Graphic
+            const heads = 60;
+            for (let i = 0; i < heads; i++) {
+                const angle = (i / heads) * Math.PI * 2;
+                
+                // Outer Head
+                const ox = centerX + Math.cos(angle) * (cellRadius + 8);
+                const oy = centerY + Math.sin(angle) * (cellRadius + 8);
+                ctx.fillStyle = '#38bdf8';
+                ctx.beginPath();
+                ctx.arc(ox, oy, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Inner Head
+                const ix = centerX + Math.cos(angle) * (cellRadius - 8);
+                const iy = centerY + Math.sin(angle) * (cellRadius - 8);
+                ctx.fillStyle = '#38bdf8';
+                ctx.beginPath();
+                ctx.arc(ix, iy, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Hydrophobic Tails
+                ctx.strokeStyle = '#94a3b8';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(ox, oy);
+                ctx.lineTo(ix, iy);
+                ctx.stroke();
+            }
+
+            // Embedded Channel Proteins (4 Locations: Top, Right, Bottom, Left)
+            for (let i = 0; i < 4; i++) {
+                const angle = i * (Math.PI / 2);
+                const cx = centerX + Math.cos(angle) * cellRadius;
+                const cy = centerY + Math.sin(angle) * cellRadius;
+
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate(angle);
+
+                // Channel structure
+                ctx.fillStyle = '#a855f7'; // Purple Channel Protein
+                ctx.fillRect(-12, -18, 10, 36);
+                ctx.fillRect(2, -18, 10, 36);
+
+                ctx.restore();
+            }
+        }
+
+        // Update Particle Counters Display
+        function updateCounters() {
+            let h2oOut = 0, h2oIn = 0;
+            let solOut = 0, solIn = 0;
+            let lrgOut = 0, lrgIn = 0;
+
+            particles.forEach(p => {
+                if (p.type === 'h2o') p.isInside ? h2oIn++ : h2oOut++;
+                if (p.type === 'solute') p.isInside ? solIn++ : solOut++;
+                if (p.type === 'large') p.isInside ? lrgIn++ : lrgOut++;
+            });
+
+            document.getElementById('count-h2o-out').textContent = h2oOut;
+            document.getElementById('count-h2o-in').textContent = h2oIn;
+            document.getElementById('count-sol-out').textContent = solOut;
+            document.getElementById('count-sol-in').textContent = solIn;
+            document.getElementById('count-lrg-out').textContent = lrgOut;
+            document.getElementById('count-lrg-in').textContent = lrgIn;
+            document.getElementById('count-atp').textContent = atpCount;
+        }
+
+        function toggleNotesModal() {
+            const modal = document.getElementById('notes-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        // --- MAIN ANIMATION LOOP ---
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawMembrane();
+
+            particles.forEach(p => {
+                p.move();
+                p.draw();
+            });
+
+            updateCounters();
+            requestAnimationFrame(animate);
+        }
+
+        // Initial Launch
+        updateConcentrations();
+        animate();
+    </script>
+</body>
+</html>

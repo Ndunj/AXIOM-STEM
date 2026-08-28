@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Genetics Lab Simulator: Mendelian & Non-Mendelian Inheritance</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .modal-scroll::-webkit-scrollbar, .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .modal-scroll::-webkit-scrollbar-thumb, .custom-scroll::-webkit-scrollbar-thumb {
+            background-color: #475569;
+            border-radius: 3px;
+        }
+        .trait-badge {
+            transition: all 0.2s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-sky-500 selection:text-white">
+
+    <!-- Header & Navigation -->
+    <header class="bg-slate-800 border-b border-slate-700 p-4 shadow-lg sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-sky-500/10 border border-sky-500/30 rounded-xl text-sky-400 text-2xl">🧬</div>
+                <div>
+                    <h1 class="text-xl font-bold text-sky-400 tracking-wide">Genetics Suite: Interactive Inheritance Simulator</h1>
+                    <p class="text-xs text-slate-400">Senior High School Biology & Genetics Virtual Laboratory</p>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- Main Simulator Tabs -->
+                <div class="bg-slate-900 p-1 rounded-xl border border-slate-700 flex gap-1">
+                    <button id="tab-modeA" onclick="switchMode('modeA')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-600 text-white shadow">Mendelian Crosses</button>
+                    <button id="tab-modeB" onclick="switchMode('modeB')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white">Non-Mendelian</button>
+                    <button id="tab-modeC" onclick="switchMode('modeC')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white">Pedigree Deduction</button>
+                </div>
+
+                <!-- Explanatory Notes & Guide Modal Button -->
+                <button onclick="toggleNotesModal()" class="bg-amber-600 hover:bg-amber-500 text-white font-semibold px-3 py-1.5 rounded-lg text-xs shadow transition flex items-center gap-1.5">
+                    <span>📖</span> Guide & Notes
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto w-full flex-1 p-4 md:p-6 flex flex-col gap-6">
+
+        <!-- ================= MODE A: MENDELIAN CROSSES ================= -->
+        <section id="sec-modeA" class="space-y-6">
+            <!-- Controls & Sub-mode Selector -->
+            <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow flex flex-wrap justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Cross Type:</label>
+                    <div class="bg-slate-900 p-1 rounded-lg border border-slate-700 flex gap-1">
+                        <button id="sub-monohybrid" onclick="setMendelianType('monohybrid')" class="px-3 py-1 rounded text-xs font-bold bg-indigo-600 text-white">Monohybrid (1 Trait)</button>
+                        <button id="sub-dihybrid" onclick="setMendelianType('dihybrid')" class="px-3 py-1 rounded text-xs font-bold text-slate-400 hover:text-white">Dihybrid (2 Traits)</button>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="resetModeA()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+                        Reset Cross
+                    </button>
+                </div>
+            </div>
+
+            <!-- Parent Selectors and Phenotype Visualizations -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Parent 1 -->
+                <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl shadow flex flex-col justify-between space-y-4">
+                    <div>
+                        <div class="flex justify-between items-center border-b border-slate-700 pb-2 mb-3">
+                            <h3 class="text-sm font-bold text-sky-400 flex items-center gap-2">
+                                <span>♂️</span> Parent 1 Genotype
+                            </h3>
+                            <span id="p1-pheno-badge" class="text-xs px-2.5 py-0.5 rounded-full bg-slate-900 text-slate-300 font-mono border border-slate-700"></span>
+                        </div>
+                        
+                        <div id="p1-select-container" class="space-y-3">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Visual organism representation -->
+                    <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl flex items-center justify-center gap-4">
+                        <div id="p1-visual" class="w-16 h-16 rounded-full border-2 border-slate-700 flex items-center justify-center text-2xl transition-all duration-300 shadow-inner">
+                            🐾
+                        </div>
+                        <div class="text-xs space-y-1">
+                            <p class="text-slate-400 font-semibold">Phenotype Preview:</p>
+                            <p id="p1-visual-text" class="text-slate-200 font-bold">Black Fur</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parent 2 -->
+                <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl shadow flex flex-col justify-between space-y-4">
+                    <div>
+                        <div class="flex justify-between items-center border-b border-slate-700 pb-2 mb-3">
+                            <h3 class="text-sm font-bold text-rose-400 flex items-center gap-2">
+                                <span>♀️</span> Parent 2 Genotype
+                            </h3>
+                            <span id="p2-pheno-badge" class="text-xs px-2.5 py-0.5 rounded-full bg-slate-900 text-slate-300 font-mono border border-slate-700"></span>
+                        </div>
+                        
+                        <div id="p2-select-container" class="space-y-3">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Visual organism representation -->
+                    <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl flex items-center justify-center gap-4">
+                        <div id="p2-visual" class="w-16 h-16 rounded-full border-2 border-slate-700 flex items-center justify-center text-2xl transition-all duration-300 shadow-inner">
+                            🐾
+                        </div>
+                        <div class="text-xs space-y-1">
+                            <p class="text-slate-400 font-semibold">Phenotype Preview:</p>
+                            <p id="p2-visual-text" class="text-slate-200 font-bold">Black Fur</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Punnett Square & Ratios Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Punnett Matrix -->
+                <div class="lg:col-span-2 bg-slate-800 border border-slate-700 p-5 rounded-xl shadow space-y-4">
+                    <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wider">Dynamic Punnett Square Matrix</h3>
+                    <div id="punnett-square-wrapper" class="overflow-x-auto custom-scroll p-2 flex justify-center">
+                        <!-- Square generated via JS -->
+                    </div>
+                </div>
+
+                <!-- Summary Ratios & Probabilities -->
+                <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl shadow flex flex-col justify-between space-y-4">
+                    <div>
+                        <h3 class="text-sm font-bold text-emerald-400 uppercase tracking-wider mb-3">Offspring Probabilities</h3>
+                        
+                        <div class="space-y-4 text-xs">
+                            <!-- Genotypic Ratios -->
+                            <div>
+                                <h4 class="font-bold text-slate-300 border-b border-slate-700 pb-1 mb-2">Genotypic Ratio:</h4>
+                                <div id="genotype-ratio-list" class="space-y-1.5 font-mono">
+                                    <!-- Populated via JS -->
+                                </div>
+                            </div>
+
+                            <!-- Phenotypic Ratios -->
+                            <div>
+                                <h4 class="font-bold text-slate-300 border-b border-slate-700 pb-1 mb-2">Phenotypic Ratio:</h4>
+                                <div id="phenotype-ratio-list" class="space-y-1.5">
+                                    <!-- Populated via JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-700/60 text-[11px] text-slate-400">
+                        💡 <strong>Note:</strong> Ratios express expected theoretical Mendelian frequencies across standard fertilization events.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= MODE B: NON-MENDELIAN INHERITANCE ================= -->
+        <section id="sec-modeB" class="hidden space-y-6">
+            <!-- Pattern Sub-tabs -->
+            <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow flex flex-wrap justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Pattern:</label>
+                    <div class="bg-slate-900 p-1 rounded-lg border border-slate-700 flex flex-wrap gap-1">
+                        <button id="sub-incomplete" onclick="setNonMendelianPattern('incomplete')" class="px-3 py-1 rounded text-xs font-bold bg-indigo-600 text-white">Incomplete Dominance</button>
+                        <button id="sub-codominance" onclick="setNonMendelianPattern('codominance')" class="px-3 py-1 rounded text-xs font-bold text-slate-400 hover:text-white">Codominance (ABO Blood)</button>
+                        <button id="sub-sexlinked" onclick="setNonMendelianPattern('sexlinked')" class="px-3 py-1 rounded text-xs font-bold text-slate-400 hover:text-white">Sex-Linked Traits</button>
+                    </div>
+                </div>
+
+                <button onclick="resetModeB()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+                    Reset
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Parents & Controls -->
+                <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl shadow space-y-5">
+                    <h3 class="text-sm font-bold text-sky-400 uppercase tracking-wider border-b border-slate-700 pb-2">Parental Cross Setup</h3>
+                    
+                    <div class="space-y-4">
+                        <!-- Parent 1 Selector -->
+                        <div class="space-y-1.5">
+                            <label id="modeB-p1-label" class="text-xs font-semibold text-slate-300">Parent 1 Genotype:</label>
+                            <select id="modeB-p1-select" onchange="updateModeB()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white focus:ring-2 focus:ring-sky-500 outline-none">
+                                <!-- Populated via JS -->
+                            </select>
+                        </div>
+
+                        <!-- Parent 2 Selector -->
+                        <div class="space-y-1.5">
+                            <label id="modeB-p2-label" class="text-xs font-semibold text-slate-300">Parent 2 Genotype:</label>
+                            <select id="modeB-p2-select" onchange="updateModeB()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white focus:ring-2 focus:ring-sky-500 outline-none">
+                                <!-- Populated via JS -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Organism Visual Previews -->
+                    <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
+                        <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider">Phenotype Previews</h4>
+                        <div class="grid grid-cols-2 gap-2 text-center">
+                            <div class="bg-slate-900 p-3 rounded-lg border border-slate-800 flex flex-col items-center">
+                                <div id="modeB-p1-avatar" class="w-12 h-12 rounded-full flex items-center justify-center text-xl mb-1 shadow border border-slate-700">🌸</div>
+                                <span class="text-[10px] text-slate-400">Parent 1</span>
+                                <span id="modeB-p1-pheno" class="text-xs font-bold text-slate-200">Red Flower</span>
+                            </div>
+                            <div class="bg-slate-900 p-3 rounded-lg border border-slate-800 flex flex-col items-center">
+                                <div id="modeB-p2-avatar" class="w-12 h-12 rounded-full flex items-center justify-center text-xl mb-1 shadow border border-slate-700">🌸</div>
+                                <span class="text-[10px] text-slate-400">Parent 2</span>
+                                <span id="modeB-p2-pheno" class="text-xs font-bold text-slate-200">White Flower</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Punnett Square & Ratios -->
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl shadow space-y-4">
+                        <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wider">Cross Punnett Square</h3>
+                        <div id="modeB-punnett-wrapper" class="flex justify-center overflow-x-auto p-2">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Statistics Panel -->
+                    <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl shadow space-y-3">
+                        <h3 class="text-sm font-bold text-emerald-400 uppercase tracking-wider">Phenotypic Ratios & Offspring Breakdown</h3>
+                        <div id="modeB-results" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= MODE C: PEDIGREE CHART INTERACTIVE ================= -->
+        <section id="sec-modeC" class="hidden space-y-6">
+            <!-- Trait Selection Header -->
+            <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow flex flex-wrap justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Inheritance Mode:</label>
+                    <select id="pedigree-trait-select" onchange="initPedigree()" class="bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white focus:ring-2 focus:ring-sky-500 outline-none">
+                        <option value="autosomal_recessive">Autosomal Recessive (e.g., Albinism / Cystic Fibrosis)</option>
+                        <option value="autosomal_dominant">Autosomal Dominant (e.g., Huntington's Disease)</option>
+                        <option value="x_linked_recessive">X-Linked Recessive (e.g., Hemophilia)</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="initPedigree()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-3 py-1.5 rounded-lg text-xs shadow transition">
+                        🔀 New Pedigree Case
+                    </button>
+                </div>
+            </div>
+
+            <!-- Pedigree Canvas / Interactive Chart -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Tree Container -->
+                <div class="lg:col-span-2 bg-slate-800 border border-slate-700 p-5 rounded-xl shadow space-y-4 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center border-b border-slate-700 pb-2 mb-4">
+                            <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wider">3-Generation Pedigree Tree</h3>
+                            <div class="flex items-center gap-4 text-xs text-slate-400">
+                                <span class="flex items-center gap-1"><span class="w-3 h-3 bg-slate-700 border border-slate-400 inline-block"></span> Male</span>
+                                <span class="flex items-center gap-1"><span class="w-3 h-3 bg-slate-700 border border-slate-400 rounded-full inline-block"></span> Female</span>
+                                <span class="flex items-center gap-1"><span class="w-3 h-3 bg-rose-600 inline-block"></span> Affected</span>
+                            </div>
+                        </div>
+
+                        <!-- Interactive Diagram Container -->
+                        <div id="pedigree-tree" class="p-4 bg-slate-950 rounded-xl border border-slate-800 relative min-h-[360px] flex flex-col justify-around gap-8 custom-scroll">
+                            <!-- Dynamically generated tree nodes -->
+                        </div>
+                    </div>
+
+                    <div class="text-[11px] text-slate-400 bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/60">
+                        👆 <strong>Student Action:</strong> Click on any individual in the tree to analyze their phenotype and deduce their hidden genotype!
+                    </div>
+                </div>
+
+                <!-- Deduction Inspector Sidebar -->
+                <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl shadow flex flex-col justify-between space-y-4">
+                    <div>
+                        <h3 class="text-sm font-bold text-sky-400 uppercase tracking-wider border-b border-slate-700 pb-2 mb-4">Individual Inspector</h3>
+                        
+                        <div id="pedigree-inspector" class="space-y-4">
+                            <div class="text-center py-8 text-slate-500 text-xs">
+                                Click any person in the pedigree tree to reveal their deduction card.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pedigree Scoreboard -->
+                    <div id="pedigree-stats" class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
+                        <div class="flex justify-between text-xs text-slate-300">
+                            <span>Solved Genotypes:</span>
+                            <span id="pedigree-solved-count" class="font-bold text-emerald-400">0 / 7</span>
+                        </div>
+                        <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                            <div id="pedigree-progress-bar" class="bg-emerald-500 h-full w-0 transition-all duration-300"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Explanatory Notes & Guide Modal -->
+    <div id="notes-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-3xl w-full p-6 max-h-[90vh] overflow-y-auto modal-scroll shadow-2xl space-y-5">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h2 class="text-lg font-bold text-amber-400 flex items-center gap-2">
+                    <span>📚</span> High School Genetics Laboratory Reference Guide
+                </h2>
+                <button onclick="toggleNotesModal()" class="text-slate-400 hover:text-white font-bold text-xl">&times;</button>
+            </div>
+
+            <div class="space-y-4 text-xs text-slate-300 leading-relaxed">
+                <!-- Section 1 -->
+                <div class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-700/80 space-y-1">
+                    <h3 class="text-xs font-bold text-sky-400 uppercase tracking-wide">1. Mendelian Inheritance Principles</h3>
+                    <p>
+                        • <strong>Law of Segregation:</strong> Alleles segregate during gamete formation so that each gamete carries only one allele per gene.<br>
+                        • <strong>Law of Independent Assortment:</strong> Genes for different traits assort independently during gamete formation (valid for unlinked genes).
+                    </p>
+                </div>
+
+                <!-- Section 2 -->
+                <div class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-700/80 space-y-1">
+                    <h3 class="text-xs font-bold text-indigo-400 uppercase tracking-wide">2. Non-Mendelian Patterns</h3>
+                    <p>
+                        • <strong>Incomplete Dominance:</strong> Heterozygotes display an intermediate, blended phenotype (e.g., Red $RR$ x White $WW$ = Pink $RW$).<br>
+                        • <strong>Codominance:</strong> Both alleles are fully expressed simultaneously without blending (e.g., ABO Blood Group $I^A I^B$ = Type AB).<br>
+                        • <strong>Sex-Linked Traits:</strong> Genes located on sex chromosomes (X chromosome). Males ($XY$) are hemizygous and express recessive traits more frequently than females ($XX$).
+                    </p>
+                </div>
+
+                <!-- Section 3 -->
+                <div class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-700/80 space-y-1">
+                    <h3 class="text-xs font-bold text-emerald-400 uppercase tracking-wide">3. Pedigree Deduction Guidelines</h3>
+                    <p>
+                        • <strong>Autosomal Recessive:</strong> Trait can skip generations; affected offspring can be born to unaffected heterozygous parents.<br>
+                        • <strong>Autosomal Dominant:</strong> Trait usually appears in every generation; affected individuals must have at least one affected parent.<br>
+                        • <strong>X-Linked Recessive:</strong> Significantly higher incidence in males; affected mothers pass the allele to all sons.
+                    </p>
+                </div>
+            </div>
+
+            <div class="mt-4 flex justify-end border-t border-slate-700 pt-3">
+                <button onclick="toggleNotesModal()" class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-1.5 px-4 rounded-lg transition text-xs">Close Guide</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN JAVASCRIPT SIMULATION ENGINE -->
+    <script>
+        // ================= GLOBAL STATE =================
+        let currentMode = 'modeA';
+        let mendelianType = 'monohybrid'; // 'monohybrid' or 'dihybrid'
+        let nonMendelianPattern = 'incomplete'; // 'incomplete', 'codominance', 'sexlinked'
+
+        // Monohybrid alleles definition (Fur Color: B = Black, b = Brown)
+        let stateModeA = {
+            p1_gene1: 'Bb',
+            p2_gene1: 'Bb',
+            // Dihybrid second trait (Eye Color: E = Dark, e = Blue)
+            p1_gene2: 'Ee',
+            p2_gene2: 'Ee'
+        };
+
+        let stateModeB = {
+            p1: '',
+            p2: ''
+        };
+
+        let pedigreeData = {
+            traitMode: 'autosomal_recessive',
+            nodes: [],
+            selectedNodeId: null,
+            solvedMap: {},
+            feedbackMsg: null
+        };
+
+        // ================= INITIALIZATION =================
+        window.onload = () => {
+            initModeA();
+            initModeB();
+            initPedigree();
+        };
+
+        function switchMode(mode) {
+            currentMode = mode;
+            ['modeA', 'modeB', 'modeC'].forEach(m => {
+                const sec = document.getElementById(`sec-${m}`);
+                const tab = document.getElementById(`tab-${m}`);
+                if (m === mode) {
+                    sec.classList.remove('hidden');
+                    tab.className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-600 text-white shadow";
+                } else {
+                    sec.classList.add('hidden');
+                    tab.className = "px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white";
+                }
+            });
+        }
+
+        function toggleNotesModal() {
+            document.getElementById('notes-modal').classList.toggle('hidden');
+        }
+
+        // ================= MODE A: MENDELIAN LOGIC =================
+        function setMendelianType(type) {
+            mendelianType = type;
+            document.getElementById('sub-monohybrid').className = type === 'monohybrid' ? "px-3 py-1 rounded text-xs font-bold bg-indigo-600 text-white" : "px-3 py-1 rounded text-xs font-bold text-slate-400 hover:text-white";
+            document.getElementById('sub-dihybrid').className = type === 'dihybrid' ? "px-3 py-1 rounded text-xs font-bold bg-indigo-600 text-white" : "px-3 py-1 rounded text-xs font-bold text-slate-400 hover:text-white";
+            initModeA();
+        }
+
+        function initModeA() {
+            const p1Container = document.getElementById('p1-select-container');
+            const p2Container = document.getElementById('p2-select-container');
+
+            if (mendelianType === 'monohybrid') {
+                p1Container.innerHTML = `
+                    <div class="space-y-1">
+                        <label class="text-xs text-slate-300 font-medium">Fur Color Gene (B/b):</label>
+                        <select id="p1-g1" onchange="updateModeA()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white">
+                            <option value="BB">BB (Homozygous Dominant - Black)</option>
+                            <option value="Bb" selected>Bb (Heterozygous - Black)</option>
+                            <option value="bb">bb (Homozygous Recessive - Brown)</option>
+                        </select>
+                    </div>
+                `;
+                p2Container.innerHTML = `
+                    <div class="space-y-1">
+                        <label class="text-xs text-slate-300 font-medium">Fur Color Gene (B/b):</label>
+                        <select id="p2-g1" onchange="updateModeA()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white">
+                            <option value="BB">BB (Homozygous Dominant - Black)</option>
+                            <option value="Bb" selected>Bb (Heterozygous - Black)</option>
+                            <option value="bb">bb (Homozygous Recessive - Brown)</option>
+                        </select>
+                    </div>
+                `;
+            } else {
+                p1Container.innerHTML = `
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="space-y-1">
+                            <label class="text-xs text-slate-300 font-medium">Fur Color (B/b):</label>
+                            <select id="p1-g1" onchange="updateModeA()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white">
+                                <option value="BB">BB (Black)</option>
+                                <option value="Bb" selected>Bb (Black)</option>
+                                <option value="bb">bb (Brown)</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs text-slate-300 font-medium">Eye Color (E/e):</label>
+                            <select id="p1-g2" onchange="updateModeA()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white">
+                                <option value="EE">EE (Dark)</option>
+                                <option value="Ee" selected>Ee (Dark)</option>
+                                <option value="ee">ee (Blue)</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+                p2Container.innerHTML = `
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="space-y-1">
+                            <label class="text-xs text-slate-300 font-medium">Fur Color (B/b):</label>
+                            <select id="p2-g1" onchange="updateModeA()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white">
+                                <option value="BB">BB (Black)</option>
+                                <option value="Bb" selected>Bb (Black)</option>
+                                <option value="bb">bb (Brown)</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs text-slate-300 font-medium">Eye Color (E/e):</label>
+                            <select id="p2-g2" onchange="updateModeA()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white">
+                                <option value="EE">EE (Dark)</option>
+                                <option value="Ee" selected>Ee (Dark)</option>
+                                <option value="ee">ee (Blue)</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+            }
+
+            updateModeA();
+        }
+
+        function resetModeA() {
+            initModeA();
+        }
+
+        function updateModeA() {
+            stateModeA.p1_gene1 = document.getElementById('p1-g1').value;
+            stateModeA.p2_gene1 = document.getElementById('p2-g1').value;
+
+            if (mendelianType === 'dihybrid') {
+                stateModeA.p1_gene2 = document.getElementById('p1-g2').value;
+                stateModeA.p2_gene2 = document.getElementById('p2-g2').value;
+            }
+
+            // Update Parent Phenotype Avatars
+            updateParentVisual('p1', stateModeA.p1_gene1, stateModeA.p1_gene2);
+            updateParentVisual('p2', stateModeA.p2_gene1, stateModeA.p2_gene2);
+
+            // Generate Gametes
+            const p1Gametes = getGametes(stateModeA.p1_gene1, mendelianType === 'dihybrid' ? stateModeA.p1_gene2 : null);
+            const p2Gametes = getGametes(stateModeA.p2_gene1, mendelianType === 'dihybrid' ? stateModeA.p2_gene2 : null);
+
+            // Build Matrix & Offspring Statistics
+            renderPunnettSquareModeA(p1Gametes, p2Gametes);
+        }
+
+        function updateParentVisual(prefix, g1, g2) {
+            const vis = document.getElementById(`${prefix}-visual`);
+            const txt = document.getElementById(`${prefix}-visual-text`);
+            const badge = document.getElementById(`${prefix}-pheno-badge`);
+
+            let furColor = g1.includes('B') ? 'Black' : 'Brown';
+            let eyeColor = g2 ? (g2.includes('E') ? 'Dark' : 'Blue') : null;
+
+            let phenoText = furColor + " Fur";
+            if (eyeColor) phenoText += `, ${eyeColor} Eyes`;
+
+            txt.innerText = phenoText;
+            badge.innerText = g1 + (g2 ? g2 : '');
+
+            if (g1.includes('B')) {
+                vis.className = "w-16 h-16 rounded-full border-2 border-slate-700 flex items-center justify-center text-2xl transition-all duration-300 bg-slate-900 text-white shadow-lg";
+            } else {
+                vis.className = "w-16 h-16 rounded-full border-2 border-amber-800 flex items-center justify-center text-2xl transition-all duration-300 bg-amber-950 text-amber-200 shadow-lg";
+            }
+        }
+
+        function getGametes(g1, g2) {
+            const a1 = [g1[0], g1[1]];
+            if (!g2) return a1;
+
+            const a2 = [g2[0], g2[1]];
+            let gametes = [];
+            for (let x of a1) {
+                for (let y of a2) {
+                    gametes.push(x + y);
+                }
+            }
+            return gametes;
+        }
+
+        function combineAlleles(gam1, gam2) {
+            if (mendelianType === 'monohybrid') {
+                let sorted = [gam1, gam2].sort();
+                return sorted[0] === sorted[0].toLowerCase() && sorted[1] === sorted[1].toUpperCase() ? sorted[1] + sorted[0] : sorted.join('');
+            } else {
+                // Dihybrid combine G1 alleles together, G2 alleles together
+                let trait1 = [gam1[0], gam2[0]].sort();
+                let g1Str = (trait1[0] === trait1[0].toLowerCase() && trait1[1] === trait1[1].toUpperCase()) ? trait1[1] + trait1[0] : trait1.join('');
+
+                let trait2 = [gam1[1], gam2[1]].sort();
+                let g2Str = (trait2[0] === trait2[0].toLowerCase() && trait2[1] === trait2[1].toUpperCase()) ? trait2[1] + trait2[0] : trait2.join('');
+
+                return g1Str + g2Str;
+            }
+        }
+
+        function getPhenotypeDescriptionModeA(genotype) {
+            if (mendelianType === 'monohybrid') {
+                return genotype.includes('B') ? 'Black Fur' : 'Brown Fur';
+            } else {
+                let fur = (genotype[0] === 'B' || genotype[1] === 'B') ? 'Black Fur' : 'Brown Fur';
+                let eyes = (genotype[2] === 'E' || genotype[3] === 'E') ? 'Dark Eyes' : 'Blue Eyes';
+                return `${fur}, ${eyes}`;
+            }
+        }
+
+        function renderPunnettSquareModeA(p1G, p2G) {
+            const wrapper = document.getElementById('punnett-square-wrapper');
+            let size = p1G.length;
+
+            let html = `<table class="border-collapse text-center font-mono text-xs">`;
+            
+            // Header row with Parent 2 gametes
+            html += `<tr><th class="p-2 bg-slate-900 border border-slate-700 text-slate-500">♂️ \\ ♀️</th>`;
+            for (let g of p2G) {
+                html += `<th class="p-3 bg-slate-900 border border-slate-700 text-amber-400 font-bold">${g}</th>`;
+            }
+            html += `</tr>`;
+
+            let genotypeCounts = {};
+            let phenotypeCounts = {};
+            let total = size * size;
+
+            for (let i = 0; i < size; i++) {
+                html += `<tr><th class="p-3 bg-slate-900 border border-slate-700 text-sky-400 font-bold">${p1G[i]}</th>`;
+                for (let j = 0; j < size; j++) {
+                    let childG = combineAlleles(p1G[i], p2G[j]);
+                    let pheno = getPhenotypeDescriptionModeA(childG);
+
+                    genotypeCounts[childG] = (genotypeCounts[childG] || 0) + 1;
+                    phenotypeCounts[pheno] = (phenotypeCounts[pheno] || 0) + 1;
+
+                    let bgClass = childG.includes('B') ? 'bg-slate-800/80 text-sky-300' : 'bg-amber-950/40 text-amber-300';
+
+                    html += `<td class="p-3 border border-slate-700 ${bgClass} hover:bg-slate-700 transition">
+                        <div class="font-bold text-sm">${childG}</div>
+                        <div class="text-[10px] text-slate-400 font-sans mt-0.5">${pheno}</div>
+                    </td>`;
+                }
+                html += `</tr>`;
+            }
+
+            html += `</table>`;
+            wrapper.innerHTML = html;
+
+            // Render Ratio Summaries
+            const genoList = document.getElementById('genotype-ratio-list');
+            genoList.innerHTML = Object.entries(genotypeCounts).map(([g, count]) => {
+                let pct = ((count / total) * 100).toFixed(1);
+                return `<div class="flex justify-between items-center bg-slate-900 p-2 rounded border border-slate-800">
+                    <span class="text-sky-400 font-bold">${g}</span>
+                    <span class="text-slate-300">${count}/${total} (${pct}%)</span>
+                </div>`;
+            }).join('');
+
+            const phenoList = document.getElementById('phenotype-ratio-list');
+            phenoList.innerHTML = Object.entries(phenotypeCounts).map(([p, count]) => {
+                let pct = ((count / total) * 100).toFixed(1);
+                return `<div class="flex justify-between items-center bg-slate-900 p-2 rounded border border-slate-800">
+                    <span class="text-emerald-400 font-medium">${p}</span>
+                    <span class="text-slate-300 font-mono">${count}/${total} (${pct}%)</span>
+                </div>`;
+            }).join('');
+        }
+
+        // ================= MODE B: NON-MENDELIAN LOGIC =================
+        function setNonMendelianPattern(pattern) {
+            nonMendelianPattern = pattern;
+            ['incomplete', 'codominance', 'sexlinked'].forEach(p => {
+                document.getElementById(`sub-${p}`).className = p === pattern ? "px-3 py-1 rounded text-xs font-bold bg-indigo-600 text-white" : "px-3 py-1 rounded text-xs font-bold text-slate-400 hover:text-white";
+            });
+            initModeB();
+        }
+
+        function initModeB() {
+            const p1Sel = document.getElementById('modeB-p1-select');
+            const p2Sel = document.getElementById('modeB-p2-select');
+
+            if (nonMendelianPattern === 'incomplete') {
+                p1Sel.innerHTML = `
+                    <option value="RR">RR (Red Snapdragon)</option>
+                    <option value="RW" selected>RW (Pink Snapdragon)</option>
+                    <option value="WW">WW (White Snapdragon)</option>
+                `;
+                p2Sel.innerHTML = `
+                    <option value="RR">RR (Red Snapdragon)</option>
+                    <option value="RW" selected>RW (Pink Snapdragon)</option>
+                    <option value="WW">WW (White Snapdragon)</option>
+                `;
+            } else if (nonMendelianPattern === 'codominance') {
+                p1Sel.innerHTML = `
+                    <option value="IAIA">IA IA (Type A - Homozygous)</option>
+                    <option value="IAi">IA i (Type A - Heterozygous)</option>
+                    <option value="IBIB">IB IB (Type B - Homozygous)</option>
+                    <option value="IBi">IB i (Type B - Heterozygous)</option>
+                    <option value="IAIB" selected>IA IB (Type AB)</option>
+                    <option value="ii">ii (Type O)</option>
+                `;
+                p2Sel.innerHTML = `
+                    <option value="IAIA">IA IA (Type A - Homozygous)</option>
+                    <option value="IAi" selected>IA i (Type A - Heterozygous)</option>
+                    <option value="IBIB">IB IB (Type B - Homozygous)</option>
+                    <option value="IBi">IB i (Type B - Heterozygous)</option>
+                    <option value="IAIB">IA IB (Type AB)</option>
+                    <option value="ii">ii (Type O)</option>
+                `;
+            } else if (nonMendelianPattern === 'sexlinked') {
+                p1Sel.innerHTML = `
+                    <option value="XNY">XN Y (Father - Normal Vision)</option>
+                    <option value="XcY">Xc Y (Father - Colorblind)</option>
+                `;
+                p2Sel.innerHTML = `
+                    <option value="XNXN">XN XN (Mother - Normal Vision)</option>
+                    <option value="XNXc" selected>XN Xc (Mother - Carrier)</option>
+                    <option value="XcXc">Xc Xc (Mother - Colorblind)</option>
+                `;
+            }
+
+            updateModeB();
+        }
+
+        function resetModeB() {
+            initModeB();
+        }
+
+        function updateModeB() {
+            const p1Val = document.getElementById('modeB-p1-select').value;
+            const p2Val = document.getElementById('modeB-p2-select').value;
+
+            stateModeB.p1 = p1Val;
+            stateModeB.p2 = p2Val;
+
+            // Render Avatars & Names
+            renderNonMendelianAvatars(p1Val, p2Val);
+
+            // Compute Cross Matrix
+            renderPunnettSquareModeB(p1Val, p2Val);
+        }
+
+        function renderNonMendelianAvatars(p1, p2) {
+            const p1Pheno = getNonMendelianPhenotype(p1);
+            const p2Pheno = getNonMendelianPhenotype(p2);
+
+            document.getElementById('modeB-p1-pheno').innerText = p1Pheno.text;
+            document.getElementById('modeB-p2-pheno').innerText = p2Pheno.text;
+
+            document.getElementById('modeB-p1-avatar').innerText = p1Pheno.icon;
+            document.getElementById('modeB-p2-avatar').innerText = p2Pheno.icon;
+        }
+
+        function getNonMendelianPhenotype(genotype) {
+            if (nonMendelianPattern === 'incomplete') {
+                if (genotype === 'RR') return { text: 'Red Flower', icon: '🌺' };
+                if (genotype === 'WW') return { text: 'White Flower', icon: '💮' };
+                return { text: 'Pink Flower', icon: '🌸' };
+            } else if (nonMendelianPattern === 'codominance') {
+                if (genotype.includes('IA') && genotype.includes('IB')) return { text: 'Type AB Blood', icon: '🩸' };
+                if (genotype.includes('IA')) return { text: 'Type A Blood', icon: '🅰️' };
+                if (genotype.includes('IB')) return { text: 'Type B Blood', icon: '🅱️' };
+                return { text: 'Type O Blood', icon: '⭕' };
+            } else { // sexlinked
+                if (genotype === 'XNY') return { text: 'Male (Normal)', icon: '👨' };
+                if (genotype === 'XcY') return { text: 'Male (Colorblind)', icon: '🧔‍♂️' };
+                if (genotype === 'XNXN') return { text: 'Female (Normal)', icon: '👩' };
+                if (genotype === 'XNXc') return { text: 'Female (Carrier)', icon: '👩‍🦰' };
+                return { text: 'Female (Colorblind)', icon: '👩‍⚕️' };
+            }
+        }
+
+        function parseGametesModeB(genotype) {
+            if (nonMendelianPattern === 'sexlinked') {
+                if (genotype.endsWith('Y')) {
+                    return [genotype.slice(0, 2), 'Y'];
+                } else {
+                    return [genotype.slice(0, 2), genotype.slice(2, 4)];
+                }
+            } else if (nonMendelianPattern === 'codominance') {
+                let gametes = [];
+                let i = 0;
+                while (i < genotype.length) {
+                    if (genotype[i] === 'I') {
+                        gametes.push(genotype.slice(i, i + 2));
+                        i += 2;
+                    } else if (genotype[i] === 'i') {
+                        gametes.push('i');
+                        i += 1;
+                    }
+                }
+                return gametes;
+            } else {
+                return [genotype[0], genotype[1]];
+            }
+        }
+
+        function combineGametesModeB(g1, g2) {
+            if (nonMendelianPattern === 'sexlinked') {
+                // Female offspring if X + X, Male if X + Y
+                if (g1.startsWith('X') && g2.startsWith('X')) {
+                    let sorted = [g1, g2].sort();
+                    return sorted[0] === 'XN' ? sorted[0] + sorted[1] : sorted[1] + sorted[0];
+                } else if (g1.startsWith('X') && g2 === 'Y') {
+                    return g1 + 'Y';
+                } else if (g2.startsWith('X') && g1 === 'Y') {
+                    return g2 + 'Y';
+                }
+            } else if (nonMendelianPattern === 'codominance') {
+                if (g1 === 'i' && g2 === 'i') return 'ii';
+                if (g1 === 'i') return g2 + 'i';
+                if (g2 === 'i') return g1 + 'i';
+                let sorted = [g1, g2].sort();
+                return sorted.join('');
+            } else {
+                let sorted = [g1, g2].sort();
+                return sorted.join('');
+            }
+        }
+
+        function renderPunnettSquareModeB(p1, p2) {
+            const g1List = parseGametesModeB(p1);
+            const g2List = parseGametesModeB(p2);
+
+            const wrapper = document.getElementById('modeB-punnett-wrapper');
+            let html = `<table class="border-collapse text-center font-mono text-xs">`;
+            
+            html += `<tr><th class="p-2 bg-slate-900 border border-slate-700 text-slate-500">Parent 1 \\ Parent 2</th>`;
+            for (let g2 of g2List) {
+                html += `<th class="p-3 bg-slate-900 border border-slate-700 text-amber-400 font-bold">${g2}</th>`;
+            }
+            html += `</tr>`;
+
+            let phenoCounts = {};
+            let total = g1List.length * g2List.length;
+
+            for (let g1 of g1List) {
+                html += `<tr><th class="p-3 bg-slate-900 border border-slate-700 text-sky-400 font-bold">${g1}</th>`;
+                for (let g2 of g2List) {
+                    let childG = combineGametesModeB(g1, g2);
+                    let pheno = getNonMendelianPhenotype(childG);
+
+                    phenoCounts[pheno.text] = (phenoCounts[pheno.text] || 0) + 1;
+
+                    html += `<td class="p-4 border border-slate-700 bg-slate-800/80 hover:bg-slate-700 transition">
+                        <div class="text-base mb-1">${pheno.icon}</div>
+                        <div class="font-bold text-sky-300 text-xs">${childG}</div>
+                        <div class="text-[10px] text-slate-400 font-sans mt-0.5">${pheno.text}</div>
+                    </td>`;
+                }
+                html += `</tr>`;
+            }
+
+            html += `</table>`;
+            wrapper.innerHTML = html;
+
+            // Stats Output
+            const resultsDiv = document.getElementById('modeB-results');
+            resultsDiv.innerHTML = Object.entries(phenoCounts).map(([pText, count]) => {
+                let pct = ((count / total) * 100).toFixed(1);
+                return `<div class="bg-slate-900 p-3 rounded-lg border border-slate-800 flex justify-between items-center">
+                    <span class="font-bold text-slate-200">${pText}</span>
+                    <span class="font-mono text-emerald-400 font-bold">${count}/${total} (${pct}%)</span>
+                </div>`;
+            }).join('');
+        }
+
+        // ================= MODE C: INTERACTIVE PEDIGREE DEDUCTION =================
+        function initPedigree() {
+            const traitMode = document.getElementById('pedigree-trait-select').value;
+            pedigreeData.traitMode = traitMode;
+            pedigreeData.solvedMap = {};
+            pedigreeData.selectedNodeId = null;
+            pedigreeData.feedbackMsg = null;
+
+            // Generate 3-Generation Tree
+            pedigreeData.nodes = [
+                // Gen I
+                { id: 'I-1', gen: 1, sex: 'M', affected: false, trueGenotype: traitMode === 'autosomal_recessive' ? 'Aa' : (traitMode === 'autosomal_dominant' ? 'aa' : 'XNY') },
+                { id: 'I-2', gen: 1, sex: 'F', affected: traitMode === 'autosomal_dominant', trueGenotype: traitMode === 'autosomal_recessive' ? 'Aa' : (traitMode === 'autosomal_dominant' ? 'Aa' : 'XNXc') },
+                
+                // Gen II
+                { id: 'II-1', gen: 2, sex: 'M', affected: traitMode === 'x_linked_recessive', trueGenotype: traitMode === 'autosomal_recessive' ? 'AA' : (traitMode === 'autosomal_dominant' ? 'aa' : 'XcY') },
+                { id: 'II-2', gen: 2, sex: 'F', affected: false, trueGenotype: traitMode === 'autosomal_recessive' ? 'Aa' : (traitMode === 'autosomal_dominant' ? 'aa' : 'XNXN') },
+                { id: 'II-3', gen: 2, sex: 'M', affected: traitMode === 'autosomal_recessive', trueGenotype: traitMode === 'autosomal_recessive' ? 'aa' : (traitMode === 'autosomal_dominant' ? 'Aa' : 'XNY') },
+
+                // Gen III
+                { id: 'III-1', gen: 3, sex: 'F', affected: false, trueGenotype: traitMode === 'autosomal_recessive' ? 'Aa' : (traitMode === 'autosomal_dominant' ? 'aa' : 'XNXc') },
+                { id: 'III-2', gen: 3, sex: 'M', affected: false, trueGenotype: traitMode === 'autosomal_recessive' ? 'Aa' : (traitMode === 'autosomal_dominant' ? 'aa' : 'XNY') }
+            ];
+
+            renderPedigreeTree();
+            updatePedigreeInspector();
+            updatePedigreeStats();
+        }
+
+        function renderPedigreeTree() {
+            const treeContainer = document.getElementById('pedigree-tree');
+            treeContainer.innerHTML = '';
+
+            const gens = [1, 2, 3];
+
+            gens.forEach(g => {
+                const row = document.createElement('div');
+                row.className = "flex justify-center items-center gap-8 relative z-10";
+
+                const nodesInGen = pedigreeData.nodes.filter(n => n.gen === g);
+
+                nodesInGen.forEach(node => {
+                    const isSelected = pedigreeData.selectedNodeId === node.id;
+                    const isSolved = pedigreeData.solvedMap[node.id] !== undefined;
+
+                    const btn = document.createElement('button');
+                    btn.onclick = () => selectPedigreeNode(node.id);
+
+                    let shapeClass = node.sex === 'M' ? 'w-10 h-10 border-2' : 'w-10 h-10 border-2 rounded-full';
+                    let fillClass = node.affected ? 'bg-rose-600 border-rose-400 text-white' : 'bg-slate-800 border-slate-400 text-slate-300';
+                    let ringClass = isSelected ? 'ring-4 ring-sky-400 ring-offset-2 ring-offset-slate-950' : '';
+
+                    btn.className = `${shapeClass} ${fillClass} ${ringClass} flex flex-col items-center justify-center font-bold text-xs shadow-lg transition transform hover:scale-110 relative`;
+                    
+                    btn.innerHTML = `
+                        <span>${node.id}</span>
+                        ${isSolved ? `<span class="absolute -bottom-2 text-[9px] bg-emerald-600 text-white px-1 rounded font-mono">${pedigreeData.solvedMap[node.id]}</span>` : ''}
+                    `;
+
+                    row.appendChild(btn);
+                });
+
+                treeContainer.appendChild(row);
+            });
+        }
+
+        function selectPedigreeNode(id) {
+            pedigreeData.selectedNodeId = id;
+            pedigreeData.feedbackMsg = null;
+            renderPedigreeTree();
+            updatePedigreeInspector();
+        }
+
+        function updatePedigreeInspector() {
+            const inspector = document.getElementById('pedigree-inspector');
+            if (!pedigreeData.selectedNodeId) {
+                inspector.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs">Click any person in the pedigree tree to reveal their deduction card.</div>`;
+                return;
+            }
+
+            const node = pedigreeData.nodes.find(n => n.id === pedigreeData.selectedNodeId);
+            const isSolved = pedigreeData.solvedMap[node.id] !== undefined;
+
+            let possibleGenotypes = [];
+            if (pedigreeData.traitMode === 'autosomal_recessive' || pedigreeData.traitMode === 'autosomal_dominant') {
+                possibleGenotypes = ['AA', 'Aa', 'aa'];
+            } else {
+                possibleGenotypes = node.sex === 'M' ? ['XNY', 'XcY'] : ['XNXN', 'XNXc', 'XcXc'];
+            }
+
+            inspector.innerHTML = `
+                <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-3">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                        <span class="text-xs font-bold text-sky-400 uppercase">Individual ${node.id}</span>
+                        <span class="text-[10px] px-2 py-0.5 rounded ${node.affected ? 'bg-rose-950 text-rose-300 border border-rose-800' : 'bg-slate-800 text-slate-300'}">
+                            ${node.affected ? 'Affected' : 'Unaffected'} (${node.sex === 'M' ? 'Male' : 'Female'})
+                        </span>
+                    </div>
+
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        Deduce the genotype based on phenotypic patterns and inheritance rules.
+                    </p>
+
+                    ${pedigreeData.feedbackMsg ? `
+                        <div class="p-2 rounded-lg text-xs ${pedigreeData.feedbackMsg.type === 'error' ? 'bg-rose-950/80 border border-rose-700 text-rose-300' : 'bg-emerald-950/80 border border-emerald-700 text-emerald-300'} animate-fade-in">
+                            ${pedigreeData.feedbackMsg.text}
+                        </div>
+                    ` : ''}
+
+                    ${isSolved ? `
+                        <div class="bg-emerald-950/60 border border-emerald-700/60 p-3 rounded-lg text-center">
+                            <span class="text-xs text-emerald-300 font-semibold">Solved Genotype:</span>
+                            <div class="text-lg font-mono font-bold text-emerald-400">${pedigreeData.solvedMap[node.id]}</div>
+                        </div>
+                    ` : `
+                        <div class="space-y-2">
+                            <label class="text-[11px] font-bold text-amber-400 uppercase">Select Genotype Hypothesis:</label>
+                            <div class="grid grid-cols-3 gap-1.5">
+                                ${possibleGenotypes.map(g => `
+                                    <button onclick="submitPedigreeGuess('${node.id}', '${g}')" class="bg-slate-800 hover:bg-sky-600 text-white font-mono text-xs py-2 rounded border border-slate-700 transition font-bold">
+                                        ${g}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+
+        function submitPedigreeGuess(nodeId, guess) {
+            const node = pedigreeData.nodes.find(n => n.id === nodeId);
+            if (guess === node.trueGenotype) {
+                pedigreeData.solvedMap[nodeId] = guess;
+                pedigreeData.feedbackMsg = { type: 'success', text: `✓ Correct! Individual ${nodeId} is indeed ${guess}.` };
+                renderPedigreeTree();
+                updatePedigreeInspector();
+                updatePedigreeStats();
+            } else {
+                pedigreeData.feedbackMsg = { type: 'error', text: `❌ Incorrect hypothesis for Individual ${nodeId}. Re-evaluate parental and offspring phenotypes!` };
+                updatePedigreeInspector();
+            }
+        }
+
+        function updatePedigreeStats() {
+            const solvedCount = Object.keys(pedigreeData.solvedMap).length;
+            const total = pedigreeData.nodes.length;
+
+            document.getElementById('pedigree-solved-count').innerText = `${solvedCount} / ${total}`;
+            const pct = (solvedCount / total) * 100;
+            document.getElementById('pedigree-progress-bar').style.width = `${pct}%`;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Molecular Genetics Lab: DNA Replication & Protein Synthesis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: { 850: '#111827', 900: '#0f172a' },
+                        teal: { 400: '#2dd4bf', 500: '#14b8a6', 600: '#0d9488' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .trna-card {
+            touch-action: none;
+            user-select: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans antialiased overflow-x-hidden selection:bg-teal-500 selection:text-white">
+
+    <!-- Header Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-30 px-4 py-3 flex flex-wrap justify-between items-center gap-4">
+        <div class="flex items-center space-x-3">
+            <div class="p-2 bg-teal-500/10 border border-teal-500/30 rounded-lg text-teal-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg text-slate-100 tracking-tight">Molecular Genetics Lab</h1>
+                <p class="text-xs text-slate-400">Interactive DNA Replication & Protein Synthesis</p>
+            </div>
+        </div>
+
+        <!-- Stage Selectors -->
+        <div class="flex bg-slate-800/80 p-1 rounded-xl border border-slate-700/50">
+            <button id="btn-stage-1" onclick="switchStage(1)" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-teal-500 text-slate-950 shadow-md">1. Replication</button>
+            <button id="btn-stage-2" onclick="switchStage(2)" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-400 hover:text-slate-200">2. Transcription</button>
+            <button id="btn-stage-3" onclick="switchStage(3)" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-400 hover:text-slate-200">3. Translation</button>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <button onclick="toggleExplanatoryNotes()" class="px-3 py-1.5 bg-teal-500/10 border border-teal-500/30 hover:bg-teal-500/20 rounded-lg text-xs font-medium text-teal-300 transition flex items-center gap-1.5">
+                <span>📖</span> <span>Lesson Notes</span>
+            </button>
+            <button id="btn-audio" onclick="toggleAudio()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-medium text-slate-300 flex items-center gap-1.5 transition">
+                <span id="audio-icon">🔊</span> <span id="audio-label">Voice: ON</span>
+            </button>
+            <button onclick="toggleCodonModal()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-medium text-slate-300 transition">
+                Codon Chart
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 p-4 max-w-7xl mx-auto w-full">
+        
+        <!-- Interactive Canvas Area (Cols 1-3) -->
+        <div class="lg:col-span-3 flex flex-col gap-3">
+            <div class="relative bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl h-[440px] flex items-center justify-center">
+                <canvas id="simCanvas" class="w-full h-full block cursor-pointer"></canvas>
+                
+                <!-- On-Canvas Controls Overlay -->
+                <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between glass px-4 py-2 rounded-xl">
+                    <div class="flex items-center space-x-2">
+                        <button id="btn-play" onclick="togglePlay()" class="p-2 bg-teal-500 hover:bg-teal-400 text-slate-950 rounded-lg transition font-bold text-xs flex items-center gap-1">
+                            <span>▶</span> <span id="play-text">Play</span>
+                        </button>
+                        <button onclick="resetCurrentStage()" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition text-xs font-medium border border-slate-700">
+                            🔄 Reset
+                        </button>
+                    </div>
+
+                    <div id="interactive-prompt" class="text-xs font-medium text-teal-300 animate-pulse">
+                        Click Helicase to begin unzipping...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Translation Drag & Drop Area (Stage 3 Only) -->
+            <div id="translation-drag-area" class="hidden glass p-4 rounded-xl border border-slate-800">
+                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">tRNA Anticodon Pool (Drag to Ribosome A-Site)</h3>
+                <div id="trna-pool" class="flex flex-wrap gap-3 justify-center min-h-[70px] items-center">
+                    <!-- tRNA cards generated via JS -->
+                </div>
+            </div>
+
+            <!-- Real-Time Educational Status Banner -->
+            <div class="glass p-4 rounded-xl border border-slate-800 flex items-start gap-3">
+                <div class="p-2 bg-teal-500/20 text-teal-300 rounded-lg shrink-0 mt-0.5">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-teal-400 mb-0.5" id="status-title">Stage Initialization</h4>
+                    <p class="text-sm text-slate-300 leading-relaxed" id="status-desc">Loading process parameters...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side Panel: Realistic 3D DNA Helix & Controls (Col 4) -->
+        <div class="flex flex-col gap-4">
+            
+            <!-- Large Realistic Rotating 3D DNA Container -->
+            <div class="glass p-3 rounded-2xl border border-slate-800 flex flex-col items-center shadow-xl">
+                <div class="w-full flex justify-between items-center mb-1 px-1">
+                    <span class="text-xs font-semibold text-slate-300">3D Photorealistic Helix</span>
+                    <span class="text-[10px] text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded-full border border-teal-500/20">Rotating Y-Axis</span>
+                </div>
+                <canvas id="helixCanvas" class="w-full h-[280px] bg-slate-950 rounded-xl border border-slate-800/80 shadow-inner"></canvas>
+            </div>
+
+            <!-- Stage Specific Interactive Controls -->
+            <div class="glass p-4 rounded-2xl border border-slate-800 flex-1 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Interactive Controls</h3>
+                    
+                    <!-- Controls Stage 1 -->
+                    <div id="ctrl-stage-1" class="space-y-4">
+                        <div>
+                            <label class="text-xs text-slate-300 flex justify-between mb-1">
+                                <span>Helicase Progress</span>
+                                <span id="unzip-val" class="text-teal-400 font-mono">0%</span>
+                            </label>
+                            <input type="range" id="unzip-slider" min="0" max="100" value="0" oninput="manualUnzip(this.value)" class="w-full accent-teal-500 bg-slate-800 rounded-lg cursor-pointer">
+                        </div>
+                        <button onclick="triggerHelicase()" class="w-full py-2 bg-teal-500/20 border border-teal-500/40 hover:bg-teal-500/30 text-teal-300 font-medium rounded-lg text-xs transition">
+                            ⚡ Activate DNA Helicase
+                        </button>
+                    </div>
+
+                    <!-- Controls Stage 2 -->
+                    <div id="ctrl-stage-2" class="space-y-4 hidden">
+                        <button onclick="stepTranscription()" class="w-full py-2 bg-teal-500/20 border border-teal-500/40 hover:bg-teal-500/30 text-teal-300 font-medium rounded-lg text-xs transition">
+                            🧬 Synthesize Next Base Pair
+                        </button>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            Click RNA Polymerase on the canvas or use the button above to match RNA nucleotides to the template DNA strand.
+                        </p>
+                    </div>
+
+                    <!-- Controls Stage 3 -->
+                    <div id="ctrl-stage-3" class="space-y-4 hidden">
+                        <div class="p-3 bg-slate-900/90 rounded-lg border border-slate-800">
+                            <span class="text-xs text-slate-400 block mb-1">Polypeptide Chain</span>
+                            <p id="protein-chain" class="font-mono text-xs text-teal-300 break-words">Met - </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Synchronized Color Legend -->
+                <div class="mt-4 pt-3 border-t border-slate-800/80">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Synchronized Base Pairing Key</span>
+                    <div class="grid grid-cols-2 gap-2 text-[11px]">
+                        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#10b981] shadow-[0_0_8px_#10b981]"></span> Adenine (A)</div>
+                        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#f43f5e] shadow-[0_0_8px_#f43f5e]"></span> Thymine (T)</div>
+                        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#f59e0b] shadow-[0_0_8px_#f59e0b]"></span> Cytosine (C)</div>
+                        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#0ea5e9] shadow-[0_0_8px_#0ea5e9]"></span> Guanine (G)</div>
+                        <div class="flex items-center gap-2 col-span-2"><span class="w-3 h-3 rounded-full bg-[#a855f7] shadow-[0_0_8px_#a855f7]"></span> Uracil (U) [RNA Only]</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Explanatory Notes Slide-Over Panel -->
+    <div id="notes-panel" class="fixed inset-y-0 right-0 w-full max-w-md bg-slate-900/95 border-l border-slate-700 shadow-2xl z-50 transform translate-x-full transition-transform duration-300 backdrop-blur-md flex flex-col">
+        <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/50">
+            <div class="flex items-center space-x-2">
+                <span class="text-teal-400 text-xl">📖</span>
+                <h2 class="font-bold text-slate-100 text-sm tracking-wide">Explanatory Lesson Notes</h2>
+            </div>
+            <button onclick="toggleExplanatoryNotes()" class="text-slate-400 hover:text-slate-100 text-lg font-bold p-1">&times;</button>
+        </div>
+        <div class="p-5 overflow-y-auto flex-1 space-y-6 text-xs text-slate-300 leading-relaxed">
+            
+            <section class="space-y-2">
+                <h3 class="text-sm font-bold text-teal-400 border-b border-teal-500/20 pb-1">1. DNA Structure & Base Pairing</h3>
+                <p>DNA (Deoxyribonucleic Acid) is composed of two anti-parallel strands forming a double helix. The nitrogenous bases pair specifically via hydrogen bonding:</p>
+                <ul class="list-disc list-inside space-y-1 text-slate-300">
+                    <li><strong class="text-emerald-400">Adenine (A)</strong> pairs with <strong class="text-rose-400">Thymine (T)</strong> (2 hydrogen bonds).</li>
+                    <li><strong class="text-amber-400">Cytosine (C)</strong> pairs with <strong class="text-sky-400">Guanine (G)</strong> (3 hydrogen bonds).</li>
+                </ul>
+            </section>
+
+            <section class="space-y-2">
+                <h3 class="text-sm font-bold text-teal-400 border-b border-teal-500/20 pb-1">2. DNA Replication</h3>
+                <p>Prior to cell division, DNA replicates in a semi-conservative manner where each new double helix contains one original and one synthesized strand.</p>
+                <ul class="list-disc list-inside space-y-1 text-slate-300">
+                    <li><strong>DNA Helicase:</strong> Unzips the double helix by breaking weak hydrogen bonds between complementary base pairs.</li>
+                    <li><strong>Replication Fork:</strong> The Y-shaped region where DNA unzips into leading and lagging strands.</li>
+                    <li><strong>DNA Polymerase:</strong> Synthesizes complementary daughter strands from 5' to 3'.</li>
+                </ul>
+            </section>
+
+            <section class="space-y-2">
+                <h3 class="text-sm font-bold text-teal-400 border-b border-teal-500/20 pb-1">3. Transcription (DNA to mRNA)</h3>
+                <p>Transcription takes place in the nucleus where genetic instructions are copied from DNA into messenger RNA (mRNA).</p>
+                <ul class="list-disc list-inside space-y-1 text-slate-300">
+                    <li><strong>RNA Polymerase:</strong> Unwinds DNA and adds RNA nucleotides along the template strand.</li>
+                    <li><strong>Uracil Sub-Rule:</strong> In RNA, <strong class="text-purple-400">Uracil (U)</strong> replaces Thymine (T) to pair with Adenine (A).</li>
+                </ul>
+            </section>
+
+            <section class="space-y-2">
+                <h3 class="text-sm font-bold text-teal-400 border-b border-teal-500/20 pb-1">4. Translation (mRNA to Protein)</h3>
+                <p>Translation takes place at the ribosome in the cytoplasm, converting the mRNA sequence into a polypeptide chain of amino acids.</p>
+                <ul class="list-disc list-inside space-y-1 text-slate-300">
+                    <li><strong>Codons:</strong> 3-nucleotide sequences on mRNA (e.g., AUG = Methionine/Start).</li>
+                    <li><strong>Anticodons:</strong> Complementary 3-nucleotide sequences carried by tRNA molecules.</li>
+                    <li><strong>Ribosome:</strong> Facilitates matching between codons and anticodons, linking amino acids via peptide bonds.</li>
+                </ul>
+            </section>
+
+        </div>
+    </div>
+
+    <!-- Codon Chart Modal Popup -->
+    <div id="codon-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="glass max-w-2xl w-full rounded-2xl p-6 border border-slate-700 shadow-2xl relative">
+            <button onclick="toggleCodonModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-100 text-xl font-bold">&times;</button>
+            <h3 class="text-lg font-bold text-teal-400 mb-2">Standard Genetic Code (mRNA Codons)</h3>
+            <p class="text-xs text-slate-300 mb-4">Match the 3-letter mRNA codon to identify its corresponding amino acid.</p>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs max-h-[60vh] overflow-y-auto p-1 font-mono">
+                <div class="p-2 bg-slate-800/60 rounded border border-slate-700"><b class="text-teal-300">AUG:</b> Met (Start)</div>
+                <div class="p-2 bg-slate-800/60 rounded border border-slate-700"><b class="text-teal-300">UUU/UUC:</b> Phe</div>
+                <div class="p-2 bg-slate-800/60 rounded border border-slate-700"><b class="text-teal-300">UUA/UUG:</b> Leu</div>
+                <div class="p-2 bg-slate-800/60 rounded border border-slate-700"><b class="text-teal-300">UCU/UCC:</b> Ser</div>
+                <div class="p-2 bg-slate-800/60 rounded border border-slate-700"><b class="text-teal-300">UAU/UAC:</b> Tyr</div>
+                <div class="p-2 bg-slate-800/60 rounded border border-slate-700"><b class="text-teal-300">UGU/UGC:</b> Cys</div>
+                <div class="p-2 bg-slate-800/60 rounded border border-slate-700"><b class="text-teal-300">UGG:</b> Trp</div>
+                <div class="p-2 bg-slate-800/60 rounded border border-slate-700"><b class="text-teal-300">CCU/CCC:</b> Pro</div>
+                <div class="p-2 bg-slate-800/60 rounded border border-slate-700"><b class="text-teal-300">CAU/CAC:</b> His</div>
+                <div class="p-2 bg-slate-800/60 rounded border border-slate-700"><b class="text-teal-300">CAA/CAG:</b> Gln</div>
+                <div class="p-2 bg-slate-800/60 rounded border border-slate-700"><b class="text-teal-300">CGU/CGC:</b> Arg</div>
+                <div class="p-2 bg-slate-800/60 rounded border border-slate-700"><b class="text-teal-300">AUU/AUC:</b> Ile</div>
+                <div class="p-2 bg-slate-800/60 rounded border border-slate-700"><b class="text-teal-300">ACU/ACC:</b> Thr</div>
+                <div class="p-2 bg-slate-800/60 rounded border border-slate-700"><b class="text-teal-300">AAU/AAC:</b> Asn</div>
+                <div class="p-2 bg-slate-800/60 rounded border border-slate-700"><b class="text-teal-300">AAA/AAG:</b> Lys</div>
+                <div class="p-2 bg-slate-800/60 rounded border border-slate-700"><b class="text-teal-300">GAU/GAC:</b> Asp</div>
+                <div class="p-2 bg-slate-800/60 rounded border border-slate-700"><b class="text-teal-300">GAA/GAG:</b> Glu</div>
+                <div class="p-2 bg-slate-800/60 rounded border border-slate-700"><b class="text-teal-300">GGU/GGC:</b> Gly</div>
+                <div class="p-2 bg-slate-800/60 rounded border border-slate-700"><b class="text-rose-400">UAA/UAG:</b> Stop</div>
+                <div class="p-2 bg-slate-800/60 rounded border border-slate-700"><b class="text-rose-400">UGA:</b> Stop</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application JavaScript Logic -->
+    <script>
+        // Synchronized base colors across main sim, key, and 3D helix
+        const baseColors = {
+            'A': '#10b981', // Emerald Green
+            'T': '#f43f5e', // Bright Rose
+            'C': '#f59e0b', // Amber Gold
+            'G': '#0ea5e9', // Sky Blue
+            'U': '#a855f7'  // Deep Purple
+        };
+
+        const aminoAcidMap = {
+            'AUG': 'Met', 'UUU': 'Phe', 'UUC': 'Phe', 'UUA': 'Leu', 'UUG': 'Leu',
+            'UCU': 'Ser', 'UCC': 'Ser', 'UAU': 'Tyr', 'UAC': 'Tyr', 'UGU': 'Cys',
+            'UGC': 'Cys', 'UGG': 'Trp', 'CCU': 'Pro', 'CCC': 'Pro', 'CAU': 'His',
+            'CAC': 'His', 'CAA': 'Gln', 'CAG': 'Gln', 'CGU': 'Arg', 'CGC': 'Arg',
+            'AUU': 'Ile', 'AUC': 'Ile', 'ACU': 'Thr', 'ACC': 'Thr', 'AAU': 'Asn',
+            'AAC': 'Asn', 'AAA': 'Lys', 'AAG': 'Lys', 'GAU': 'Asp', 'GAC': 'Asp',
+            'GAA': 'Glu', 'GAG': 'Glu', 'GGU': 'Gly', 'GGC': 'Gly', 'UAA': 'Stop',
+            'UAG': 'Stop', 'UGA': 'Stop'
+        };
+
+        // State variables
+        let currentStage = 1;
+        let isPlaying = false;
+        let audioEnabled = true;
+
+        // Base Sequences
+        const primaryDNA = ['T', 'A', 'C', 'C', 'G', 'C', 'T', 'A', 'T', 'A', 'C', 'T']; 
+        const templateDNA = primaryDNA.map(b => getComplement(b, false)); 
+        const mrnaSequence = primaryDNA.map(b => getComplement(b, true));  
+
+        // Stage States
+        let unzipProgress = 0; 
+        let transcriptionIndex = 0;
+        let translationStep = 0;
+        let synthesizedProteins = ['Met'];
+
+        // Speech Synthesis setup
+        const synth = window.speechSynthesis;
+        let selectedVoice = null;
+
+        function initVoice() {
+            if (!synth) return;
+            let voices = synth.getVoices();
+            const findFemale = () => voices.find(v => v.lang.startsWith('en') && (v.name.includes('Female') || v.name.includes('Zira') || v.name.includes('Samantha') || v.name.includes('Victoria') || v.name.includes('Google US English')));
+            selectedVoice = findFemale() || voices.find(v => v.lang.startsWith('en')) || voices[0];
+        }
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = initVoice;
+        }
+
+        function speak(text) {
+            if (!audioEnabled || !synth) return;
+            synth.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            if (selectedVoice) utterance.voice = selectedVoice;
+            utterance.pitch = 1.1;
+            utterance.rate = 0.95;
+            synth.speak(utterance);
+        }
+
+        function toggleAudio() {
+            audioEnabled = !audioEnabled;
+            document.getElementById('audio-label').textContent = audioEnabled ? 'Voice: ON' : 'Voice: OFF';
+            document.getElementById('audio-icon').textContent = audioEnabled ? '🔊' : '🔇';
+            if (!audioEnabled && synth) synth.cancel();
+        }
+
+        function toggleExplanatoryNotes() {
+            const panel = document.getElementById('notes-panel');
+            panel.classList.toggle('translate-x-full');
+        }
+
+        function getComplement(base, isRNA = false) {
+            switch(base) {
+                case 'A': return isRNA ? 'U' : 'T';
+                case 'T': return 'A';
+                case 'C': return 'G';
+                case 'G': return 'C';
+                case 'U': return 'A';
+                default: return '';
+            }
+        }
+
+        // Setup Main Canvas & 3D Helix Canvas
+        const simCanvas = document.getElementById('simCanvas');
+        const ctx = simCanvas.getContext('2d');
+        const helixCanvas = document.getElementById('helixCanvas');
+        const hCtx = helixCanvas.getContext('2d');
+
+        function resizeCanvases() {
+            const rect = simCanvas.parentElement.getBoundingClientRect();
+            simCanvas.width = rect.width;
+            simCanvas.height = rect.height;
+
+            const hRect = helixCanvas.parentElement.getBoundingClientRect();
+            helixCanvas.width = hRect.width;
+            helixCanvas.height = 280;
+        }
+
+        window.addEventListener('resize', resizeCanvases);
+
+        // ------------------ STAGE MANAGEMENT ------------------
+        function switchStage(stage) {
+            currentStage = stage;
+            isPlaying = false;
+            document.getElementById('play-text').textContent = 'Play';
+
+            [1, 2, 3].forEach(s => {
+                const btn = document.getElementById(`btn-stage-${s}`);
+                const ctrl = document.getElementById(`ctrl-stage-${s}`);
+                if (s === stage) {
+                    btn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-teal-500 text-slate-950 shadow-md";
+                    ctrl.classList.remove('hidden');
+                } else {
+                    btn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-400 hover:text-slate-200";
+                    ctrl.classList.add('hidden');
+                }
+            });
+
+            document.getElementById('translation-drag-area').classList.toggle('hidden', stage !== 3);
+            resetCurrentStage();
+        }
+
+        function resetCurrentStage() {
+            isPlaying = false;
+            document.getElementById('play-text').textContent = 'Play';
+
+            if (currentStage === 1) {
+                unzipProgress = 0;
+                document.getElementById('unzip-slider').value = 0;
+                document.getElementById('unzip-val').textContent = '0%';
+                updateStatus("Stage 1: DNA Replication", "DNA Helicase unzips the double helix by breaking hydrogen bonds between complementary base pairs, creating leading and lagging strands.");
+                speak("Stage 1: DNA Replication. DNA Helicase unzips the double helix by breaking hydrogen bonds.");
+            } else if (currentStage === 2) {
+                transcriptionIndex = 0;
+                updateStatus("Stage 2: Transcription", "RNA Polymerase reads the template strand to build complementary single-stranded mRNA.");
+                speak("Stage 2: Transcription. RNA Polymerase reads the template DNA strand to synthesize messenger RNA.");
+            } else if (currentStage === 3) {
+                translationStep = 0;
+                synthesizedProteins = ['Met'];
+                document.getElementById('protein-chain').textContent = 'Met - ';
+                setupTranslationPool();
+                updateStatus("Stage 3: Translation", "Ribosome matches mRNA codons with corresponding tRNA anticodons to assemble amino acids.");
+                speak("Stage 3: Translation. Match the tRNA anticodons to build the polypeptide chain.");
+            }
+        }
+
+        function updateStatus(title, desc) {
+            document.getElementById('status-title').textContent = title;
+            document.getElementById('status-desc').textContent = desc;
+        }
+
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            document.getElementById('play-text').textContent = isPlaying ? 'Pause' : 'Play';
+            if (isPlaying) runAutoPlay();
+        }
+
+        function runAutoPlay() {
+            if (!isPlaying) return;
+            if (currentStage === 1) {
+                if (unzipProgress < 100) {
+                    unzipProgress += 1;
+                    document.getElementById('unzip-slider').value = unzipProgress;
+                    document.getElementById('unzip-val').textContent = Math.round(unzipProgress) + '%';
+                    setTimeout(runAutoPlay, 40);
+                } else {
+                    isPlaying = false;
+                    document.getElementById('play-text').textContent = 'Play';
+                }
+            } else if (currentStage === 2) {
+                if (transcriptionIndex < primaryDNA.length) {
+                    stepTranscription();
+                    setTimeout(runAutoPlay, 800);
+                } else {
+                    isPlaying = false;
+                    document.getElementById('play-text').textContent = 'Play';
+                }
+            }
+        }
+
+        function manualUnzip(val) {
+            unzipProgress = parseFloat(val);
+            document.getElementById('unzip-val').textContent = Math.round(unzipProgress) + '%';
+        }
+
+        function triggerHelicase() {
+            unzipProgress = 0;
+            isPlaying = true;
+            document.getElementById('play-text').textContent = 'Pause';
+            runAutoPlay();
+            speak("DNA Helicase activated, unzipping base pairs.");
+        }
+
+        function stepTranscription() {
+            if (transcriptionIndex < primaryDNA.length) {
+                const dnaBase = primaryDNA[transcriptionIndex];
+                const rnaBase = mrnaSequence[transcriptionIndex];
+                transcriptionIndex++;
+                updateStatus("Transcription Active", `RNA Polymerase pairs DNA base ${dnaBase} with complementary RNA nucleotide ${rnaBase}.`);
+                speak(`Transcribing base ${transcriptionIndex}: ${dnaBase} pairs with RNA nucleotide ${rnaBase}.`);
+                if (transcriptionIndex === primaryDNA.length) {
+                    updateStatus("Transcription Complete", "Full mRNA transcript synthesized! Ready for translation.");
+                    speak("Transcription complete. mRNA transcript is ready.");
+                }
+            }
+        }
+
+        // ------------------ TRANSLATION DRAG AND DROP ------------------
+        function setupTranslationPool() {
+            const pool = document.getElementById('trna-pool');
+            pool.innerHTML = '';
+
+            if (translationStep >= 3) {
+                pool.innerHTML = `<span class="text-xs text-teal-400 font-semibold">Translation Completed! Full protein synthesized.</span>`;
+                return;
+            }
+
+            const currentCodon = mrnaSequence.slice(translationStep * 3, (translationStep + 1) * 3).join('');
+            const correctAnticodon = currentCodon.split('').map(b => getComplement(b, true)).join('');
+
+            const distractors = ['AAC', 'UUG', 'GCA', 'CGC', 'UAA'].filter(a => a !== correctAnticodon).slice(0, 2);
+            const options = [correctAnticodon, ...distractors].sort(() => Math.random() - 0.5);
+
+            options.forEach(anticodon => {
+                const el = document.createElement('div');
+                el.className = "trna-card bg-slate-800 border-2 border-teal-500/40 hover:border-teal-400 p-2 rounded-xl text-center cursor-grab active:cursor-grabbing shadow-lg transition-transform hover:scale-105";
+                el.draggable = true;
+                el.dataset.anticodon = anticodon;
+                
+                const codonEquivalent = anticodon.split('').map(b => getComplement(b, true)).join('');
+                const aa = aminoAcidMap[codonEquivalent] || 'Aa';
+
+                el.innerHTML = `
+                    <div class="text-[10px] font-bold text-amber-300 bg-amber-500/10 rounded px-1 mb-1">${aa}</div>
+                    <div class="text-xs font-mono font-bold tracking-widest text-teal-300">${anticodon}</div>
+                    <div class="text-[9px] text-slate-400 mt-0.5">Anticodon</div>
+                `;
+
+                el.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', anticodon);
+                });
+
+                pool.appendChild(el);
+            });
+
+            document.getElementById('interactive-prompt').textContent = `Target Codon: ${currentCodon} -> Drag tRNA with Anticodon: ${correctAnticodon}`;
+        }
+
+        simCanvas.addEventListener('dragover', (e) => e.preventDefault());
+        simCanvas.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (currentStage !== 3) return;
+            const anticodon = e.dataTransfer.getData('text/plain');
+            verifytRNADrop(anticodon);
+        });
+
+        function verifytRNADrop(anticodon) {
+            const currentCodon = mrnaSequence.slice(translationStep * 3, (translationStep + 1) * 3).join('');
+            const expectedAnticodon = currentCodon.split('').map(b => getComplement(b, true)).join('');
+
+            if (anticodon === expectedAnticodon) {
+                const aa = aminoAcidMap[currentCodon] || 'Aa';
+                synthesizedProteins.push(aa);
+                translationStep++;
+                document.getElementById('protein-chain').textContent = synthesizedProteins.join(' - ');
+                updateStatus("Translation Match!", `tRNA (${anticodon}) successfully matched codon ${currentCodon}, delivering ${aa}.`);
+                speak(`Correct match! tRNA anticodon ${anticodon} binds to codon ${currentCodon}, adding ${aa}.`);
+                setupTranslationPool();
+            } else {
+                updateStatus("Mismatch Error", `Anticodon ${anticodon} does not complement mRNA codon ${currentCodon}. Try again!`);
+                speak(`Mismatch. Anticodon ${anticodon} is not complementary.`);
+            }
+        }
+
+        // ------------------ MAIN SIMULATION CANVAS RENDERING ------------------
+        function renderCanvas() {
+            ctx.clearRect(0, 0, simCanvas.width, simCanvas.height);
+
+            if (currentStage === 1) renderReplication();
+            else if (currentStage === 2) renderTranscription();
+            else if (currentStage === 3) renderTranslation();
+
+            requestAnimationFrame(renderCanvas);
+        }
+
+        function renderReplication() {
+            const width = simCanvas.width;
+            const height = simCanvas.height;
+            const centerY = height / 2;
+            const startX = 60;
+            const spacing = (width - 120) / primaryDNA.length;
+
+            const splitPoint = startX + (unzipProgress / 100) * (width - 160);
+
+            // Draw Helicase
+            if (unzipProgress > 0 && unzipProgress < 100) {
+                ctx.fillStyle = '#f59e0b';
+                ctx.beginPath();
+                ctx.arc(splitPoint, centerY, 24, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#0f172a';
+                ctx.font = 'bold 10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('HELICASE', splitPoint, centerY + 3);
+            }
+
+            for (let i = 0; i < primaryDNA.length; i++) {
+                const x = startX + i * spacing;
+                let topY = centerY - 50;
+                let botY = centerY + 50;
+
+                if (x < splitPoint) {
+                    const factor = (splitPoint - x) / 2.5;
+                    topY -= Math.min(factor, 45);
+                    botY += Math.min(factor, 45);
+                }
+
+                if (x >= splitPoint) {
+                    ctx.strokeStyle = '#475569';
+                    ctx.setLineDash([3, 3]);
+                    ctx.beginPath();
+                    ctx.moveTo(x, topY + 14);
+                    ctx.lineTo(x, botY - 14);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+
+                drawBaseNode(x, topY, primaryDNA[i], '3\'');
+                drawBaseNode(x, botY, templateDNA[i], '5\'');
+            }
+        }
+
+        function renderTranscription() {
+            const width = simCanvas.width;
+            const height = simCanvas.height;
+            const centerY = height / 2;
+            const startX = 60;
+            const spacing = (width - 120) / primaryDNA.length;
+
+            const polyX = startX + transcriptionIndex * spacing;
+
+            for (let i = 0; i < primaryDNA.length; i++) {
+                const x = startX + i * spacing;
+                const topY = centerY - 55;
+                const botY = centerY + 55;
+
+                drawBaseNode(x, topY, primaryDNA[i], '');
+                drawBaseNode(x, botY, templateDNA[i], '');
+
+                if (i < transcriptionIndex) {
+                    const mrnaY = centerY;
+                    drawBaseNode(x, mrnaY, mrnaSequence[i], 'mRNA');
+                    
+                    ctx.strokeStyle = baseColors[mrnaSequence[i]] || '#a855f7';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(x, topY + 14);
+                    ctx.lineTo(x, mrnaY - 14);
+                    ctx.stroke();
+                }
+            }
+
+            ctx.fillStyle = 'rgba(13, 148, 136, 0.45)';
+            ctx.strokeStyle = '#2dd4bf';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.ellipse(polyX, centerY - 15, 45, 65, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#ccfbf1';
+            ctx.font = 'bold 10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('RNA POLYMERASE', polyX, centerY - 65);
+        }
+
+        function renderTranslation() {
+            const width = simCanvas.width;
+            const height = simCanvas.height;
+            const centerY = height / 2 + 20;
+            const startX = 70;
+            const spacing = (width - 140) / mrnaSequence.length;
+
+            ctx.strokeStyle = '#a855f7';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(startX - 20, centerY);
+            ctx.lineTo(startX + mrnaSequence.length * spacing, centerY);
+            ctx.stroke();
+
+            for (let i = 0; i < mrnaSequence.length; i++) {
+                const x = startX + i * spacing;
+                drawBaseNode(x, centerY, mrnaSequence[i], '');
+            }
+
+            const activeX = startX + (translationStep * 3 + 1) * spacing;
+            ctx.fillStyle = 'rgba(100, 116, 139, 0.35)';
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 2;
+            
+            ctx.beginPath();
+            ctx.roundRect(activeX - 65, centerY - 130, 130, 90, 20);
+            ctx.fill();
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.roundRect(activeX - 55, centerY + 15, 110, 45, 12);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#f1f5f9';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('RIBOSOME', activeX, centerY - 110);
+        }
+
+        function drawBaseNode(x, y, label, subtext) {
+            ctx.fillStyle = baseColors[label] || '#64748b';
+            ctx.beginPath();
+            ctx.arc(x, y, 14, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, x, y);
+
+            if (subtext) {
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '9px sans-serif';
+                ctx.fillText(subtext, x, y + 22);
+            }
+        }
+
+        // ------------------ ENHANCED REALISTIC 3D HELIX CANVAS ------------------
+        let helixAngle = 0;
+        const dnaSequence3D = ['A', 'T', 'C', 'G', 'G', 'C', 'T', 'A', 'C', 'G', 'A', 'T', 'T', 'A', 'C', 'G', 'C', 'G', 'A', 'T'];
+
+        function render3DHelix() {
+            hCtx.clearRect(0, 0, helixCanvas.width, helixCanvas.height);
+            const cx = helixCanvas.width / 2;
+            const cy = helixCanvas.height / 2;
+            const numNodes = dnaSequence3D.length;
+            const radius = 65; 
+            const heightStep = 12; 
+
+            helixAngle += 0.02;
+
+            let nodes = [];
+            for (let i = 0; i < numNodes; i++) {
+                const y = cy - (numNodes * heightStep) / 2 + i * heightStep;
+                const angle = helixAngle + i * 0.45;
+
+                const baseA = dnaSequence3D[i];
+                const baseB = getComplement(baseA, false);
+
+                const x1 = cx + Math.cos(angle) * radius;
+                const z1 = Math.sin(angle);
+                
+                const x2 = cx + Math.cos(angle + Math.PI) * radius;
+                const z2 = Math.sin(angle + Math.PI);
+
+                nodes.push({ x1, z1, x2, z2, y, baseA, baseB });
+            }
+
+            nodes.forEach(n => {
+                const depthAlpha = 0.35 + (n.z1 + 1) * 0.3;
+
+                hCtx.strokeStyle = `rgba(148, 163, 184, ${depthAlpha * 0.7})`;
+                hCtx.lineWidth = 3 + (n.z1 + 1);
+                hCtx.beginPath();
+                hCtx.moveTo(n.x1, n.y);
+                hCtx.lineTo(n.x2, n.y);
+                hCtx.stroke();
+
+                draw3DSphere(n.x1, n.y, n.z1, baseColors[n.baseA]);
+                draw3DSphere(n.x2, n.y, n.z2, baseColors[n.baseB]);
+            });
+
+            requestAnimationFrame(render3DHelix);
+        }
+
+        function draw3DSphere(x, y, z, colorHex) {
+            const scale = 0.7 + (z + 1) * 0.35; 
+            const radius = 8 * scale;
+            
+            hCtx.save();
+            hCtx.globalAlpha = Math.max(0.3, Math.min(1, 0.4 + (z + 1) * 0.3));
+            
+            const grad = hCtx.createRadialGradient(x - radius * 0.3, y - radius * 0.3, radius * 0.1, x, y, radius);
+            grad.addColorStop(0, '#ffffff');
+            grad.addColorStop(0.4, colorHex);
+            grad.addColorStop(1, adjustColor(colorHex, -60));
+
+            hCtx.fillStyle = grad;
+            hCtx.beginPath();
+            hCtx.arc(x, y, Math.max(1, radius), 0, Math.PI * 2);
+            hCtx.fill();
+            hCtx.restore();
+        }
+
+        function adjustColor(hex, amount) {
+            return '#' + hex.replace(/^#/, '').match(/.{2}/g).map(c => {
+                return Math.max(0, Math.min(255, parseInt(c, 16) + amount)).toString(16).padStart(2, '0');
+            }).join('');
+        }
+
+        // Modal Handler
+        function toggleCodonModal() {
+            document.getElementById('codon-modal').classList.toggle('hidden');
+        }
+
+        // Canvas Click Listener
+        simCanvas.addEventListener('click', (e) => {
+            if (currentStage === 1) triggerHelicase();
+            else if (currentStage === 2) stepTranscription();
+        });
+
+        // Initialization
+        window.onload = () => {
+            resizeCanvases();
+            switchStage(1);
+            renderCanvas();
+            render3DHelix();
+            initVoice();
+        };
+    </script>
+</body>
+</html>
