@@ -292,6 +292,45 @@ export const MATH_WORKSHEETS: Record<string, SimulationWorksheetData> = {
     }
   },
 
+  "sim-theoretical-probability-lab": {
+    drivingQuestion: "How do sample spaces, set addition rules, and tree diagrams allow us to model and calculate theoretical probabilities for single-stage and multi-stage compound events?",
+    hypothesisPrompt: "If two fair standard 6-sided dice are rolled simultaneously, predict which sum from 2 through 12 has the highest theoretical probability and test how sample space size n(Ω) dictates the probability fraction P(E) = n(E) / n(Ω).",
+    tableHeaders: ["Stage / Experiment", "Event Condition / Region", "Total Sample Space n(Ω)", "Favorable Outcomes n(E)", "Fraction P(E)", "Simplified Fraction", "Decimal Value", "Percentage"],
+    tableRows: [
+      ["Stage 1: 2 Dice", "Sum = 7", "36", "6", "6 / 36", "1 / 6", "0.1667", "16.7%"],
+      ["Stage 1: 2 Dice", "Sum ≥ 10", "36", "6", "6 / 36", "1 / 6", "0.1667", "16.7%"],
+      ["Stage 1: 2 Dice", "Doubles (1-1, 2-2, ...)", "36", "6", "6 / 36", "1 / 6", "0.1667", "16.7%"],
+      ["Stage 1: Die & Coin", "Head & Even Die", "12", "3", "3 / 12", "1 / 4", "0.2500", "25.0%"],
+      ["Stage 1: 3 Coins", "Exactly 2 Heads (HHT, HTH, THH)", "8", "3", "3 / 8", "3 / 8", "0.3750", "37.5%"],
+      ["Stage 2: Venn Diagram", "Union P(A ∪ B) with A=35, B=40, AB=15", "100", "60", "60 / 100", "3 / 5", "0.6000", "60.0%"],
+      ["Stage 3: Tree (With Replacement)", "Draw Red then Red (4R, 4B, 2G)", "100", "16", "16 / 100", "4 / 25", "0.1600", "16.0%"],
+      ["Stage 3: Tree (Without Replacement)", "Draw Red then Red (4R, 4B, 2G)", "90", "12", "12 / 90", "2 / 15", "0.1333", "13.3%"]
+    ],
+    criticalQuestions: [
+      {
+        prompt: "1. The Theoretical Probability Formula and Sample Space Geometry",
+        subtext: "Analyze Stage 1 for the 2-dice experiment (6 × 6 grid = 36 outcomes). Why is rolling a sum of 7 more likely than rolling a sum of 2 or 12? Explain using favorable outcome paths.",
+        exemplarAnswer: "A sum of 7 has 6 distinct microstates in the sample space: (1,6), (2,5), (3,4), (4,3), (5,2), and (6,1), yielding P(7) = 6/36 = 1/6 ≈ 16.7%. In contrast, a sum of 2 can only occur from (1,1) and a sum of 12 only from (6,6), each having only 1 favorable outcome (P = 1/36 ≈ 2.8%)."
+      },
+      {
+        prompt: "2. The Addition Rule and Mutually Exclusive vs. Overlapping Events",
+        subtext: "In Stage 2, explain why calculating P(A ∪ B) requires subtracting the intersection P(A ∩ B). Under what mathematical condition does P(A ∪ B) simply equal P(A) + P(B)?",
+        exemplarAnswer: "When events overlap, the elements belonging to the intersection A ∩ B are counted once in Set A and a second time in Set B. Subtracting P(A ∩ B) corrects for this double-counting: P(A ∪ B) = P(A) + P(B) - P(A ∩ B). If events A and B are mutually exclusive (disjoint), their intersection is empty (P(A ∩ B) = 0), so P(A ∪ B) = P(A) + P(B)."
+      },
+      {
+        prompt: "3. Independent vs. Dependent Multi-Stage Events (Tree Diagrams)",
+        subtext: "Compare the Stage 3 tree calculations for drawing two red marbles (RR) with replacement versus without replacement from a bag of 4 Red, 4 Blue, and 2 Green marbles (total N = 10). Why does the second stage probability change when replacement is omitted?",
+        exemplarAnswer: "With replacement, each draw is independent: the bag retains 10 marbles, so P(RR) = (4/10) × (4/10) = 16/100 = 0.1600. Without replacement, the first red draw removes 1 red marble and 1 total marble, leaving 3 red out of 9 total marbles. The conditional probability is P(R2 | R1) = 3/9, giving P(RR) = (4/10) × (3/9) = 12/90 = 2/15 ≈ 0.1333."
+      }
+    ],
+    realWorldScenario: {
+      title: "Quality Control & Double Sampling Plan",
+      scenario: "A semiconductor manufacturer tests microchips from a production batch. A batch of 50 chips contains 5 defective chips. A quality assurance engineer randomly samples 2 chips in sequence without replacement.",
+      task: "Using tree diagram multiplication, calculate the probability that: (a) Both tested chips are defective, and (b) Neither tested chip is defective.",
+      exemplarAnswer: "(a) Probability both are defective: P(D1 ∩ D2) = (5/50) × (4/49) = 20 / 2450 = 2 / 245 ≈ 0.00816 (0.82%). (b) Probability neither is defective: P(G1 ∩ G2) = (45/50) × (44/49) = 1980 / 2450 = 198 / 245 ≈ 0.8082 (80.82%)."
+    }
+  },
+
   "sim-geometric-transformations-rotation": {
     drivingQuestion: "How do rigid motions (rotations, reflections, translations) and non-rigid transformations (dilations) change the coordinates, side lengths, and orientation of 2D geometric shapes?",
     hypothesisPrompt: "If a triangle with vertices at (2,2), (6,2), and (4,6) is rotated 90° counterclockwise about the origin (0,0), predict the new coordinates of its vertices. Which transformations preserve side lengths and angles (isometries), and which change size?",

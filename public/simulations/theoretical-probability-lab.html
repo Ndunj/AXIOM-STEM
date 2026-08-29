@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theoretical Probability Lab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #020617; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; margin: 0; }
+        .grid-7x7 { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+        .grid-coins { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+        .grid-die-coin { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+        .cell-btn { background-color: #1e293b; border: 1px solid #334155; color: #cbd5e1; border-radius: 6px; padding: 6px 2px; text-align: center; cursor: pointer; user-select: none; }
+        .cell-btn.selected { background-color: rgba(45, 212, 191, 0.2); border-color: #2dd4bf; color: #5eead4; font-weight: bold; box-shadow: 0 0 8px rgba(45,212,191,0.3); }
+        .tab-btn { padding: 6px 12px; font-size: 13px; font-weight: 500; border-radius: 8px; border: 1px solid transparent; cursor: pointer; color: #94a3b8; background: transparent; }
+        .tab-btn.active { color: #2dd4bf; background-color: #1e293b; border-color: rgba(45, 212, 191, 0.3); }
+        .mode-btn { padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; color: #94a3b8; border: 1px solid transparent; cursor: pointer; transition: all 0.2s; }
+        .mode-btn.active { background-color: rgba(45, 212, 191, 0.2); color: #5eead4; font-weight: 600; border-color: rgba(45, 212, 191, 0.3); }
+        .tree-node { cursor: pointer; transition: all 0.2s ease; }
+        .tree-node:hover rect { fill: #134e4a; stroke: #2dd4bf; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased">
+
+    <header class="bg-slate-900 border-b border-slate-800 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="h-8 w-8 rounded-lg bg-teal-500/20 border border-teal-400/30 flex items-center justify-center text-teal-400 font-bold text-xl">
+                    P
+                </div>
+                <h1 class="text-xl font-bold tracking-tight text-slate-100">Theoretical Probability Lab</h1>
+            </div>
+
+            <nav class="flex space-x-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                <button id="tab-stage1" class="tab-btn active">Stage 1: Sample Space Grid</button>
+                <button id="tab-stage2" class="tab-btn">Stage 2: Venn & Addition Rules</button>
+                <button id="tab-stage3" class="tab-btn">Stage 3: Tree Diagrams</button>
+            </nav>
+
+            <button id="btn-toggle-notes" class="flex items-center gap-2 bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 border border-teal-500/30 px-3 py-1.5 rounded-lg text-sm font-medium">
+                📖 Lesson Notes
+            </button>
+        </div>
+    </header>
+
+    <section class="bg-slate-900 border-b border-slate-800 px-4 py-2.5">
+        <div class="max-w-7xl mx-auto flex items-center gap-3 text-xs sm:text-sm">
+            <span class="text-slate-400 uppercase tracking-wider text-[10px] font-bold">Status:</span>
+            <span id="status-banner-text" class="text-slate-200 font-medium">Ready. Select experiment parameters or outcome cells to begin.</span>
+        </div>
+    </section>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <section class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between shadow-xl min-h-[520px]">
+            
+            <div id="stage-1" class="flex-1 flex flex-col">
+                <div class="flex flex-wrap justify-between items-center gap-2 mb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-100">Sample Space Grid</h2>
+                        <p class="text-xs text-slate-400">Select experiments and click outcome cells to build event sets.</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="bg-slate-950 p-1 rounded-lg border border-slate-800 flex text-xs gap-1">
+                            <button id="mode-dice" class="mode-btn active">🎲 2 Dice</button>
+                            <button id="mode-die-coin" class="mode-btn">🎲+🪙 Die & Coin</button>
+                            <button id="mode-coins" class="mode-btn">🪙 3 Coins</button>
+                        </div>
+                        <button id="btn-reset-stage1" class="text-xs text-slate-400 hover:text-slate-200 bg-slate-800 border border-slate-700 px-3 py-1 rounded">Reset</button>
+                    </div>
+                </div>
+                
+                <div class="flex-1 flex items-center justify-center p-2 min-h-[320px]">
+                    <div id="grid-container" class="w-full max-w-md font-mono text-xs"></div>
+                </div>
+            </div>
+
+            <div id="stage-2" class="hidden flex-1 flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-100">Venn Diagram Set Relationships</h2>
+                        <p class="text-xs text-slate-400">Adjust set counts and select regions to evaluate set addition rules.</p>
+                    </div>
+                    <button id="btn-reset-stage2" class="text-xs text-slate-400 hover:text-slate-200 bg-slate-800 border border-slate-700 px-3 py-1 rounded">Reset Sets</button>
+                </div>
+
+                <div class="flex-1 flex items-center justify-center relative min-h-[260px]">
+                    <svg viewBox="0 0 400 240" class="w-full max-w-md h-auto">
+                        <rect x="5" y="5" width="390" height="230" rx="12" fill="#020617" stroke="#334155" stroke-width="2"/>
+                        <text x="20" y="30" fill="#64748b" font-size="12" font-weight="bold">Sample Space (Ω = 100 Outcomes)</text>
+                        <circle id="venn-circle-a" cx="150" cy="125" r="70" class="fill-cyan-500/20 stroke-cyan-400" stroke-width="2" />
+                        <circle id="venn-circle-b" cx="250" cy="125" r="70" class="fill-purple-500/20 stroke-purple-400" stroke-width="2" />
+                        <text id="label-set-a" x="130" y="130" fill="#22d3ee" font-size="14" font-weight="bold">Set A</text>
+                        <text id="label-set-b" x="270" y="130" fill="#c084fc" font-size="14" font-weight="bold" text-anchor="end">Set B</text>
+                    </svg>
+                </div>
+
+                <div class="flex flex-wrap justify-center gap-2 mt-2">
+                    <button id="btn-venn-union" class="px-2.5 py-1 text-xs rounded border border-teal-500 bg-teal-500/20 text-teal-300">Union P(A ∪ B)</button>
+                    <button id="btn-venn-onlyA" class="px-2.5 py-1 text-xs rounded border border-slate-700 bg-slate-800 text-slate-400">Only Set A</button>
+                    <button id="btn-venn-onlyB" class="px-2.5 py-1 text-xs rounded border border-slate-700 bg-slate-800 text-slate-400">Only Set B</button>
+                    <button id="btn-venn-intersection" class="px-2.5 py-1 text-xs rounded border border-slate-700 bg-slate-800 text-slate-400">Intersection P(A ∩ B)</button>
+                </div>
+            </div>
+
+            <div id="stage-3" class="hidden flex-1 flex flex-col">
+                <div class="flex justify-between items-center mb-2">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-100">Multi-Stage Probability Tree Diagram</h2>
+                        <p class="text-xs text-slate-400">Click any outcome path box to evaluate combined probabilities.</p>
+                    </div>
+                    <button id="btn-reset-stage3" class="text-xs text-slate-400 hover:text-slate-200 bg-slate-800 border border-slate-700 px-3 py-1 rounded">Reset Tree</button>
+                </div>
+
+                <div class="flex-1 flex items-center justify-center overflow-x-auto p-2">
+                    <svg id="tree-svg" viewBox="0 0 560 320" class="w-full min-w-[500px] h-auto"></svg>
+                </div>
+            </div>
+
+        </section>
+
+        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between shadow-xl space-y-6">
+            
+            <div id="controls-stage-1" class="space-y-4">
+                <h3 class="text-sm font-semibold uppercase tracking-wider text-teal-400 border-b border-slate-800 pb-2">Event Selection Presets</h3>
+                <div id="presets-dice" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button id="preset-sum7" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg text-xs font-medium text-left">Sum = 7</button>
+                    <button id="preset-sum10" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg text-xs font-medium text-left">Sum ≥ 10</button>
+                    <button id="preset-doubles" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg text-xs font-medium text-left">Doubles (1-1, 2-2...)</button>
+                    <button id="preset-has6" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg text-xs font-medium text-left">At least one '6'</button>
+                </div>
+                <div id="presets-die-coin" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button id="preset-head-even" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg text-xs font-medium text-left">Head & Even Die</button>
+                    <button id="preset-tail-gt3" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg text-xs font-medium text-left">Tail & Die ≥ 4</button>
+                    <button id="preset-all-heads" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg text-xs font-medium text-left">All Head Outcomes</button>
+                    <button id="preset-prime-die" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg text-xs font-medium text-left">Prime Die (2, 3, 5)</button>
+                </div>
+                <div id="presets-coins" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button id="preset-heads2" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg text-xs font-medium text-left">Exactly 2 Heads</button>
+                    <button id="preset-heads1" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg text-xs font-medium text-left">At least 2 Heads</button>
+                    <button id="preset-allmatch" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg text-xs font-medium text-left">All Match (HHH/TTT)</button>
+                    <button id="preset-lasthead" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg text-xs font-medium text-left">Ends with Head (* * H)</button>
+                </div>
+            </div>
+
+            <div id="controls-stage-2" class="hidden space-y-4">
+                <h3 class="text-sm font-semibold uppercase tracking-wider text-teal-400 border-b border-slate-800 pb-2">Set Parameters</h3>
+                <div class="space-y-3">
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-cyan-400 font-medium">Count of Set A:</span>
+                            <span id="slider-val-a" class="font-mono text-slate-200">35</span>
+                        </div>
+                        <input id="slider-a" type="range" min="0" max="60" value="35" class="w-full accent-cyan-400 h-1.5 bg-slate-800 rounded-lg">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-purple-400 font-medium">Count of Set B:</span>
+                            <span id="slider-val-b" class="font-mono text-slate-200">40</span>
+                        </div>
+                        <input id="slider-b" type="range" min="0" max="60" value="40" class="w-full accent-purple-400 h-1.5 bg-slate-800 rounded-lg">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-teal-400 font-medium">Intersection A ∩ B:</span>
+                            <span id="slider-val-ab" class="font-mono text-slate-200">15</span>
+                        </div>
+                        <input id="slider-ab" type="range" min="0" max="35" value="15" class="w-full accent-teal-400 h-1.5 bg-slate-800 rounded-lg">
+                    </div>
+                </div>
+            </div>
+
+            <div id="controls-stage-3" class="hidden space-y-4">
+                <h3 class="text-sm font-semibold uppercase tracking-wider text-teal-400 border-b border-slate-800 pb-2">3-Color Bag Composition & Mode</h3>
+                <div class="space-y-3">
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-amber-400 font-medium">Red Marbles:</span>
+                            <span id="slider-val-red" class="font-mono text-slate-200">4</span>
+                        </div>
+                        <input id="slider-red" type="range" min="0" max="10" value="4" class="w-full accent-amber-500 h-1.5 bg-slate-800 rounded-lg">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-indigo-400 font-medium">Blue Marbles:</span>
+                            <span id="slider-val-blue" class="font-mono text-slate-200">4</span>
+                        </div>
+                        <input id="slider-blue" type="range" min="0" max="10" value="4" class="w-full accent-indigo-500 h-1.5 bg-slate-800 rounded-lg">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-emerald-400 font-medium">Green Marbles:</span>
+                            <span id="slider-val-green" class="font-mono text-slate-200">2</span>
+                        </div>
+                        <input id="slider-green" type="range" min="0" max="10" value="2" class="w-full accent-emerald-500 h-1.5 bg-slate-800 rounded-lg">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 pt-2">
+                        <button id="btn-with-repl" class="px-2.5 py-1.5 border text-xs font-medium rounded-lg border-teal-500 bg-teal-500/10 text-teal-400">With Replacement</button>
+                        <button id="btn-without-repl" class="px-2.5 py-1.5 border text-xs font-medium rounded-lg border-slate-700 bg-slate-800 text-slate-400">Without Replacement</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
+                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Calculated Probability Output</h4>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="bg-slate-900 border border-slate-800 p-2 rounded-lg">
+                        <div class="text-[10px] text-slate-500 font-medium uppercase">Fraction</div>
+                        <div id="output-fraction" class="text-sm font-mono font-bold text-teal-400 mt-0.5">0 / 36</div>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 p-2 rounded-lg">
+                        <div class="text-[10px] text-slate-500 font-medium uppercase">Decimal</div>
+                        <div id="output-decimal" class="text-sm font-mono font-bold text-teal-400 mt-0.5">0.0000</div>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 p-2 rounded-lg">
+                        <div class="text-[10px] text-slate-500 font-medium uppercase">Percent</div>
+                        <div id="output-percent" class="text-sm font-mono font-bold text-teal-400 mt-0.5">0.0%</div>
+                    </div>
+                </div>
+                <div id="formula-breakdown" class="text-xs text-slate-400 font-mono bg-slate-900/50 p-2 rounded border border-slate-800/60">
+                    P(Event) = 0 / 36
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <div id="notes-backdrop" class="fixed inset-0 bg-slate-950/70 hidden"></div>
+    <aside id="notes-drawer" class="fixed right-0 top-0 h-full w-full max-w-md bg-slate-900 border-l border-slate-800 hidden p-6 overflow-y-auto">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+            <h3 class="text-lg font-bold text-slate-100">📖 Lesson Notes</h3>
+            <button id="btn-close-notes" class="text-slate-400 text-lg font-bold">✕</button>
+        </div>
+        <div class="space-y-4 text-xs text-slate-300">
+            <div>
+                <h4 class="font-semibold text-teal-400">1. Basic Probability Definition</h4>
+                <div class="bg-slate-950 p-2 rounded border border-slate-800 font-mono my-1 text-teal-300">P(E) = n(E) / n(S)</div>
+            </div>
+            <div>
+                <h4 class="font-semibold text-teal-400">2. Die & Coin Outcome Space</h4>
+                <div class="bg-slate-950 p-2 rounded border border-slate-800 font-mono my-1 text-teal-300">n(Ω) = 6 × 2 = 12 outcomes</div>
+            </div>
+            <div>
+                <h4 class="font-semibold text-teal-400">3. Addition Law of Probability</h4>
+                <div class="bg-slate-950 p-2 rounded border border-slate-800 font-mono my-1 text-teal-300">P(A ∪ B) = P(A) + P(B) - P(A ∩ B)</div>
+            </div>
+            <div>
+                <h4 class="font-semibold text-teal-400">4. Multi-Color Tree Multiplication</h4>
+                <div class="bg-slate-950 p-2 rounded border border-slate-800 font-mono my-1 text-teal-300">P(C1 ∩ C2) = P(C1) × P(C2 | C1)</div>
+            </div>
+        </div>
+    </aside>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            let currentStage = 1;
+            let stage1Mode = 'dice'; 
+            const stage1Selected = new Set();
+            let stage2Data = { total: 100, countA: 35, countB: 40, countAB: 15, activeRegion: 'union' };
+            let stage3Data = { redCount: 4, blueCount: 4, greenCount: 2, withReplacement: true, selectedPath: 'RR' };
+
+            function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+            function formatFraction(num, den) {
+                if (num === 0) return `0 / ${den}`;
+                const g = gcd(num, den);
+                const n = num / g, d = den / g;
+                return n === d ? "1" : `${n} / ${d}`;
+            }
+
+            function updateOutput(num, den, formula, status) {
+                const dec = den > 0 ? (num / den).toFixed(4) : "0.0000";
+                const pct = den > 0 ? ((num / den) * 100).toFixed(1) + "%" : "0.0%";
+                document.getElementById('output-fraction').innerText = `${num} / ${den}`;
+                document.getElementById('output-decimal').innerText = dec;
+                document.getElementById('output-percent').innerText = pct;
+                document.getElementById('formula-breakdown').innerHTML = `${formula}<br><b class="text-teal-400">Simplified: ${formatFraction(num, den)}</b>`;
+                document.getElementById('status-banner-text').innerText = status;
+            }
+
+            function switchTab(stageNum) {
+                currentStage = stageNum;
+                [1, 2, 3].forEach(i => {
+                    const s = document.getElementById(`stage-${i}`);
+                    const c = document.getElementById(`controls-stage-${i}`);
+                    const t = document.getElementById(`tab-stage${i}`);
+                    if (s && c && t) {
+                        if (i === stageNum) {
+                            s.classList.remove('hidden');
+                            c.classList.remove('hidden');
+                            t.classList.add('active');
+                        } else {
+                            s.classList.add('hidden');
+                            c.classList.add('hidden');
+                            t.classList.remove('active');
+                        }
+                    }
+                });
+
+                if (stageNum === 1) updateStage1Output();
+                if (stageNum === 2) updateStage2Data();
+                if (stageNum === 3) updateStage3Data();
+            }
+
+            // Tab Event Listeners
+            document.getElementById('tab-stage1').addEventListener('click', () => switchTab(1));
+            document.getElementById('tab-stage2').addEventListener('click', () => switchTab(2));
+            document.getElementById('tab-stage3').addEventListener('click', () => switchTab(3));
+
+            const drawer = document.getElementById('notes-drawer');
+            const backdrop = document.getElementById('notes-backdrop');
+            const toggleNotes = () => {
+                drawer.classList.toggle('hidden');
+                backdrop.classList.toggle('hidden');
+            };
+            document.getElementById('btn-toggle-notes').addEventListener('click', toggleNotes);
+            document.getElementById('btn-close-notes').addEventListener('click', toggleNotes);
+            backdrop.addEventListener('click', toggleNotes);
+
+            // STAGE 1: GRID GENERATOR
+            function buildStage1Grid() {
+                const grid = document.getElementById('grid-container');
+                if (!grid) return;
+                grid.innerHTML = '';
+                stage1Selected.clear();
+
+                if (stage1Mode === 'dice') {
+                    grid.className = "grid-7x7 w-full max-w-md aspect-square font-mono text-xs";
+                    const corner = document.createElement('div');
+                    corner.className = "flex items-center justify-center font-bold text-slate-500 bg-slate-950 border border-slate-800 rounded text-[10px]";
+                    corner.innerText = "D1\\D2";
+                    grid.appendChild(corner);
+
+                    for (let d2 = 1; d2 <= 6; d2++) {
+                        const h = document.createElement('div');
+                        h.className = "flex items-center justify-center font-bold text-slate-400 bg-slate-950 border border-slate-800 rounded";
+                        h.innerText = d2;
+                        grid.appendChild(h);
+                    }
+
+                    for (let d1 = 1; d1 <= 6; d1++) {
+                        const rh = document.createElement('div');
+                        rh.className = "flex items-center justify-center font-bold text-slate-400 bg-slate-950 border border-slate-800 rounded";
+                        rh.innerText = d1;
+                        grid.appendChild(rh);
+
+                        for (let d2 = 1; d2 <= 6; d2++) {
+                            const cell = document.createElement('button');
+                            cell.id = `cell-${d1}-${d2}`;
+                            cell.className = "cell-btn";
+                            cell.innerHTML = `<div>${d1},${d2}</div><div style="font-size:8px; opacity:0.6;">s=${d1+d2}</div>`;
+                            cell.addEventListener('click', () => {
+                                const key = `${d1},${d2}`;
+                                if (stage1Selected.has(key)) stage1Selected.delete(key);
+                                else stage1Selected.add(key);
+                                renderGridSelection();
+                                updateStage1Output();
+                            });
+                            grid.appendChild(cell);
+                        }
+                    }
+                } else if (stage1Mode === 'die-coin') {
+                    grid.className = "grid-die-coin w-full max-w-md font-mono text-xs";
+                    const corner = document.createElement('div');
+                    corner.className = "flex items-center justify-center font-bold text-slate-500 bg-slate-950 border border-slate-800 rounded text-[10px]";
+                    corner.innerText = "Coin\\Die";
+                    grid.appendChild(corner);
+
+                    for (let d = 1; d <= 6; d++) {
+                        const h = document.createElement('div');
+                        h.className = "flex items-center justify-center font-bold text-slate-400 bg-slate-950 border border-slate-800 rounded py-1";
+                        h.innerText = `D${d}`;
+                        grid.appendChild(h);
+                    }
+
+                    ['H', 'T'].forEach(coin => {
+                        const rh = document.createElement('div');
+                        rh.className = "flex items-center justify-center font-bold text-teal-400 bg-slate-950 border border-slate-800 rounded py-2";
+                        rh.innerText = coin === 'H' ? 'Head' : 'Tail';
+                        grid.appendChild(rh);
+
+                        for (let d = 1; d <= 6; d++) {
+                            const cell = document.createElement('button');
+                            const key = `${coin}${d}`;
+                            cell.id = `diecoin-${key}`;
+                            cell.className = "cell-btn py-3";
+                            cell.innerHTML = `<div class="font-bold">${key}</div>`;
+                            cell.addEventListener('click', () => {
+                                if (stage1Selected.has(key)) stage1Selected.delete(key);
+                                else stage1Selected.add(key);
+                                renderDieCoinSelection();
+                                updateStage1Output();
+                            });
+                            grid.appendChild(cell);
+                        }
+                    });
+                } else {
+                    grid.className = "grid-coins w-full max-w-md font-mono text-xs";
+                    const coinOutcomes = ['HHH', 'HHT', 'HTH', 'HTT', 'THH', 'THT', 'TTH', 'TTT'];
+                    coinOutcomes.forEach(code => {
+                        const cell = document.createElement('button');
+                        cell.id = `coin-${code}`;
+                        cell.className = "cell-btn py-4";
+                        const hCount = (code.match(/H/g) || []).length;
+                        cell.innerHTML = `<div class="font-bold text-sm">${code}</div><div style="font-size:9px; opacity:0.6;">${hCount} Head${hCount!==1?'s':''}</div>`;
+                        cell.addEventListener('click', () => {
+                            if (stage1Selected.has(code)) stage1Selected.delete(code);
+                            else stage1Selected.add(code);
+                            renderCoinSelection();
+                            updateStage1Output();
+                        });
+                        grid.appendChild(cell);
+                    });
+                }
+                updateStage1Output();
+            }
+
+            function renderGridSelection() {
+                for (let d1 = 1; d1 <= 6; d1++) {
+                    for (let d2 = 1; d2 <= 6; d2++) {
+                        const cell = document.getElementById(`cell-${d1}-${d2}`);
+                        if (cell) {
+                            if (stage1Selected.has(`${d1},${d2}`)) cell.classList.add('selected');
+                            else cell.classList.remove('selected');
+                        }
+                    }
+                }
+            }
+
+            function renderDieCoinSelection() {
+                ['H', 'T'].forEach(coin => {
+                    for (let d = 1; d <= 6; d++) {
+                        const key = `${coin}${d}`;
+                        const cell = document.getElementById(`diecoin-${key}`);
+                        if (cell) {
+                            if (stage1Selected.has(key)) cell.classList.add('selected');
+                            else cell.classList.remove('selected');
+                        }
+                    }
+                });
+            }
+
+            function renderCoinSelection() {
+                ['HHH', 'HHT', 'HTH', 'HTT', 'THH', 'THT', 'TTH', 'TTT'].forEach(code => {
+                    const cell = document.getElementById(`coin-${code}`);
+                    if (cell) {
+                        if (stage1Selected.has(code)) cell.classList.add('selected');
+                        else cell.classList.remove('selected');
+                    }
+                });
+            }
+
+            function updateStage1Output() {
+                const count = stage1Selected.size;
+                const total = stage1Mode === 'dice' ? 36 : stage1Mode === 'die-coin' ? 12 : 8;
+                const modeLabel = stage1Mode === 'dice' ? '2 DICE' : stage1Mode === 'die-coin' ? 'DIE & COIN' : '3 COINS';
+                updateOutput(count, total, `P(E) = n(E) / n(Ω) = ${count} / ${total}`, `Stage 1 (${modeLabel}): ${count} of ${total} outcomes selected.`);
+            }
+
+            function setMode(modeKey) {
+                stage1Mode = modeKey;
+                ['dice', 'die-coin', 'coins'].forEach(m => {
+                    const btn = document.getElementById(`mode-${m}`);
+                    const presets = document.getElementById(`presets-${m}`);
+                    if (btn && presets) {
+                        if (m === modeKey) {
+                            btn.classList.add('active');
+                            presets.classList.remove('hidden');
+                        } else {
+                            btn.classList.remove('active');
+                            presets.classList.add('hidden');
+                        }
+                    }
+                });
+                buildStage1Grid();
+            }
+
+            document.getElementById('mode-dice').addEventListener('click', () => setMode('dice'));
+            document.getElementById('mode-die-coin').addEventListener('click', () => setMode('die-coin'));
+            document.getElementById('mode-coins').addEventListener('click', () => setMode('coins'));
+
+            // Dice Presets
+            document.getElementById('preset-sum7').addEventListener('click', () => {
+                stage1Selected.clear();
+                for (let d1 = 1; d1 <= 6; d1++) for (let d2 = 1; d2 <= 6; d2++) if (d1 + d2 === 7) stage1Selected.add(`${d1},${d2}`);
+                renderGridSelection(); updateStage1Output();
+            });
+
+            document.getElementById('preset-sum10').addEventListener('click', () => {
+                stage1Selected.clear();
+                for (let d1 = 1; d1 <= 6; d1++) for (let d2 = 1; d2 <= 6; d2++) if (d1 + d2 >= 10) stage1Selected.add(`${d1},${d2}`);
+                renderGridSelection(); updateStage1Output();
+            });
+
+            document.getElementById('preset-doubles').addEventListener('click', () => {
+                stage1Selected.clear();
+                for (let d1 = 1; d1 <= 6; d1++) stage1Selected.add(`${d1},${d1}`);
+                renderGridSelection(); updateStage1Output();
+            });
+
+            document.getElementById('preset-has6').addEventListener('click', () => {
+                stage1Selected.clear();
+                for (let d1 = 1; d1 <= 6; d1++) for (let d2 = 1; d2 <= 6; d2++) if (d1 === 6 || d2 === 6) stage1Selected.add(`${d1},${d2}`);
+                renderGridSelection(); updateStage1Output();
+            });
+
+            // Die + Coin Presets
+            document.getElementById('preset-head-even').addEventListener('click', () => {
+                stage1Selected.clear();
+                [2, 4, 6].forEach(d => stage1Selected.add(`H${d}`));
+                renderDieCoinSelection(); updateStage1Output();
+            });
+
+            document.getElementById('preset-tail-gt3').addEventListener('click', () => {
+                stage1Selected.clear();
+                [4, 5, 6].forEach(d => stage1Selected.add(`T${d}`));
+                renderDieCoinSelection(); updateStage1Output();
+            });
+
+            document.getElementById('preset-all-heads').addEventListener('click', () => {
+                stage1Selected.clear();
+                [1, 2, 3, 4, 5, 6].forEach(d => stage1Selected.add(`H${d}`));
+                renderDieCoinSelection(); updateStage1Output();
+            });
+
+            document.getElementById('preset-prime-die').addEventListener('click', () => {
+                stage1Selected.clear();
+                ['H', 'T'].forEach(c => [2, 3, 5].forEach(d => stage1Selected.add(`${c}${d}`)));
+                renderDieCoinSelection(); updateStage1Output();
+            });
+
+            // Coin Presets
+            document.getElementById('preset-heads2').addEventListener('click', () => {
+                stage1Selected.clear();
+                ['HHT', 'HTH', 'THH'].forEach(c => stage1Selected.add(c));
+                renderCoinSelection(); updateStage1Output();
+            });
+
+            document.getElementById('preset-heads1').addEventListener('click', () => {
+                stage1Selected.clear();
+                ['HHH', 'HHT', 'HTH', 'THH'].forEach(c => stage1Selected.add(c));
+                renderCoinSelection(); updateStage1Output();
+            });
+
+            document.getElementById('preset-allmatch').addEventListener('click', () => {
+                stage1Selected.clear();
+                ['HHH', 'TTT'].forEach(c => stage1Selected.add(c));
+                renderCoinSelection(); updateStage1Output();
+            });
+
+            document.getElementById('preset-lasthead').addEventListener('click', () => {
+                stage1Selected.clear();
+                ['HHH', 'HTH', 'THH', 'TTH'].forEach(c => stage1Selected.add(c));
+                renderCoinSelection(); updateStage1Output();
+            });
+
+            document.getElementById('btn-reset-stage1').addEventListener('click', () => {
+                stage1Selected.clear();
+                if (stage1Mode === 'dice') renderGridSelection();
+                else if (stage1Mode === 'die-coin') renderDieCoinSelection();
+                else renderCoinSelection();
+                updateStage1Output();
+            });
+
+            // STAGE 2: VENN
+            function updateStage2Data() {
+                const a = parseInt(document.getElementById('slider-a').value);
+                const b = parseInt(document.getElementById('slider-b').value);
+                const abSlider = document.getElementById('slider-ab');
+                const maxAB = Math.min(a, b);
+                abSlider.max = maxAB;
+                let ab = parseInt(abSlider.value);
+                if (ab > maxAB) { ab = maxAB; abSlider.value = ab; }
+
+                stage2Data.countA = a;
+                stage2Data.countB = b;
+                stage2Data.countAB = ab;
+
+                document.getElementById('slider-val-a').innerText = a;
+                document.getElementById('slider-val-b').innerText = b;
+                document.getElementById('slider-val-ab').innerText = ab;
+
+                const overlap = (ab / Math.max(1, maxAB)) * 60;
+                const dist = 120 - overlap;
+                document.getElementById('venn-circle-a').setAttribute('cx', 200 - dist / 2);
+                document.getElementById('venn-circle-b').setAttribute('cx', 200 + dist / 2);
+
+                calculateStage2();
+            }
+
+            function calculateStage2() {
+                const { countA: a, countB: b, countAB: ab, total, activeRegion: r } = stage2Data;
+                let fav = 0, formula = "", status = "";
+
+                if (r === 'union') {
+                    fav = a + b - ab;
+                    formula = `P(A ∪ B) = ${a}/100 + ${b}/100 - ${ab}/100 = ${fav}/100`;
+                    status = "Stage 2: Addition law evaluation.";
+                } else if (r === 'onlyA') {
+                    fav = a - ab;
+                    formula = `P(Only A) = ${a}/100 - ${ab}/100 = ${fav}/100`;
+                    status = "Stage 2: Outcomes exclusive to Set A.";
+                } else if (r === 'onlyB') {
+                    fav = b - ab;
+                    formula = `P(Only B) = ${b}/100 - ${ab}/100 = ${fav}/100`;
+                    status = "Stage 2: Outcomes exclusive to Set B.";
+                } else if (r === 'intersection') {
+                    fav = ab;
+                    formula = `P(A ∩ B) = ${ab}/100`;
+                    status = "Stage 2: Overlapping intersection outcomes.";
+                }
+                updateOutput(fav, total, formula, status);
+            }
+
+            document.getElementById('slider-a').addEventListener('input', updateStage2Data);
+            document.getElementById('slider-b').addEventListener('input', updateStage2Data);
+            document.getElementById('slider-ab').addEventListener('input', updateStage2Data);
+
+            ['union', 'onlyA', 'onlyB', 'intersection'].forEach(region => {
+                document.getElementById(`btn-venn-${region}`).addEventListener('click', () => {
+                    stage2Data.activeRegion = region;
+                    calculateStage2();
+                });
+            });
+
+            document.getElementById('btn-reset-stage2').addEventListener('click', () => {
+                document.getElementById('slider-a').value = 35;
+                document.getElementById('slider-b').value = 40;
+                document.getElementById('slider-ab').value = 15;
+                stage2Data.activeRegion = 'union';
+                updateStage2Data();
+            });
+
+            // STAGE 3: 3-COLOR MARBLE TREE DIAGRAM
+            function updateStage3Data() {
+                stage3Data.redCount = parseInt(document.getElementById('slider-red').value);
+                stage3Data.blueCount = parseInt(document.getElementById('slider-blue').value);
+                stage3Data.greenCount = parseInt(document.getElementById('slider-green').value);
+
+                document.getElementById('slider-val-red').innerText = stage3Data.redCount;
+                document.getElementById('slider-val-blue').innerText = stage3Data.blueCount;
+                document.getElementById('slider-val-green').innerText = stage3Data.greenCount;
+
+                render3ColorTree();
+                calculateStage3();
+            }
+
+            function render3ColorTree() {
+                const R = stage3Data.redCount;
+                const B = stage3Data.blueCount;
+                const G = stage3Data.greenCount;
+                const N = R + B + G;
+                const repl = stage3Data.withReplacement;
+                const sel = stage3Data.selectedPath;
+
+                const colors = [
+                    { code: 'R', name: 'Red', count: R, stroke: '#f59e0b' },
+                    { code: 'B', name: 'Blue', count: B, stroke: '#6366f1' },
+                    { code: 'G', name: 'Green', count: G, stroke: '#10b981' }
+                ];
+
+                const svg = document.getElementById('tree-svg');
+                if (!svg) return;
+                let svgContent = `
+                    <circle cx="30" cy="160" r="6" fill="#94a3b8"/>
+                    <text x="20" y="180" fill="#64748b" font-size="10" font-weight="bold">Start</text>
+                `;
+
+                const yFirst = [60, 160, 260];
+
+                colors.forEach((c1, i) => {
+                    if (c1.count === 0) return;
+                    const p1 = formatFraction(c1.count, N);
+                    const isFirstSel = sel.startsWith(c1.code);
+
+                    svgContent += `
+                        <line x1="30" y1="160" x2="160" y2="${yFirst[i]}" stroke="${c1.stroke}" stroke-width="${isFirstSel ? '3' : '1.5'}"/>
+                        <text x="80" y="${yFirst[i] + (i===0?-8:i===2?16:4)}" fill="${c1.stroke}" font-size="11" font-weight="bold">${c1.code} (${p1})</text>
+                        <circle cx="160" cy="${yFirst[i]}" r="4" fill="${c1.stroke}"/>
+                    `;
+
+                    const ySecond = [
+                        yFirst[i] - 30,
+                        yFirst[i],
+                        yFirst[i] + 30
+                    ];
+
+                    colors.forEach((c2, j) => {
+                        let c2Count = c2.count;
+                        let n2 = repl ? N : N - 1;
+
+                        if (!repl && c1.code === c2.code) {
+                            c2Count = Math.max(0, c2.count - 1);
+                        }
+
+                        if (c2Count === 0 && n2 <= 0) return;
+
+                        const p2 = n2 > 0 ? formatFraction(c2Count, n2) : "0";
+                        const pathCode = `${c1.code}${c2.code}`;
+                        const isPathSel = sel === pathCode;
+
+                        const nodeStyle = isPathSel 
+                            ? 'fill="#134e4a" stroke="#2dd4bf" stroke-width="2"' 
+                            : 'fill="#1e293b" stroke="#475569" stroke-width="1"';
+
+                        const textStyle = isPathSel ? 'fill="#5eead4"' : 'fill="#f8fafc"';
+
+                        svgContent += `
+                            <g class="tree-node" id="node-${pathCode.toLowerCase()}">
+                                <line x1="160" y1="${yFirst[i]}" x2="380" y2="${ySecond[j]}" stroke="${c2.stroke}" stroke-width="${isPathSel ? '3' : '1.5'}"/>
+                                <text x="250" y="${ySecond[j] + (j===0?-4:j===2?12:4)}" fill="${c2.stroke}" font-size="10">${c2.code} (${p2})</text>
+                                <rect x="380" y="${ySecond[j] - 12}" width="55" height="24" rx="5" ${nodeStyle}/>
+                                <text x="407" y="${ySecond[j] + 4}" ${textStyle} font-size="11" text-anchor="middle" font-weight="bold">${c1.code}, ${c2.code}</text>
+                            </g>
+                        `;
+                    });
+                });
+
+                svg.innerHTML = svgContent;
+
+                ['rr', 'rb', 'rg', 'br', 'bb', 'bg', 'gr', 'gb', 'gg'].forEach(code => {
+                    const el = document.getElementById(`node-${code}`);
+                    if (el) {
+                        el.addEventListener('click', () => {
+                            stage3Data.selectedPath = code.toUpperCase();
+                            render3ColorTree();
+                            calculateStage3();
+                        });
+                    }
+                });
+            }
+
+            function calculateStage3() {
+                const R = stage3Data.redCount;
+                const B = stage3Data.blueCount;
+                const G = stage3Data.greenCount;
+                const N = R + B + G;
+                const repl = stage3Data.withReplacement;
+                const path = stage3Data.selectedPath;
+
+                if (N === 0) {
+                    updateOutput(0, 1, "P = 0", "Empty Bag: Add marbles to calculate.");
+                    return;
+                }
+
+                const c1Code = path[0];
+                const c2Code = path[1];
+
+                const getCount = (code) => code === 'R' ? R : code === 'B' ? B : G;
+
+                const count1 = getCount(c1Code);
+                let count2 = getCount(c2Code);
+                let den2 = repl ? N : N - 1;
+
+                if (!repl && c1Code === c2Code) {
+                    count2 = Math.max(0, count2 - 1);
+                }
+
+                const num = count1 * count2;
+                const den = repl ? (N * N) : (N * Math.max(1, den2));
+
+                const formula = repl
+                    ? `P(${c1Code},${c2Code}) = (${count1}/${N}) × (${count2}/${N}) = ${num}/${den}`
+                    : `P(${c1Code},${c2Code}) = (${count1}/${N}) × (${count2}/${Math.max(1, den2)}) = ${num}/${den}`;
+
+                updateOutput(num, den, formula, `Stage 3: 3-Color path [${c1Code}, ${c2Code}] evaluated.`);
+            }
+
+            document.getElementById('slider-red').addEventListener('input', updateStage3Data);
+            document.getElementById('slider-blue').addEventListener('input', updateStage3Data);
+            document.getElementById('slider-green').addEventListener('input', updateStage3Data);
+
+            document.getElementById('btn-with-repl').addEventListener('click', () => {
+                stage3Data.withReplacement = true;
+                document.getElementById('btn-with-repl').className = "px-2.5 py-1.5 border text-xs font-medium rounded-lg border-teal-500 bg-teal-500/10 text-teal-400";
+                document.getElementById('btn-without-repl').className = "px-2.5 py-1.5 border text-xs font-medium rounded-lg border-slate-700 bg-slate-800 text-slate-400";
+                updateStage3Data();
+            });
+
+            document.getElementById('btn-without-repl').addEventListener('click', () => {
+                stage3Data.withReplacement = false;
+                document.getElementById('btn-without-repl').className = "px-2.5 py-1.5 border text-xs font-medium rounded-lg border-teal-500 bg-teal-500/10 text-teal-400";
+                document.getElementById('btn-with-repl').className = "px-2.5 py-1.5 border text-xs font-medium rounded-lg border-slate-700 bg-slate-800 text-slate-400";
+                updateStage3Data();
+            });
+
+            document.getElementById('btn-reset-stage3').addEventListener('click', () => {
+                document.getElementById('slider-red').value = 4;
+                document.getElementById('slider-blue').value = 4;
+                document.getElementById('slider-green').value = 2;
+                stage3Data.selectedPath = 'RR';
+                updateStage3Data();
+            });
+
+            // Initial Launch
+            buildStage1Grid();
+            switchTab(1);
+        });
+    </script>
+</body>
+</html>
