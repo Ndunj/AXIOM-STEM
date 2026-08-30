@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Galvanic Cell & Nernst Equation Simulation</title>
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --card-bg: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-blue: #38bdf8;
+      --accent-green: #4ade80;
+      --accent-orange: #fb923c;
+      --border-color: #334155;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      line-height: 1.5;
+      padding: 16px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    header { text-align: center; }
+    header h1 { color: var(--accent-blue); font-size: 2rem; }
+    header p { color: var(--text-muted); }
+
+    .app-layout {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 16px;
+    }
+
+    @media (max-width: 900px) {
+      .app-layout { grid-template-columns: 1fr; }
+    }
+
+    .viewport-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      position: relative;
+      height: 540px;
+      width: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .controls-panel {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    select, input[type="number"] {
+      background-color: #0f172a;
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      accent-color: var(--accent-blue);
+    }
+
+    .range-val {
+      font-weight: 600;
+      color: var(--accent-blue);
+      min-width: 55px;
+      text-align: right;
+      font-size: 0.9rem;
+    }
+
+    .info-card {
+      background-color: #0f172a;
+      border-radius: 6px;
+      padding: 12px;
+      border: 1px solid var(--border-color);
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      padding: 4px 0;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: var(--text-muted); }
+    .info-value { font-weight: 600; color: var(--accent-green); text-align: right; }
+
+    .reaction-box {
+      background: #0f172a;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 10px;
+      text-align: center;
+      font-family: monospace;
+      font-size: 0.9rem;
+      color: var(--accent-orange);
+    }
+
+    .theory-section {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 24px;
+    }
+
+    .theory-section h2 { color: var(--accent-blue); margin-bottom: 12px; }
+    .theory-section h3 { color: var(--accent-green); margin: 16px 0 8px 0; }
+    .theory-section p { margin-bottom: 8px; }
+    .theory-section ul { margin-left: 20px; margin-bottom: 12px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 0.88rem;
+    }
+
+    th, td {
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+      text-align: left;
+    }
+
+    th { background-color: #0f172a; color: var(--accent-blue); }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>Galvanic Cell & Nernst Equation Visualizer</h1>
+      <p>Spontaneous Electrochemical Reaction Simulation & Potential Calculator</p>
+    </header>
+
+    <div class="app-layout">
+      <div class="viewport-card">
+        <canvas id="cellCanvas"></canvas>
+      </div>
+
+      <div class="controls-panel">
+        <div class="control-group">
+          <label for="couple-left">Left Couple (Couple 1)</label>
+          <select id="couple-left">
+            <option value="Mg">Mg²⁺ / Mg (E° = -2.37 V)</option>
+            <option value="Al">Al³⁺ / Al (E° = -1.66 V)</option>
+            <option value="Zn" selected>Zn²⁺ / Zn (E° = -0.76 V)</option>
+            <option value="Fe">Fe²⁺ / Fe (E° = -0.44 V)</option>
+            <option value="Ni">Ni²⁺ / Ni (E° = -0.25 V)</option>
+            <option value="Pb">Pb²⁺ / Pb (E° = -0.13 V)</option>
+            <option value="Cu">Cu²⁺ / Cu (E° = +0.34 V)</option>
+            <option value="Ag">Ag⁺ / Ag (E° = +0.80 V)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="couple-right">Right Couple (Couple 2)</label>
+          <select id="couple-right">
+            <option value="Mg">Mg²⁺ / Mg (E° = -2.37 V)</option>
+            <option value="Al">Al³⁺ / Al (E° = -1.66 V)</option>
+            <option value="Zn">Zn²⁺ / Zn (E° = -0.76 V)</option>
+            <option value="Fe">Fe²⁺ / Fe (E° = -0.44 V)</option>
+            <option value="Ni">Ni²⁺ / Ni (E° = -0.25 V)</option>
+            <option value="Pb">Pb²⁺ / Pb (E° = -0.13 V)</option>
+            <option value="Cu" selected>Cu²⁺ / Cu (E° = +0.34 V)</option>
+            <option value="Ag">Ag⁺ / Ag (E° = +0.80 V)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="conc-left">Left Concentration [M¹⁺/²⁺/³⁺]</label>
+          <div class="slider-container">
+            <input type="range" id="conc-left" min="0.001" max="2.0" step="0.001" value="1.00">
+            <span class="range-val" id="conc-left-val">1.00 M</span>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label for="conc-right">Right Concentration [M¹⁺/²⁺/³⁺]</label>
+          <div class="slider-container">
+            <input type="range" id="conc-right" min="0.001" max="2.0" step="0.001" value="1.00">
+            <span class="range-val" id="conc-right-val">1.00 M</span>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label for="temp-slider">Temperature (T)</label>
+          <div class="slider-container">
+            <input type="range" id="temp-slider" min="273" max="373" step="1" value="298">
+            <span class="range-val" id="temp-val">298 K</span>
+          </div>
+        </div>
+
+        <div class="reaction-box" id="rxn-display">
+          Zn(s) + Cu²⁺(aq) → Zn²⁺(aq) + Cu(s)
+        </div>
+
+        <div class="info-card">
+          <div class="info-row">
+            <span class="info-label">Standard Cell Potential (E°cell)</span>
+            <span class="info-value" id="info-e0">+1.10 V</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Electrons Transferred (n)</span>
+            <span class="info-value" id="info-n">2</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Reaction Quotient (Q)</span>
+            <span class="info-value" id="info-q">1.00</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Cell Potential (Ecell)</span>
+            <span class="info-value" style="color: var(--accent-blue);" id="info-ecell">+1.10 V</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="theory-section">
+      <h2>Electrochemical Principles & The Nernst Equation</h2>
+      <p>
+        A galvanic cell converts chemical energy into electrical potential using a spontaneous redox reaction. Electrons flow through the external circuit from the <strong>Anode</strong> (oxidation, lower E°) to the <strong>Cathode</strong> (reduction, higher E°).
+      </p>
+
+      <h3>Does Standard Cell Potential (E°cell) Depend on Concentration?</h3>
+      <p>
+        <strong>No, E°cell does NOT depend on electrolyte concentrations.</strong> By definition, standard potential is measured strictly under standard conditions where all solute concentrations are fixed at 1.0 M, gas pressures are 1 atm, and temperature is 25°C (298.15 K). Because standard conditions explicitly fix concentrations at 1.0 M, E°cell remains a constant baseline value.
+      </p>
+
+      <h3>Standard Potential vs. Non-Standard Cell Potential</h3>
+      <ul>
+        <li><strong>Standard Cell Potential (E°cell):</strong> A fixed constant for a specific pair of metals at a given temperature. It does not change when concentration changes.</li>
+        <li><strong>Non-Standard Cell Potential (Ecell):</strong> The actual operating voltage of the battery. It dynamically changes as electrolyte concentrations change, governed by the Nernst Equation.</li>
+      </ul>
+
+      <h3>The Nernst Equation Formulation</h3>
+      <div class="reaction-box" style="margin: 10px 0;">
+        Ecell = E°cell - (R · T / n · F) · ln(Q)
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Description</th>
+            <th>Value / Unit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>E°cell</td><td>Standard Cell Potential</td><td>E°(Cathode) - E°(Anode) [V]</td></tr>
+          <tr><td>Ecell</td><td>Non-Standard Cell Potential</td><td>Real-time operating voltage [V]</td></tr>
+          <tr><td>R</td><td>Universal Gas Constant</td><td>8.314 J / (mol·K)</td></tr>
+          <tr><td>T</td><td>Absolute Temperature</td><td>Kelvin [K]</td></tr>
+          <tr><td>n</td><td>Moles of Electrons Transferred</td><td>Integer</td></tr>
+          <tr><td>F</td><td>Faraday Constant</td><td>96,485 C / mol e⁻</td></tr>
+          <tr><td>Q</td><td>Reaction Quotient</td><td>[Anode Ions] / [Cathode Ions]</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const COUPLES = {
+      Mg: { symbol: "Mg", name: "Magnesium", ion: "Mg²⁺", n: 2, e0: -2.37, color: "#94a3b8", textColor: "#0f172a" },
+      Al: { symbol: "Al", name: "Aluminum", ion: "Al³⁺", n: 3, e0: -1.66, color: "#cbd5e1", textColor: "#0f172a" },
+      Zn: { symbol: "Zn", name: "Zinc", ion: "Zn²⁺", n: 2, e0: -0.76, color: "#a1a1aa", textColor: "#0f172a" },
+      Fe: { symbol: "Fe", name: "Iron", ion: "Fe²⁺", n: 2, e0: -0.44, color: "#78716c", textColor: "#ffffff" },
+      Ni: { symbol: "Ni", name: "Nickel", ion: "Ni²⁺", n: 2, e0: -0.25, color: "#64748b", textColor: "#ffffff" },
+      Pb: { symbol: "Pb", name: "Lead", ion: "Pb²⁺", n: 1, e0: -0.13, color: "#475569", textColor: "#ffffff" },
+      Cu: { symbol: "Cu", name: "Copper", ion: "Cu²⁺", n: 2, e0: 0.34, color: "#b45309", textColor: "#ffffff" },
+      Ag: { symbol: "Ag", name: "Silver", ion: "Ag⁺", n: 1, e0: 0.80, color: "#e2e8f0", textColor: "#0f172a" }
+    };
+
+    const R = 8.314;
+    const F = 96485;
+
+    // DOM Elements
+    const coupleLeftSelect = document.getElementById('couple-left');
+    const coupleRightSelect = document.getElementById('couple-right');
+    const concLeftInput = document.getElementById('conc-left');
+    const concRightInput = document.getElementById('conc-right');
+    const tempInput = document.getElementById('temp-slider');
+
+    const concLeftVal = document.getElementById('conc-left-val');
+    const concRightVal = document.getElementById('conc-right-val');
+    const tempVal = document.getElementById('temp-val');
+
+    const rxnDisplay = document.getElementById('rxn-display');
+    const infoE0 = document.getElementById('info-e0');
+    const infoN = document.getElementById('info-n');
+    const infoQ = document.getElementById('info-q');
+    const infoEcell = document.getElementById('info-ecell');
+
+    const canvas = document.getElementById('cellCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let electronOffset = 0;
+    let anionProgress = 0;
+    let cationProgress = 0;
+
+    function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+
+    function calculateCell() {
+      const cLeft = COUPLES[coupleLeftSelect.value];
+      const cRight = COUPLES[coupleRightSelect.value];
+      const concL = parseFloat(concLeftInput.value);
+      const concR = parseFloat(concRightInput.value);
+      const T = parseFloat(tempInput.value);
+
+      let anode, cathode, concA, concC, isLeftAnode;
+
+      if (cLeft.e0 < cRight.e0) {
+        anode = cLeft; cathode = cRight;
+        concA = concL; concC = concR;
+        isLeftAnode = true;
+      } else if (cRight.e0 < cLeft.e0) {
+        anode = cRight; cathode = cLeft;
+        concA = concR; concC = concL;
+        isLeftAnode = false;
+      } else {
+        if (concL <= concR) {
+          anode = cLeft; cathode = cRight;
+          concA = concL; concC = concR;
+          isLeftAnode = true;
+        } else {
+          anode = cRight; cathode = cLeft;
+          concA = concR; concC = concL;
+          isLeftAnode = false;
+        }
+      }
+
+      const e0Cell = cathode.e0 - anode.e0;
+
+      const nA = anode.n;
+      const nC = cathode.n;
+      const lcm = (nA * nC) / gcd(nA, nC);
+      const coeffA = lcm / nA;
+      const coeffC = lcm / nC;
+      const n = lcm;
+
+      const Q = Math.pow(concA, coeffA) / Math.pow(concC, coeffC);
+      const eCell = e0Cell - ((R * T) / (n * F)) * Math.log(Q);
+
+      const strA_solid = coeffA === 1 ? anode.symbol : `${coeffA}${anode.symbol}`;
+      const strC_ion = coeffC === 1 ? cathode.ion : `${coeffC}${cathode.ion}`;
+      const strA_ion = coeffA === 1 ? anode.ion : `${coeffA}${anode.ion}`;
+      const strC_solid = coeffC === 1 ? cathode.symbol : `${coeffC}${cathode.symbol}`;
+      const rxnStr = `${strA_solid}(s) + ${strC_ion}(aq) → ${strA_ion}(aq) + ${strC_solid}(s)`;
+
+      return {
+        anode, cathode, concA, concC, isLeftAnode,
+        e0Cell, eCell, n, Q, T, rxnStr,
+        cLeft, cRight, concL, concR
+      };
+    }
+
+    function updateUI() {
+      concLeftVal.textContent = parseFloat(concLeftInput.value).toFixed(2) + " M";
+      concRightVal.textContent = parseFloat(concRightInput.value).toFixed(2) + " M";
+      tempVal.textContent = tempInput.value + " K";
+
+      const data = calculateCell();
+
+      rxnDisplay.textContent = data.rxnStr;
+      infoE0.textContent = (data.e0Cell >= 0 ? "+" : "") + data.e0Cell.toFixed(2) + " V";
+      infoN.textContent = data.n;
+      infoQ.textContent = data.Q < 0.001 || data.Q > 1000 ? data.Q.toExponential(2) : data.Q.toFixed(3);
+      infoEcell.textContent = (data.eCell >= 0 ? "+" : "") + data.eCell.toFixed(3) + " V";
+    }
+
+    function resizeCanvas() {
+      canvas.width = canvas.parentElement.clientWidth;
+      canvas.height = canvas.parentElement.clientHeight;
+    }
+
+    function drawElectrode(x, y, w, h, couple, isAnode) {
+      ctx.fillStyle = couple.color;
+      ctx.fillRect(x, y, w, h);
+      ctx.strokeStyle = isAnode ? "#fb923c" : "#4ade80";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(x, y, w, h);
+
+      ctx.fillStyle = couple.textColor;
+      ctx.font = "bold 22px system-ui";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(couple.symbol, x + w / 2, y + h * 0.4);
+
+      ctx.font = "bold 11px system-ui";
+      ctx.fillText(isAnode ? "(Anode)" : "(Cathode)", x + w / 2, y + h * 0.65);
+    }
+
+    function drawCurvedSaltBridge(leftCenterX, rightCenterX, startY, archHeight, thickness) {
+      const midX = (leftCenterX + rightCenterX) / 2;
+      const topY = startY - archHeight;
+
+      ctx.save();
+      
+      // Opaque salt bridge body
+      ctx.fillStyle = "#334155";
+      ctx.strokeStyle = "#94a3b8";
+      ctx.lineWidth = 3;
+
+      ctx.beginPath();
+      ctx.moveTo(leftCenterX - thickness / 2, startY);
+      ctx.quadraticCurveTo(leftCenterX - thickness / 2, topY, midX, topY);
+      ctx.quadraticCurveTo(rightCenterX + thickness / 2, topY, rightCenterX + thickness / 2, startY);
+      ctx.lineTo(rightCenterX - thickness / 2, startY);
+      ctx.quadraticCurveTo(rightCenterX - thickness / 2, topY + thickness, midX, topY + thickness);
+      ctx.quadraticCurveTo(leftCenterX + thickness / 2, topY + thickness, leftCenterX + thickness / 2, startY);
+      ctx.closePath();
+
+      ctx.fill();
+      ctx.stroke();
+
+      // Label
+      ctx.fillStyle = "#f8fafc";
+      ctx.font = "bold 12px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillText("Salt Bridge (KNO₃)", midX, topY - 8);
+
+      ctx.restore();
+    }
+
+    function getQuadraticPoint(p0, p1, p2, t) {
+      const oneMinusT = 1 - t;
+      return {
+        x: oneMinusT * oneMinusT * p0.x + 2 * oneMinusT * t * p1.x + t * t * p2.x,
+        y: oneMinusT * oneMinusT * p0.y + 2 * oneMinusT * t * p1.y + t * t * p2.y
+      };
+    }
+
+    function getQuadraticAngle(p0, p1, p2, t) {
+      const dx = 2 * (1 - t) * (p1.x - p0.x) + 2 * t * (p2.x - p1.x);
+      const dy = 2 * (1 - t) * (p1.y - p0.y) + 2 * t * (p2.y - p1.y);
+      return Math.atan2(dy, dx);
+    }
+
+    function drawFlowingIon(p0, p1, p2, t, label, color) {
+      const pos = getQuadraticPoint(p0, p1, p2, t);
+      const angle = getQuadraticAngle(p0, p1, p2, t);
+
+      ctx.save();
+      ctx.translate(pos.x, pos.y);
+      ctx.rotate(angle);
+
+      // Arrow path
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(-12, -4);
+      ctx.lineTo(2, -4);
+      ctx.lineTo(2, -8);
+      ctx.lineTo(12, 0);
+      ctx.lineTo(2, 8);
+      ctx.lineTo(2, 4);
+      ctx.lineTo(-12, 4);
+      ctx.closePath();
+      ctx.fill();
+
+      // Ion Text
+      ctx.rotate(-angle); // Keep text upright
+      ctx.font = "bold 11px system-ui";
+      ctx.fillStyle = "#ffffff";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.fillText(label, 0, -10);
+
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const data = calculateCell();
+
+      const w = canvas.width;
+      const h = canvas.height;
+
+      const beakerW = w * 0.32;
+      const beakerH = h * 0.45;
+      const beakerY = h * 0.45;
+      const beakerLeftX = w * 0.12;
+      const beakerRightX = w * 0.56;
+
+      ctx.fillStyle = "rgba(56, 189, 248, 0.1)";
+      ctx.strokeStyle = "#475569";
+      ctx.lineWidth = 3;
+
+      ctx.fillRect(beakerLeftX, beakerY, beakerW, beakerH);
+      ctx.strokeRect(beakerLeftX, beakerY, beakerW, beakerH);
+
+      ctx.fillRect(beakerRightX, beakerY, beakerW, beakerH);
+      ctx.strokeRect(beakerRightX, beakerY, beakerW, beakerH);
+
+      ctx.fillStyle = "rgba(56, 189, 248, 0.22)";
+      ctx.fillRect(beakerLeftX + 2, beakerY + 30, beakerW - 4, beakerH - 32);
+      ctx.fillRect(beakerRightX + 2, beakerY + 30, beakerW - 4, beakerH - 32);
+
+      const elecW = 44;
+      const elecH = beakerH * 0.8;
+      const elecLeftX = beakerLeftX + beakerW / 2 - elecW / 2;
+      const elecRightX = beakerRightX + beakerW / 2 - elecW / 2;
+      const elecY = beakerY - 15;
+
+      drawElectrode(elecLeftX, elecY, elecW, elecH, data.cLeft, data.isLeftAnode);
+      drawElectrode(elecRightX, elecY, elecW, elecH, data.cRight, !data.isLeftAnode);
+
+      // Curved Salt Bridge Drawing
+      const sbLeftX = beakerLeftX + beakerW * 0.78;
+      const sbRightX = beakerRightX + beakerW * 0.22;
+      const sbStartY = beakerY + 45;
+      const archH = 75;
+      const thickness = 28;
+
+      drawCurvedSaltBridge(sbLeftX, sbRightX, sbStartY, archH, thickness);
+
+      const wireY = h * 0.12;
+      const vmX = w * 0.5;
+      const vmR = 26;
+
+      const anodeX = data.isLeftAnode ? elecLeftX + elecW / 2 : elecRightX + elecW / 2;
+      const cathodeX = data.isLeftAnode ? elecRightX + elecW / 2 : elecLeftX + elecW / 2;
+      const anodeBodyY = elecY + elecH * 0.4;
+      const cathodeBodyY = elecY + elecH * 0.4;
+
+      ctx.strokeStyle = "#f59e0b";
+      ctx.lineWidth = 3;
+
+      ctx.beginPath();
+      ctx.moveTo(elecLeftX + elecW / 2, elecY + elecH * 0.4);
+      ctx.lineTo(elecLeftX + elecW / 2, wireY);
+      ctx.lineTo(vmX - vmR, wireY);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(vmX + vmR, wireY);
+      ctx.lineTo(elecRightX + elecW / 2, wireY);
+      ctx.lineTo(elecRightX + elecW / 2, elecY + elecH * 0.4);
+      ctx.stroke();
+
+      ctx.fillStyle = "#1e293b";
+      ctx.strokeStyle = "#38bdf8";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(vmX, wireY, vmR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "#4ade80";
+      ctx.font = "bold 11px monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText((data.eCell >= 0 ? "+" : "") + data.eCell.toFixed(2) + "V", vmX, wireY);
+
+      ctx.font = "bold 13px system-ui";
+      ctx.fillStyle = data.isLeftAnode ? "#fb923c" : "#4ade80";
+      ctx.fillText(data.isLeftAnode ? "ANODE (Oxidation)" : "CATHODE (Reduction)", beakerLeftX + beakerW / 2, beakerY + beakerH + 20);
+
+      ctx.fillStyle = !data.isLeftAnode ? "#fb923c" : "#4ade80";
+      ctx.fillText(!data.isLeftAnode ? "ANODE (Oxidation)" : "CATHODE (Reduction)", beakerRightX + beakerW / 2, beakerY + beakerH + 20);
+
+      ctx.font = "12px system-ui";
+      ctx.fillStyle = "#f8fafc";
+      ctx.fillText(`${data.cLeft.ion}: ${data.concL.toFixed(2)} M`, beakerLeftX + beakerW / 2, beakerY + beakerH - 12);
+      ctx.fillText(`${data.cRight.ion}: ${data.concR.toFixed(2)} M`, beakerRightX + beakerW / 2, beakerY + beakerH - 12);
+
+      if (Math.abs(data.eCell) > 0.001) {
+        // External Circuit Electrons
+        const speed = Math.max(0.6, Math.min(Math.abs(data.eCell) * 2.5, 4.5));
+        electronOffset = (electronOffset + speed);
+
+        const path = [
+          { x: anodeX, y: anodeBodyY },
+          { x: anodeX, y: wireY },
+          { x: vmX - vmR, y: wireY },
+          { x: vmX + vmR, y: wireY },
+          { x: cathodeX, y: wireY },
+          { x: cathodeX, y: cathodeBodyY }
+        ];
+
+        let totalLen = 0;
+        const segments = [];
+        for (let i = 0; i < path.length - 1; i++) {
+          const dx = path[i+1].x - path[i].x;
+          const dy = path[i+1].y - path[i].y;
+          const len = Math.sqrt(dx * dx + dy * dy);
+          segments.push({ start: path[i], end: path[i+1], len });
+          totalLen += len;
+        }
+
+        const dotSpacing = 22;
+        ctx.fillStyle = "#38bdf8";
+
+        for (let d = (electronOffset % dotSpacing); d < totalLen; d += dotSpacing) {
+          let accumulated = 0;
+          for (let seg of segments) {
+            if (d >= accumulated && d <= accumulated + seg.len) {
+              const segT = (d - accumulated) / seg.len;
+              const px = seg.start.x + segT * (seg.end.x - seg.start.x);
+              const py = seg.start.y + segT * (seg.end.y - seg.start.y);
+
+              ctx.beginPath();
+              ctx.arc(px, py, 4, 0, Math.PI * 2);
+              ctx.fill();
+
+              ctx.fillStyle = "#0f172a";
+              ctx.font = "bold 7px system-ui";
+              ctx.fillText("e⁻", px, py);
+              ctx.fillStyle = "#38bdf8";
+              break;
+            }
+            accumulated += seg.len;
+          }
+        }
+
+        // Salt Bridge Continuous Ion Migration (Anion -> Anode, Cation -> Cathode)
+        anionProgress = (anionProgress + 0.006) % 1;
+        cationProgress = (cationProgress + 0.006) % 1;
+
+        const midX = (sbLeftX + sbRightX) / 2;
+        const topY = sbStartY - archH + thickness / 2;
+
+        const anodeSbX = data.isLeftAnode ? sbLeftX : sbRightX;
+        const cathodeSbX = data.isLeftAnode ? sbRightX : sbLeftX;
+
+        // Anion Path (Start at Bridge Apex -> Move Down to Anode Beaker)
+        const anionP0 = { x: midX, y: topY };
+        const anionP1 = { x: anodeSbX, y: topY };
+        const anionP2 = { x: anodeSbX, y: sbStartY };
+
+        // Cation Path (Start at Bridge Apex -> Move Down to Cathode Beaker)
+        const cationP0 = { x: midX, y: topY };
+        const cationP1 = { x: cathodeSbX, y: topY };
+        const cationP2 = { x: cathodeSbX, y: sbStartY };
+
+        // Draw flowing arrows
+        drawFlowingIon(anionP0, anionP1, anionP2, anionProgress, "NO3⁻", "#fb923c");
+        drawFlowingIon(cationP0, cationP1, cationP2, cationProgress, "K⁺", "#4ade80");
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    coupleLeftSelect.addEventListener('change', updateUI);
+    coupleRightSelect.addEventListener('change', updateUI);
+    concLeftInput.addEventListener('input', updateUI);
+    concRightInput.addEventListener('input', updateUI);
+    tempInput.addEventListener('input', updateUI);
+
+    window.addEventListener('resize', resizeCanvas);
+
+    resizeCanvas();
+    updateUI();
+    draw();
+  </script>
+</body>
+</html>

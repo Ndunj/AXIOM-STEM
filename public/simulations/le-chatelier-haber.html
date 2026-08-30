@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Le Châtelier's Principle Simulation: Haber Process</title>
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --card-bg: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-blue: #38bdf8;   /* N2 */
+      --accent-green: #4ade80;  /* H2 */
+      --accent-purple: #c084fc; /* NH3 */
+      --accent-orange: #fb923c;
+      --border-color: #334155;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      line-height: 1.5;
+      padding: 16px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    header { text-align: center; }
+    header h1 { color: var(--accent-blue); font-size: 2rem; }
+    header p { color: var(--text-muted); }
+
+    .app-layout {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 16px;
+    }
+
+    @media (max-width: 900px) {
+      .app-layout { grid-template-columns: 1fr; }
+    }
+
+    .viewport-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      position: relative;
+      height: 560px;
+      width: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .controls-panel {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      accent-color: var(--accent-blue);
+    }
+
+    .range-val {
+      font-weight: 600;
+      color: var(--accent-blue);
+      min-width: 65px;
+      text-align: right;
+      font-size: 0.9rem;
+    }
+
+    .btn-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    button {
+      background-color: #0f172a;
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    button:hover {
+      border-color: var(--accent-blue);
+      color: var(--accent-blue);
+      background-color: #1e293b;
+    }
+
+    .info-card {
+      background-color: #0f172a;
+      border-radius: 6px;
+      padding: 12px;
+      border: 1px solid var(--border-color);
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      padding: 4px 0;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: var(--text-muted); }
+    .info-value { font-weight: 600; color: var(--accent-green); text-align: right; }
+
+    .reaction-box {
+      background: #0f172a;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 10px;
+      text-align: center;
+      font-family: monospace;
+      font-size: 0.95rem;
+      color: var(--accent-orange);
+    }
+
+    .theory-section {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 24px;
+    }
+
+    .theory-section h2 { color: var(--accent-blue); margin-bottom: 12px; }
+    .theory-section h3 { color: var(--accent-green); margin: 16px 0 8px 0; }
+    .theory-section p { margin-bottom: 8px; }
+    .theory-section ul { margin-left: 20px; margin-bottom: 12px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 0.88rem;
+    }
+
+    th, td {
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+      text-align: left;
+    }
+
+    th { background-color: #0f172a; color: var(--accent-blue); }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>Le Châtelier's Principle Visualizer</h1>
+      <p>Dynamic Equilibrium in the Haber Process: N₂(g) + 3H₂(g) ⇌ 2NH₃(g) + Heat</p>
+    </header>
+
+    <div class="app-layout">
+      <div class="viewport-card">
+        <canvas id="simCanvas"></canvas>
+      </div>
+
+      <div class="controls-panel">
+        <div class="reaction-box">
+          N₂(g) + 3H₂(g) ⇌ 2NH₃(g) &nbsp;&nbsp; (ΔH < 0)
+        </div>
+
+        <div class="control-group">
+          <label for="temp-slider">Temperature (T)</label>
+          <div class="slider-container">
+            <input type="range" id="temp-slider" min="300" max="700" step="5" value="450">
+            <span class="range-val" id="temp-val">450 K</span>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label for="vol-slider">Container Volume (V)</label>
+          <div class="slider-container">
+            <input type="range" id="vol-slider" min="1.0" max="5.0" step="0.1" value="2.5">
+            <span class="range-val" id="vol-val">2.5 L</span>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label>Disturbances & Injections</label>
+          <div class="btn-grid">
+            <button id="btn-add-n2">+ Inject N₂</button>
+            <button id="btn-add-h2">+ Inject H₂</button>
+            <button id="btn-rem-nh3">- Remove NH₃</button>
+            <button id="btn-add-nh3">+ Inject NH₃</button>
+            <button id="btn-compress">Quick Compress</button>
+            <button id="btn-expand">Quick Expand</button>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-row">
+            <span class="info-label">Equilibrium Constant K_c(T)</span>
+            <span class="info-value" id="info-kc">0.500</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Reaction Quotient Q_c</span>
+            <span class="info-value" id="info-qc" style="color: var(--accent-blue);">0.500</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Shift Status</span>
+            <span class="info-value" id="info-status" style="color: var(--accent-orange);">At Equilibrium</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="theory-section">
+      <h2>Equilibrium Principles & Le Châtelier's Law</h2>
+      <p>
+        Le Châtelier's principle states that if a dynamic equilibrium system is subjected to a change in temperature, pressure, or species concentrations, the system shifts its position to partially counteract the disturbance.
+      </p>
+
+      <h3>Reaction Quotient ($Q_c$) vs Equilibrium Constant ($K_c$)</h3>
+      <p>For the gas-phase Haber process, the concentration reaction quotient is calculated as:</p>
+      <div class="reaction-box" style="margin: 10px 0;">
+        Q_c = [NH₃]² / ([N₂] · [H₂]³) = (n_NH₃² · V²) / (n_N₂ · n_H₂³)
+      </div>
+      <ul>
+        <li><strong>Q_c < K_c:</strong> The forward reaction is favored to convert reactants into products (shift right).</li>
+        <li><strong>Q_c > K_c:</strong> The reverse reaction is favored to consume excess product (shift left).</li>
+        <li><strong>Q_c = K_c:</strong> The system is at dynamic equilibrium (no net change in concentrations).</li>
+      </ul>
+
+      <h3>Thermodynamics & Pressure Responses</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Disturbance</th>
+            <th>Immediate Direct Effect</th>
+            <th>Le Châtelier Counter-Shift</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Increase Temperature</td><td>Increases thermal energy</td><td>Shifts <strong>Left</strong> (endothermic direction to absorb heat; K_c decreases)</td></tr>
+          <tr><td>Decrease Volume (Compress)</td><td>Increases total pressure & concentration</td><td>Shifts <strong>Right</strong> (toward fewer gas moles: 4 moles → 2 moles)</td></tr>
+          <tr><td>Inject Reactant (N₂ or H₂)</td><td>Raises reactant concentrations ($Q_c < K_c$)</td><td>Shifts <strong>Right</strong> (consumes added reactants)</td></tr>
+          <tr><td>Remove Product (NH₃)</td><td>Lowers product concentration ($Q_c < K_c$)</td><td>Shifts <strong>Right</strong> (replenishes missing ammonia)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // State variables
+    let T = 450;  // Temperature (K)
+    let V = 2.5;  // Volume (L)
+
+    // Mole amounts (n_N2, n_H2, n_NH3)
+    let n_N2 = 2.0;
+    let n_H2 = 4.0;
+    let n_NH3 = 2.0;
+
+    // Van't Hoff parameters for schematic K_c(T)
+    const T_ref = 450;
+    const K_ref = 0.5;
+    const deltaH_R = -4500; // Schematic exothermic constant (dH / R)
+
+    function getKc(temp) {
+      return K_ref * Math.exp(-deltaH_R * (1 / temp - 1 / T_ref));
+    }
+
+    function getQc(n1, n2, n3, vol) {
+      // Q = ([NH3]^2) / ([N2] * [H2]^3) = (n_NH3^2 * V^2) / (n_N2 * n_H2^3)
+      const concN2 = Math.max(0.01, n1 / vol);
+      const concH2 = Math.max(0.01, n2 / vol);
+      const concNH3 = Math.max(0.0, n3 / vol);
+      return (concNH3 * concNH3) / (concN2 * Math.pow(concH2, 3));
+    }
+
+    // Solve equilibrium extent (xi) for current moles, V, and target K_c
+    function solveEquilibriumExtent(n1, n2, n3, vol, Kc) {
+      let xi = 0;
+      let minXi = -n3 / 2; // Maximum possible reverse shift
+      let maxXi = Math.min(n1, n2 / 3); // Maximum possible forward shift
+
+      // Bisection method to find xi where Q(xi) = Kc
+      for (let iter = 0; iter < 40; iter++) {
+        let mid = (minXi + maxXi) / 2;
+        let testN1 = n1 - mid;
+        let testN2 = n2 - 3 * mid;
+        let testN3 = n3 + 2 * mid;
+
+        let q = getQc(testN1, testN2, testN3, vol);
+
+        if (q < Kc) {
+          minXi = mid; // Need forward shift to increase Q
+        } else {
+          maxXi = mid; // Need reverse shift to decrease Q
+        }
+      }
+      return (minXi + maxXi) / 2;
+    }
+
+    // DOM Elements
+    const tempSlider = document.getElementById('temp-slider');
+    const volSlider = document.getElementById('vol-slider');
+    const tempVal = document.getElementById('temp-val');
+    const volVal = document.getElementById('vol-val');
+
+    const infoKc = document.getElementById('info-kc');
+    const infoQc = document.getElementById('info-qc');
+    const infoStatus = document.getElementById('info-status');
+
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Particle rendering system
+    let particles = [];
+
+    function initParticles() {
+      particles = [];
+      const total = 70;
+      for (let i = 0; i < total; i++) {
+        let type = i < 20 ? 'N2' : (i < 50 ? 'H2' : 'NH3');
+        particles.push({
+          type: type,
+          x: Math.random(),
+          y: Math.random(),
+          vx: (Math.random() - 0.5) * 0.005,
+          vy: (Math.random() - 0.5) * 0.005
+        });
+      }
+    }
+
+    function resizeCanvas() {
+      canvas.width = canvas.parentElement.clientWidth;
+      canvas.height = canvas.parentElement.clientHeight;
+    }
+
+    // Event Listeners
+    tempSlider.addEventListener('input', (e) => {
+      T = parseFloat(e.target.value);
+      tempVal.textContent = T + " K";
+    });
+
+    volSlider.addEventListener('input', (e) => {
+      V = parseFloat(e.target.value);
+      volVal.textContent = V.toFixed(1) + " L";
+    });
+
+    document.getElementById('btn-add-n2').addEventListener('click', () => { n_N2 += 1.5; });
+    document.getElementById('btn-add-h2').addEventListener('click', () => { n_H2 += 3.0; });
+    document.getElementById('btn-rem-nh3').addEventListener('click', () => { n_NH3 = Math.max(0.1, n_NH3 - 1.5); });
+    document.getElementById('btn-add-nh3').addEventListener('click', () => { n_NH3 += 1.5; });
+    
+    document.getElementById('btn-compress').addEventListener('click', () => {
+      V = Math.max(1.0, V - 1.0);
+      volSlider.value = V;
+      volVal.textContent = V.toFixed(1) + " L";
+    });
+
+    document.getElementById('btn-expand').addEventListener('click', () => {
+      V = Math.min(5.0, V + 1.0);
+      volSlider.value = V;
+      volVal.textContent = V.toFixed(1) + " L";
+    });
+
+    // Main Simulation Loop
+    function updateAndDraw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const Kc = getKc(T);
+      const xiTarget = solveEquilibriumExtent(n_N2, n_H2, n_NH3, V, Kc);
+
+      // Smooth first-order relaxation toward equilibrium composition
+      const blendRate = 0.025;
+      const dXi = xiTarget * blendRate;
+
+      n_N2 -= dXi;
+      n_H2 -= 3 * dXi;
+      n_NH3 += 2 * dXi;
+
+      // Prevent non-physical negative values
+      n_N2 = Math.max(0.01, n_N2);
+      n_H2 = Math.max(0.01, n_H2);
+      n_NH3 = Math.max(0.00, n_NH3);
+
+      const Qc = getQc(n_N2, n_H2, n_NH3, V);
+
+      // UI Text updates
+      infoKc.textContent = Kc < 0.01 || Kc > 100 ? Kc.toExponential(2) : Kc.toFixed(3);
+      infoQc.textContent = Qc < 0.01 || Qc > 100 ? Qc.toExponential(2) : Qc.toFixed(3);
+
+      const diff = Qc - Kc;
+      if (Math.abs(diff) / Kc < 0.03) {
+        infoStatus.textContent = "At Equilibrium";
+        infoStatus.style.color = "var(--accent-green)";
+      } else if (diff < 0) {
+        infoStatus.textContent = "Shifting Right (Forward →)";
+        infoStatus.style.color = "var(--accent-blue)";
+      } else {
+        infoStatus.textContent = "Shifting Left (← Reverse)";
+        infoStatus.style.color = "var(--accent-orange)";
+      }
+
+      // Render Visual Container
+      const w = canvas.width;
+      const h = canvas.height;
+
+      // Piston Box dimensions based on Volume V (V ranges from 1.0 to 5.0)
+      const containerW = w * 0.45;
+      const minH = h * 0.22;
+      const maxH = h * 0.72;
+      const containerH = minH + ((V - 1.0) / 4.0) * (maxH - minH);
+      const containerX = w * 0.05;
+      const containerY = h * 0.82 - containerH;
+
+      // Draw Container Background & Gas
+      ctx.fillStyle = "rgba(15, 23, 42, 0.8)";
+      ctx.fillRect(containerX, containerY, containerW, containerH);
+
+      // Heat glow dependent on T
+      const tempRatio = (T - 300) / 400;
+      ctx.fillStyle = `rgba(251, 146, 60, ${tempRatio * 0.15})`;
+      ctx.fillRect(containerX, containerY, containerW, containerH);
+
+      ctx.strokeStyle = "#475569";
+      ctx.lineWidth = 4;
+      ctx.strokeRect(containerX, containerY, containerW, containerH);
+
+      // Draw Top Piston Handle
+      ctx.fillStyle = "#334155";
+      ctx.fillRect(containerX - 10, containerY - 12, containerW + 20, 12);
+      ctx.fillStyle = "#94a3b8";
+      ctx.fillRect(containerX + containerW / 2 - 8, containerY - 35, 16, 23);
+
+      // Particles Animation inside Container
+      const speedMult = 0.5 + (T / 300);
+      particles.forEach((p, idx) => {
+        p.x += p.vx * speedMult;
+        p.y += p.vy * speedMult;
+
+        if (p.x < 0.03 || p.x > 0.97) p.vx *= -1;
+        if (p.y < 0.03 || p.y > 0.97) p.vy *= -1;
+
+        const px = containerX + p.x * containerW;
+        const py = containerY + p.y * containerH;
+
+        // Particle type proportioning
+        const totalMoles = n_N2 + n_H2 + n_NH3;
+        const fracN2 = n_N2 / totalMoles;
+        const fracH2 = (n_N2 + n_H2) / totalMoles;
+        const r = idx / particles.length;
+
+        let color = "#38bdf8"; // N2
+        let size = 5;
+        if (r > fracN2 && r <= fracH2) {
+          color = "#4ade80"; // H2
+          size = 3;
+        } else if (r > fracH2) {
+          color = "#c084fc"; // NH3
+          size = 6;
+        }
+
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(px, py, size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // Label Container
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "bold 12px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillText(`Gas Chamber (V = ${V.toFixed(1)} L, T = ${T} K)`, containerX + containerW / 2, containerY + containerH + 20);
+
+      // Render Horizontal Bars for Mole Composition
+      const barBoxX = w * 0.55;
+      const barBoxY = h * 0.12;
+      const barBoxW = w * 0.40;
+      const maxBarW = barBoxW - 90;
+
+      ctx.fillStyle = "#f8fafc";
+      ctx.font = "bold 14px system-ui";
+      ctx.textAlign = "left";
+      ctx.fillText("Mole Composition (n)", barBoxX, barBoxY);
+
+      const species = [
+        { label: "N₂", moles: n_N2, color: "#38bdf8" },
+        { label: "H₂", moles: n_H2, color: "#4ade80" },
+        { label: "NH₃", moles: n_NH3, color: "#c084fc" }
+      ];
+
+      const maxScaleMoles = 10.0;
+
+      species.forEach((s, idx) => {
+        const rowY = barBoxY + 35 + idx * 45;
+
+        // Species Label
+        ctx.fillStyle = s.color;
+        ctx.font = "bold 13px system-ui";
+        ctx.fillText(s.label, barBoxX, rowY + 14);
+
+        // Bar Track Background
+        ctx.fillStyle = "#0f172a";
+        ctx.fillRect(barBoxX + 45, rowY, maxBarW, 20);
+
+        // Active Bar Fill
+        const currentBarW = Math.min(maxBarW, (s.moles / maxScaleMoles) * maxBarW);
+        ctx.fillStyle = s.color;
+        ctx.fillRect(barBoxX + 45, rowY, currentBarW, 20);
+
+        // Value text
+        ctx.fillStyle = "#f8fafc";
+        ctx.font = "bold 12px monospace";
+        ctx.fillText(`${s.moles.toFixed(2)} mol`, barBoxX + 55 + maxBarW, rowY + 14);
+      });
+
+      // Concentrations Display Box
+      const concBoxY = barBoxY + 190;
+      ctx.fillStyle = "#0f172a";
+      ctx.strokeStyle = "#334155";
+      ctx.lineWidth = 1;
+      ctx.fillRect(barBoxX, concBoxY, barBoxW, 110);
+      ctx.strokeRect(barBoxX, concBoxY, barBoxW, 110);
+
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "bold 12px system-ui";
+      ctx.fillText("Molar Concentrations ([M])", barBoxX + 12, concBoxY + 24);
+
+      ctx.font = "12px monospace";
+      ctx.fillStyle = "#38bdf8";
+      ctx.fillText(`[N₂]  = ${(n_N2 / V).toFixed(3)} M`, barBoxX + 12, concBoxY + 48);
+      ctx.fillStyle = "#4ade80";
+      ctx.fillText(`[H₂]  = ${(n_H2 / V).toFixed(3)} M`, barBoxX + 12, concBoxY + 68);
+      ctx.fillStyle = "#c084fc";
+      ctx.fillText(`[NH₃] = ${(n_NH3 / V).toFixed(3)} M`, barBoxX + 12, concBoxY + 88);
+
+      requestAnimationFrame(updateAndDraw);
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    resizeCanvas();
+    initParticles();
+    updateAndDraw();
+  </script>
+</body>
+</html>

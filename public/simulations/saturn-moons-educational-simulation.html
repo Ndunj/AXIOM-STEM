@@ -42,9 +42,33 @@
       border-radius: 3px;
     }
     h1 {
-      margin: 0 0 4px 0;
+      margin: 0 0 12px 0;
       font-size: 20px;
       color: #ffd700;
+    }
+    .expl-toggle-btn {
+      width: 100%;
+      background: rgba(0, 229, 255, 0.15);
+      border: 1px solid #00e5ff;
+      color: #00e5ff;
+      padding: 10px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      transition: background 0.2s;
+    }
+    .expl-toggle-btn:hover {
+      background: rgba(0, 229, 255, 0.3);
+    }
+    #explanatory-content {
+      display: none;
+    }
+    #explanatory-content.visible {
+      display: block;
     }
     .controls-hint {
       margin: 0 0 15px 0;
@@ -52,6 +76,18 @@
       color: #aaa;
       border-bottom: 1px solid rgba(255, 255, 255, 0.15);
       padding-bottom: 8px;
+    }
+    .controls-hint ul {
+      margin: 5px 0 0 0;
+      padding-left: 16px;
+      line-height: 1.5;
+    }
+    .controls-hint key {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-family: monospace;
+      color: #00e5ff;
     }
     .section-title {
       font-size: 14px;
@@ -91,43 +127,63 @@
 
 <div id="ui-overlay">
   <h1>Saturn Orbital Simulation</h1>
-  <div class="controls-hint">Left Click + Drag: Rotate | Right Click + Drag: Pan | Scroll: Zoom</div>
+  <button class="expl-toggle-btn" id="expl-toggle-btn">Explanatory Note</button>
+  
+  <div id="explanatory-content">
+    <div class="controls-hint">
+      <strong>Navigation Controls:</strong>
+      <ul>
+        <li><strong>Rotate:</strong> Left Click + Drag</li>
+        <li><strong>Pan:</strong> Right Click + Drag</li>
+        <li><strong>Zoom:</strong> Scroll Wheel or <key>Q</key> / <key>E</key></li>
+        <li><strong>Move Camera:</strong> <key>W</key> <key>A</key> <key>S</key> <key>D</key> or <key>Arrow Keys</key></li>
+      </ul>
+    </div>
 
-  <div class="section-title">Key Characteristics</div>
+    <div class="section-title">Key Characteristics</div>
 
-  <div class="info-card">
-    <strong>The Ring System</strong>
-    <p>Saturn's defining feature is its extensive ring system, composed mostly of water ice, rocky debris, and dust particles. These rings span tens of thousands of kilometers yet are remarkably thin—often less than a kilometer thick.</p>
-  </div>
+    <div class="info-card">
+      <strong>The Ring System</strong>
+      <p>Saturn's defining feature is its extensive ring system, composed mostly of water ice, rocky debris, and dust particles. These rings span tens of thousands of kilometers yet are remarkably thin—often less than a kilometer thick.</p>
+    </div>
 
-  <div class="info-card">
-    <strong>Moons & Satellites</strong>
-    <p>Saturn hosts a diverse system of over 100 moons. Visible in this simulation:</p>
-    <ul class="moon-list">
-      <li>Mimas</li>
-      <li>Enceladus</li>
-      <li>Tethys</li>
-      <li>Dione</li>
-      <li>Rhea</li>
-      <li>Titan</li>
-      <li>Iapetus</li>
-    </ul>
-  </div>
+    <div class="info-card">
+      <strong>Moons & Satellites</strong>
+      <p>Saturn hosts a diverse system of over 100 moons. Visible in this simulation:</p>
+      <ul class="moon-list">
+        <li>Mimas</li>
+        <li>Enceladus</li>
+        <li>Tethys</li>
+        <li>Dione</li>
+        <li>Rhea</li>
+        <li>Titan</li>
+        <li>Iapetus</li>
+      </ul>
+    </div>
 
-  <div class="info-card">
-    <strong>Atmospheric Features</strong>
-    <p>Saturn displays faint atmospheric banding caused by high-speed winds exceeding 1,800 km/h, alongside a unique hexagonal jet stream surrounding its north pole.</p>
-  </div>
+    <div class="info-card">
+      <strong>Atmospheric Features</strong>
+      <p>Saturn displays faint atmospheric banding caused by high-speed winds exceeding 1,800 km/h, alongside a unique hexagonal jet stream surrounding its north pole.</p>
+    </div>
 
-  <div class="info-card">
-    <strong>Density</strong>
-    <p>Saturn is the least dense planet in the Solar System, with an average density lower than that of water.</p>
+    <div class="info-card">
+      <strong>Density</strong>
+      <p>Saturn is the least dense planet in the Solar System, with an average density lower than that of water.</p>
+    </div>
   </div>
 </div>
 
 <div id="canvas-container"></div>
 
 <script>
+  // --- UI Toggle for Explanatory Note ---
+  const explBtn = document.getElementById('expl-toggle-btn');
+  const explContent = document.getElementById('explanatory-content');
+  explBtn.addEventListener('click', () => {
+    explContent.classList.toggle('visible');
+    explBtn.textContent = explContent.classList.contains('visible') ? 'Hide Explanatory Note' : 'Explanatory Note';
+  });
+
   // --- Scene Setup ---
   const container = document.getElementById('canvas-container');
   const scene = new THREE.Scene();
@@ -144,6 +200,41 @@
   controls.enableDamping = true;
   controls.dampingFactor = 0.05;
   controls.target.set(0, 0, 0);
+
+  // --- Keyboard Control System ---
+  const keyState = {};
+  window.addEventListener('keydown', (e) => { keyState[e.code] = true; });
+  window.addEventListener('keyup', (e) => { keyState[e.code] = false; });
+
+  function handleKeyboardNavigation() {
+    const moveSpeed = 4.0;
+    const zoomSpeed = 5.0;
+
+    if (keyState['KeyA'] || keyState['ArrowLeft']) {
+      controls.target.x -= moveSpeed;
+      camera.position.x -= moveSpeed;
+    }
+    if (keyState['KeyD'] || keyState['ArrowRight']) {
+      controls.target.x += moveSpeed;
+      camera.position.x += moveSpeed;
+    }
+    if (keyState['KeyW'] || keyState['ArrowUp']) {
+      controls.target.y += moveSpeed;
+      camera.position.y += moveSpeed;
+    }
+    if (keyState['KeyS'] || keyState['ArrowDown']) {
+      controls.target.y -= moveSpeed;
+      camera.position.y -= moveSpeed;
+    }
+    if (keyState['KeyQ']) {
+      const dir = new THREE.Vector3().subVectors(controls.target, camera.position).normalize();
+      camera.position.addScaledVector(dir, zoomSpeed);
+    }
+    if (keyState['KeyE']) {
+      const dir = new THREE.Vector3().subVectors(controls.target, camera.position).normalize();
+      camera.position.addScaledVector(dir, -zoomSpeed);
+    }
+  }
 
   // --- Lighting ---
   const ambientLight = new THREE.AmbientLight(0x555555);
@@ -189,7 +280,6 @@
   const sunGroup = new THREE.Group();
   scene.add(sunGroup);
 
-  // 1. Fixed Circumference Golden Radial Glow Sprite
   function createUniformGlowTexture() {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
@@ -228,7 +318,6 @@
   sunGlowSprite.scale.set(140, 140, 1.0);
   sunGroup.add(sunGlowSprite);
 
-  // 2. Larger Inner Sun Core Sphere (Radius 36)
   const sunCoreMat = new THREE.MeshStandardMaterial({
     color: 0xfffcf0,
     emissive: 0xffd700,
@@ -242,7 +331,6 @@
   );
   sunGroup.add(sunCore);
 
-  // Extra Large Sun Label
   const sunLabel = createTextLabel("SUN", "#ffffff", 64, 60, 15);
   sunLabel.position.set(0, 68, 0);
   sunGroup.add(sunLabel);
@@ -256,18 +344,16 @@
   saturnGroup.position.x = saturnOrbitRadius;
   saturnPivot.add(saturnGroup);
 
-  // --- Saturn Body with Fine Surface Lines ---
+  // --- Saturn Body ---
   const saturnGeo = new THREE.SphereGeometry(14, 64, 64);
   const saturnMat = new THREE.MeshStandardMaterial({ color: 0xdfc088, roughness: 0.5 });
   const saturn = new THREE.Mesh(saturnGeo, saturnMat);
   saturnGroup.add(saturn);
 
-  // Extra Large Saturn Label
   const saturnLabel = createTextLabel("SATURN", "#ffd700", 64, 64, 16);
   saturnLabel.position.set(0, 26, 0);
   saturnGroup.add(saturnLabel);
 
-  // Fine Surface Lines across Saturn
   const lineCount = 18;
   for (let i = 0; i < lineCount; i++) {
     const latAngle = ((i / lineCount) - 0.5) * Math.PI * 0.85;
@@ -290,7 +376,7 @@
 
   saturnGroup.rotation.z = 0.4;
 
-  // --- Multi-Colored Concentric Rings & Outlines ---
+  // --- Multi-Colored Concentric Rings ---
   const ringLayers = [
     { inner: 17, outer: 21, color: 0xe07a5f, opacity: 0.85 },
     { inner: 21.5, outer: 27, color: 0x3d5a80, opacity: 0.90 },
@@ -363,15 +449,25 @@
     moons.push({ group: moonGroup, speed: data.speed, angle: Math.random() * Math.PI * 2 });
   });
 
-  // --- Sun Orbit Line ---
-  const sunOrbitPath = new THREE.Mesh(
-    new THREE.RingGeometry(saturnOrbitRadius - 0.4, saturnOrbitRadius + 0.4, 256),
-    new THREE.MeshBasicMaterial({ color: 0xffd700, side: THREE.DoubleSide, transparent: true, opacity: 0.2 })
-  );
-  sunOrbitPath.rotation.x = Math.PI / 2;
-  scene.add(sunOrbitPath);
+  // --- Softened Saturn Orbit Path Line ---
+  const sunOrbitGeo = new THREE.BufferGeometry();
+  const sunOrbitPts = [];
+  const orbitSegments = 512;
+  for (let i = 0; i <= orbitSegments; i++) {
+    const theta = (i / orbitSegments) * Math.PI * 2;
+    sunOrbitPts.push(new THREE.Vector3(saturnOrbitRadius * Math.cos(theta), 0, saturnOrbitRadius * Math.sin(theta)));
+  }
+  sunOrbitGeo.setFromPoints(sunOrbitPts);
 
-  // --- Asteroids Labeled "ASTEROID" ---
+  const sunOrbitMat = new THREE.LineBasicMaterial({
+    color: 0xffd700,
+    transparent: true,
+    opacity: 0.45
+  });
+  const sunOrbitLine = new THREE.Line(sunOrbitGeo, sunOrbitMat);
+  scene.add(sunOrbitLine);
+
+  // --- Asteroids ---
   const asteroidGroup = new THREE.Group();
   scene.add(asteroidGroup);
   const asteroids = [];
@@ -424,7 +520,6 @@
   cometTail.position.z = -12.5;
   comet.add(cometTail);
 
-  // Comet Label Attachment
   const cometLabel = createTextLabel("COMET", "#00e5ff", 36, 32, 8);
   cometLabel.position.set(0, 6, 0);
   comet.add(cometLabel);
@@ -444,27 +539,22 @@
 
     time += 0.0025;
 
-    // Gentle Pulsating Gold Glow
+    handleKeyboardNavigation();
+
     const pulseFactor = 1 + Math.sin(time * 3) * 0.05;
     sunGlowSprite.scale.set(140 * pulseFactor, 140 * pulseFactor, 1.0);
     glowSpriteMaterial.opacity = 0.90 + Math.sin(time * 3) * 0.10;
 
-    // Sync inner sun core emissive warmth
     sunCoreMat.emissiveIntensity = 0.5 + Math.sin(time * 3) * 0.1;
 
-    // Counter-clockwise Orbit around Sun
     saturnPivot.rotation.y = time;
-
-    // Saturn Self-Rotation
     saturn.rotation.y += 0.008;
 
-    // Moons Movement
     moons.forEach(m => {
       m.angle += m.speed;
       m.group.rotation.y = m.angle;
     });
 
-    // Move Asteroids
     asteroids.forEach(a => {
       a.mesh.position.add(a.velocity);
       a.mesh.rotation.x += 0.008;
@@ -474,7 +564,6 @@
       if (Math.abs(a.mesh.position.z) > 380) a.mesh.position.z *= -1;
     });
 
-    // Comet Movement
     comet.position.x += 1.6;
     comet.position.z += 0.5;
     comet.lookAt(comet.position.clone().add(new THREE.Vector3(1.6, 0, 0.5)));
@@ -483,7 +572,6 @@
       resetComet();
     }
 
-    // Twinkling Starfield
     starMaterial.opacity = 0.65 + Math.sin(time * 6) * 0.25;
 
     controls.update();

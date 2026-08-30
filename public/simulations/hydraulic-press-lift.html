@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hydraulic Press - Multi-Stroke Significant Lift Simulation</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: #1e293b;
+            --accent-color: #38bdf8;
+            --accent-hover: #0284c7;
+            --text-color: #f8fafc;
+            --border-color: #334155;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            color: var(--accent-color);
+            text-align: center;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            max-width: 1180px;
+        }
+
+        @media (min-width: 850px) {
+            .container {
+                display: grid;
+                grid-template-columns: 1fr 370px;
+            }
+        }
+
+        .canvas-container {
+            position: relative;
+            background-color: #020617;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        .controls-panel {
+            background-color: var(--panel-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        label span {
+            color: var(--accent-color);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: #475569;
+            border-radius: 3px;
+            outline: none;
+            accent-color: var(--accent-color);
+        }
+
+        select {
+            width: 100%;
+            padding: 8px 10px;
+            background-color: #0f172a;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.88rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .calc-panel {
+            background-color: #020617;
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.78rem;
+            line-height: 1.45;
+            color: #38bdf8;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .calc-title {
+            font-weight: bold;
+            color: #f8fafc;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 4px;
+            margin-bottom: 4px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: #0f172a;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+            color: #ffffff;
+        }
+
+        .btn-secondary {
+            background-color: #475569;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #334155;
+        }
+
+        .status-box {
+            padding: 8px;
+            border-radius: 6px;
+            background-color: #0f172a;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+
+        /* Physics Explanation Card Styles */
+        .physics-section {
+            width: 100%;
+            max-width: 1180px;
+            margin-top: 25px;
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .physics-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 16px;
+        }
+
+        .physics-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        @media (min-width: 768px) {
+            .physics-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .physics-card {
+            background-color: #020617;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .physics-card h3 {
+            font-size: 1.05rem;
+            color: #f8fafc;
+            margin-bottom: 8px;
+        }
+
+        .physics-card p {
+            font-size: 0.88rem;
+            color: #94a3b8;
+            line-height: 1.5;
+        }
+
+        .formula {
+            display: block;
+            margin: 8px 0;
+            padding: 6px;
+            background-color: #0f172a;
+            border-radius: 4px;
+            color: var(--accent-color);
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Hydraulic Lift Simulation (High Displacement System)</h1>
+
+    <div class="container">
+        <div class="canvas-container">
+            <canvas id="simCanvas" width="700" height="560"></canvas>
+        </div>
+
+        <div class="controls-panel">
+            <div class="control-group">
+                <label for="liquidSelect">Hydraulic Fluid</label>
+                <select id="liquidSelect">
+                    <option value="oil">Standard Hydraulic Oil</option>
+                    <option value="water">Pure Water</option>
+                    <option value="brake">Brake Fluid (DOT 4)</option>
+                    <option value="molasses">Heavy Duty Viscous Fluid</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="objectSelect">Target Load / Object</label>
+                <select id="objectSelect">
+                    <option value="car">Small Car (Weight/Crush: 25,000 N)</option>
+                    <option value="steel">Steel Cube (Crush: 8,000 N)</option>
+                    <option value="wood">Wooden Block (Crush: 1,500 N)</option>
+                    <option value="can">Soda Can (Crush: 200 N)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="inputForce">Input Force (F1): <span id="valForce">150 N</span></label>
+                <input type="range" id="inputForce" min="20" max="500" value="150" step="5">
+            </div>
+
+            <div class="control-group">
+                <label for="r1">Small Piston Radius (r1): <span id="valR1">3.0 cm</span></label>
+                <input type="range" id="r1" min="1" max="5" value="3" step="0.1">
+            </div>
+
+            <div class="control-group">
+                <label for="r2">Large Piston Radius (r2): <span id="valR2">8.0 cm</span></label>
+                <input type="range" id="r2" min="4" max="15" value="8" step="0.5">
+            </div>
+
+            <!-- Dynamic Mathematical Calculations -->
+            <div class="calc-panel">
+                <div class="calc-title">Dynamic Calculation Parameters</div>
+                <div>A1 = π × (r1)² = <span id="calcA1">0.00283</span> m²</div>
+                <div>A2 = π × (r2)² = <span id="calcA2">0.02011</span> m²</div>
+                <div>Pressure P = F1 / A1 = <span id="calcP" style="color: #4ade80;">53,051.6</span> N/m²</div>
+                <div>Output Force F2 = P × A2 = <span id="calcF2" style="color: #38bdf8;">1,066</span> N</div>
+                <div>Stroke Ratio (d1 / d2) = <span id="calcSR">7.11</span></div>
+                <div>Total Load Lifted Distance: <span id="calcLiftDist" style="color: #eab308;">0.00 cm</span></div>
+            </div>
+
+            <div class="status-box" id="statusText">Status: Ready</div>
+
+            <div class="btn-group">
+                <button id="btnPress" class="btn-primary">Continuous Lift</button>
+                <button id="btnReset" class="btn-secondary">Reset</button>
+            </div>
+            
+            <button id="btnNarrate" class="btn-secondary" style="background-color: #0284c7;">Explain Lift Physics</button>
+        </div>
+    </div>
+
+    <!-- Physics Explanation Section -->
+    <section class="physics-section">
+        <h2 class="physics-title">Physics Principles of the Hydraulic Press</h2>
+        <div class="physics-grid">
+            <div class="physics-card">
+                <h3>1. Pascal's Principle</h3>
+                <p>
+                    A hydraulic press relies on <strong>Pascal's Principle</strong>, which states that any change in pressure applied to an enclosed, incompressible fluid is transmitted undiminished throughout the entire fluid.
+                </p>
+                <span class="formula">P₁ = P₂ = P</span>
+            </div>
+
+            <div class="physics-card">
+                <h3>2. Force Multiplication</h3>
+                <p>
+                    Because pressure is equal to force divided by cross-sectional area, a small force applied on a smaller piston ($A_1$) creates fluid pressure that produces a much larger output force on a larger piston ($A_2$).
+                </p>
+                <span class="formula">F₂ = P × A₂ = F₁ × (A₂ / A₁)</span>
+            </div>
+
+            <div class="physics-card">
+                <h3>3. Conservation of Work & Energy</h3>
+                <p>
+                    Force is multiplied at the expense of distance. Work input equals work output ($W = F \times d$). The input piston must move a much greater distance ($d_1$) than the output piston moves ($d_2$).
+                </p>
+                <span class="formula">F₁ × d₁ = F₂ × d₂</span>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Controls
+        const inputForceElem = document.getElementById('inputForce');
+        const r1Elem = document.getElementById('r1');
+        const r2Elem = document.getElementById('r2');
+        const objectSelect = document.getElementById('objectSelect');
+        const liquidSelect = document.getElementById('liquidSelect');
+
+        // Readout Displays
+        const valForce = document.getElementById('valForce');
+        const valR1 = document.getElementById('valR1');
+        const valR2 = document.getElementById('valR2');
+        const calcA1 = document.getElementById('calcA1');
+        const calcA2 = document.getElementById('calcA2');
+        const calcP = document.getElementById('calcP');
+        const calcF2 = document.getElementById('calcF2');
+        const calcSR = document.getElementById('calcSR');
+        const calcLiftDist = document.getElementById('calcLiftDist');
+        const statusText = document.getElementById('statusText');
+
+        // Buttons
+        const btnPress = document.getElementById('btnPress');
+        const btnReset = document.getElementById('btnReset');
+        const btnNarrate = document.getElementById('btnNarrate');
+
+        // Fluids
+        const liquids = {
+            oil: { name: 'Standard Hydraulic Oil', color: '#eab308', opacity: 0.8, speedFactor: 1.0 },
+            water: { name: 'Pure Water', color: '#0284c7', opacity: 0.75, speedFactor: 1.2 },
+            brake: { name: 'Brake Fluid (DOT 4)', color: '#a855f7', opacity: 0.8, speedFactor: 1.1 },
+            molasses: { name: 'Viscous Molasses', color: '#78350f', opacity: 0.95, speedFactor: 0.4 }
+        };
+
+        // Targets
+        const objects = {
+            car: { name: 'Small Car', threshold: 25000, color: '#0ea5e9', height: 45, width: 90 },
+            steel: { name: 'Steel Cube', threshold: 8000, color: '#64748b', height: 45, width: 50 },
+            wood: { name: 'Wooden Block', threshold: 1500, color: '#b45309', height: 45, width: 55 },
+            can: { name: 'Soda Can', threshold: 200, color: '#ef4444', height: 45, width: 35 }
+        };
+
+        // Simulation State Variables
+        let pressing = false;
+        let p1StrokeOffset = 0;
+        let totalP2LiftPixels = 0;
+        let strokePhase = 'down';
+        let crushProgress = 0;
+        const maxLiftLimit = 220;
+
+        function getParams() {
+            const F1 = parseFloat(inputForceElem.value);
+            const r1_cm = parseFloat(r1Elem.value);
+            const r2_cm = parseFloat(r2Elem.value);
+            
+            const r1_m = r1_cm / 100;
+            const r2_m = r2_cm / 100;
+
+            const A1 = Math.PI * r1_m * r1_m;
+            const A2 = Math.PI * r2_m * r2_m;
+            const strokeRatio = A2 / A1;
+            
+            const Pressure_N_m2 = F1 / A1; 
+            const F2 = Pressure_N_m2 * A2;
+
+            const target = objects[objectSelect.value];
+            const liquid = liquids[liquidSelect.value];
+
+            return { F1, r1_cm, r2_cm, r1_m, r2_m, A1, A2, strokeRatio, F2, Pressure_N_m2, target, liquid };
+        }
+
+        function updateReadouts() {
+            const p = getParams();
+            valForce.textContent = `${p.F1} N`;
+            valR1.textContent = `${p.r1_cm.toFixed(1)} cm`;
+            valR2.textContent = `${p.r2_cm.toFixed(1)} cm`;
+
+            calcA1.textContent = p.A1.toFixed(5);
+            calcA2.textContent = p.A2.toFixed(5);
+            calcP.textContent = p.Pressure_N_m2.toLocaleString(undefined, { maximumFractionDigits: 1 });
+            calcF2.textContent = Math.round(p.F2).toLocaleString();
+            calcSR.textContent = p.strokeRatio.toFixed(2);
+            
+            const liftInCm = (totalP2LiftPixels / 10).toFixed(2);
+            calcLiftDist.textContent = `${liftInCm} cm`;
+
+            if (!pressing) {
+                const outputForce = Math.round(p.F2);
+                if (p.F2 >= p.target.threshold) {
+                    statusText.textContent = `Status: Output Force = ${outputForce.toLocaleString()} N (Sufficient to lift load)`;
+                    statusText.style.color = '#4ade80';
+                } else {
+                    statusText.textContent = `Status: Needs ${outputForce.toLocaleString()} N output force to lift load`;
+                    statusText.style.color = '#f87171';
+                }
+            }
+        }
+
+        function drawPressSystem() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const p = getParams();
+            
+            const x1 = 170;
+            const x2 = 490;
+            const pipeBottomY = 480;
+            const pipeTopY = 430;
+            const initialBaseY = 400;
+
+            const w1 = p.r1_cm * 20; 
+            const w2 = p.r2_cm * 16; 
+
+            const p1Y = initialBaseY + p1StrokeOffset;  
+            const p2Y = initialBaseY - totalP2LiftPixels;
+
+            const roofY = 80;
+
+            // --- 1. HYDRAULIC FLUID ---
+            ctx.fillStyle = p.liquid.color;
+            ctx.globalAlpha = p.liquid.opacity;
+            ctx.beginPath();
+
+            ctx.rect(x1 - w1 / 2, p1Y, w1, pipeTopY - p1Y);
+            ctx.rect(x1 - w1 / 2, pipeTopY, (x2 + w2 / 2) - (x1 - w1 / 2), pipeBottomY - pipeTopY);
+            ctx.rect(x2 - w2 / 2, p2Y, w2, pipeTopY - p2Y);
+
+            ctx.fill();
+            ctx.globalAlpha = 1.0; 
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.fillRect(x1 - w1 / 2, pipeTopY, (x2 + w2 / 2) - (x1 - w1 / 2), 8);
+
+            // --- 2. PIPING & WALLS ---
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(x1 - w1 / 2, 200);
+            ctx.lineTo(x1 - w1 / 2, pipeBottomY);
+            ctx.lineTo(x2 + w2 / 2, pipeBottomY);
+            ctx.lineTo(x2 + w2 / 2, 120);
+
+            ctx.moveTo(x1 + w1 / 2, 200);
+            ctx.lineTo(x1 + w1 / 2, pipeTopY);
+            ctx.lineTo(x2 - w2 / 2, pipeTopY);
+            ctx.lineTo(x2 - w2 / 2, 120);
+            ctx.stroke();
+
+            // --- 3. INPUT PISTON & CHECK VALVES ---
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fillRect(x1 - w1 / 2 + 2, p1Y - 15, w1 - 4, 15);
+            ctx.fillRect(x1 - 5, p1Y - 160, 10, 145);
+
+            ctx.fillStyle = strokePhase === 'down' ? '#22c55e' : '#f59e0b';
+            ctx.beginPath();
+            ctx.arc(x1 + w1 / 2 + 15, pipeTopY + 25, 7, 0, Math.PI * 2);
+            ctx.fill();
+
+            // --- 4. OUTPUT PISTON & PLATFORM (LOAD SIDE) ---
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fillRect(x2 - w2 / 2 + 2, p2Y - 18, w2 - 4, 18);
+            ctx.fillRect(x2 - 12, p2Y - 220, 24, 202);
+            
+            ctx.fillStyle = '#64748b';
+            const platformY = p2Y - 225;
+            ctx.fillRect(x2 - 75, platformY, 150, 14); 
+
+            // --- 5. UPPER ANVIL FRAME ---
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(x2 - 110, roofY - 20, 220, 20);
+            ctx.fillRect(x2 - 20, roofY, 40, 15);
+
+            // --- 6. LOAD OBJECT ---
+            drawObjectOnPlatform(x2, platformY, roofY + 15, p.target);
+
+            // --- 7. ON-CANVAS LABELS ---
+            ctx.fillStyle = '#f8fafc';
+            ctx.font = '12px sans-serif';
+
+            ctx.fillText(`Input Cylinder (A1)`, x1 - 45, 190);
+            ctx.fillText(`Area = ${p.A1.toFixed(4)} m²`, x1 - 45, 175);
+
+            ctx.fillText(`Lift Cylinder (A2)`, x2 - 45, 110);
+            ctx.fillText(`Area = ${p.A2.toFixed(4)} m²`, x2 - 45, 95);
+
+            ctx.fillStyle = '#38bdf8';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.fillText(`Transmitted Pressure P = ${Math.round(p.Pressure_N_m2).toLocaleString()} N/m²`, x1 + 25, pipeBottomY - 15);
+
+            if (totalP2LiftPixels > 5) {
+                ctx.strokeStyle = '#eab308';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(x2 + 85, initialBaseY - 225);
+                ctx.lineTo(x2 + 85, platformY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                ctx.fillStyle = '#eab308';
+                ctx.font = 'bold 12px sans-serif';
+                ctx.fillText(`Lift Distance = ${(totalP2LiftPixels / 10).toFixed(1)} cm`, x2 + 95, (initialBaseY - 225 + platformY) / 2);
+            }
+
+            // --- 8. FORCE ARROWS ---
+            if (pressing && strokePhase === 'down') {
+                drawArrow(x1, p1Y - 180, x1, p1Y - 140, '#ef4444', 4);
+                ctx.fillStyle = '#ef4444';
+                ctx.font = 'bold 13px sans-serif';
+                ctx.fillText(`F1 = ${p.F1} N`, x1 - 35, p1Y - 188);
+
+                drawArrow(x2, p2Y + 15, x2, p2Y - 35, '#38bdf8', 5);
+                ctx.fillStyle = '#38bdf8';
+                ctx.fillText(`F2 = ${Math.round(p.F2)} N`, x2 + w2 / 2 + 10, p2Y - 5);
+            }
+        }
+
+        function drawObjectOnPlatform(x, platformY, anvilY, target) {
+            ctx.save();
+            ctx.translate(x, platformY);
+
+            const currentHeight = target.height * (1 - crushProgress * 0.65);
+            const currentWidth = target.width * (1 + crushProgress * 0.35);
+
+            ctx.fillStyle = target.color;
+
+            if (objectSelect.value === 'car') {
+                ctx.beginPath();
+                ctx.fillRect(-currentWidth / 2, -currentHeight * 0.6, currentWidth, currentHeight * 0.6);
+                ctx.fillRect(-currentWidth / 4, -currentHeight, currentWidth / 2, currentHeight * 0.4);
+                ctx.fillStyle = '#020617';
+                ctx.beginPath();
+                ctx.arc(-currentWidth / 3, -5, 8, 0, Math.PI * 2);
+                ctx.arc(currentWidth / 3, -5, 8, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                ctx.beginPath();
+                if (crushProgress > 0.1) {
+                    ctx.moveTo(-currentWidth / 2, 0);
+                    ctx.lineTo(-currentWidth / 2 - 5, -currentHeight / 2);
+                    ctx.lineTo(-currentWidth / 2, -currentHeight);
+                    ctx.lineTo(currentWidth / 2, -currentHeight);
+                    ctx.lineTo(currentWidth / 2 + 5, -currentHeight / 2);
+                    ctx.lineTo(currentWidth / 2, 0);
+                } else {
+                    ctx.rect(-currentWidth / 2, -currentHeight, currentWidth, currentHeight);
+                }
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+
+        function drawArrow(fromx, fromy, tox, toy, color, width) {
+            const headlen = 9;
+            const dx = tox - fromx;
+            const dy = toy - fromy;
+            const angle = Math.atan2(dy, dx);
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = width;
+            ctx.beginPath();
+            ctx.moveTo(fromx, fromy);
+            ctx.lineTo(tox, toy);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(tox, toy);
+            ctx.lineTo(tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6));
+            ctx.fill();
+        }
+
+        let animationFrame;
+        function animateMultiStrokeLift() {
+            const p = getParams();
+            const canCrush = p.F2 >= p.target.threshold;
+            const stepSpeed = 2.0 * p.liquid.speedFactor;
+            const strokeMax = 50;
+
+            if (totalP2LiftPixels < maxLiftLimit) {
+                if (strokePhase === 'down') {
+                    p1StrokeOffset += stepSpeed;
+                    const deltaP2 = (stepSpeed / p.strokeRatio);
+                    totalP2LiftPixels += deltaP2;
+
+                    if (p1StrokeOffset >= strokeMax) {
+                        strokePhase = 'up';
+                    }
+                } else {
+                    p1StrokeOffset -= stepSpeed * 1.5;
+                    if (p1StrokeOffset <= 0) {
+                        p1StrokeOffset = 0;
+                        strokePhase = 'down';
+                    }
+                }
+
+                const currentPlatformY = (400 - totalP2LiftPixels) - 225;
+                const anvilY = 95;
+
+                if (currentPlatformY - p.target.height <= anvilY) {
+                    if (canCrush) {
+                        crushProgress = Math.min(1, crushProgress + 0.02 * p.liquid.speedFactor);
+                        statusText.textContent = `Status: Max Height Reached - Compressing Load!`;
+                        statusText.style.color = '#38bdf8';
+                    } else {
+                        statusText.textContent = `Status: Blocked at Roof Frame! Insufficient Crush Force.`;
+                        statusText.style.color = '#f87171';
+                        pressing = false;
+                        updateReadouts();
+                        drawPressSystem();
+                        return;
+                    }
+                } else {
+                    statusText.textContent = `Status: Continuous Pumping - Lifting Load (Distance: ${(totalP2LiftPixels/10).toFixed(1)} cm)`;
+                    statusText.style.color = '#eab308';
+                }
+
+                updateReadouts();
+                drawPressSystem();
+                animationFrame = requestAnimationFrame(animateMultiStrokeLift);
+            } else {
+                pressing = false;
+                statusText.textContent = `Status: Maximum Lift Height Attained!`;
+                statusText.style.color = '#4ade80';
+            }
+        }
+
+        btnPress.addEventListener('click', () => {
+            if (pressing) return;
+            pressing = true;
+            strokePhase = 'down';
+            animateMultiStrokeLift();
+        });
+
+        btnReset.addEventListener('click', () => {
+            cancelAnimationFrame(animationFrame);
+            pressing = false;
+            p1StrokeOffset = 0;
+            totalP2LiftPixels = 0;
+            crushProgress = 0;
+            strokePhase = 'down';
+            updateReadouts();
+            drawPressSystem();
+        });
+
+        // Speech Narration
+        btnNarrate.addEventListener('click', () => {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const p = getParams();
+                const text = `According to Pascal's Principle, pressure applied to an enclosed fluid is transmitted equally in all directions. Here, an input force of ${p.F1} Newtons produces a pressure of ${Math.round(p.Pressure_N_m2)} Newtons per square meter. Transmitted over the larger area, it generates an output force F2 of ${Math.round(p.F2)} Newtons, calculated from F2 equals pressure times A2.`;
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                const voices = window.speechSynthesis.getVoices();
+                const preferredVoice = voices.find(v => v.lang.includes('ng') || v.lang.includes('en-NG') || v.name.includes('Nigeria'));
+                if (preferredVoice) utterance.voice = preferredVoice;
+
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert('Speech Synthesis not supported in your browser.');
+            }
+        });
+
+        // Controls Listeners
+        [inputForceElem, r1Elem, r2Elem, objectSelect, liquidSelect].forEach(elem => {
+            elem.addEventListener('input', () => {
+                updateReadouts();
+                drawPressSystem();
+            });
+        });
+
+        // Initial Load
+        updateReadouts();
+        drawPressSystem();
+    </script>
+</body>
+</html>

@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Principle of Moments - Seesaw Simulation</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-blue: #38bdf8;
+            --accent-pink: #f43f5e;
+            --accent-green: #22c55e;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        header {
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 6px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 320px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+
+        .status-badge.balanced {
+            background-color: rgba(34, 197, 94, 0.2);
+            color: var(--accent-green);
+            border: 1px solid var(--accent-green);
+        }
+
+        .status-badge.unbalanced {
+            background-color: rgba(244, 63, 94, 0.2);
+            color: var(--accent-pink);
+            border: 1px solid var(--accent-pink);
+        }
+
+        .readouts {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            text-align: center;
+        }
+
+        .readout-card {
+            background: rgba(15, 23, 42, 0.4);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .readout-card.left { border-top: 3px solid var(--accent-blue); }
+        .readout-card.right { border-top: 3px solid var(--accent-pink); }
+        .readout-card.net { border-top: 3px solid var(--text-muted); }
+
+        .readout-card label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .readout-card span {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 650px) {
+            .controls {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .control-group {
+            background: rgba(15, 23, 42, 0.3);
+            padding: 16px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .control-group h3 {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .slider-row {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+        }
+
+        .stepper-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .step-btn {
+            background: #334155;
+            border: none;
+            color: #fff;
+            padding: 4px 8px;
+            min-width: 42px;
+            height: 28px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            user-select: none;
+        }
+
+        .step-btn:hover {
+            background: #475569;
+        }
+
+        .step-btn:active {
+            background: #64748b;
+        }
+
+        input[type="range"] {
+            flex-grow: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #334155;
+            outline: none;
+            accent-color: var(--accent-blue);
+            cursor: pointer;
+        }
+
+        .fulcrum-control input[type="range"] {
+            accent-color: #a855f7;
+        }
+
+        .presets {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button.action-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        button.action-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        button.solve-btn {
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid var(--accent-green);
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+
+        button.solve-btn:hover {
+            background: rgba(34, 197, 94, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Principle of Moments Simulation</h1>
+        <p>Moment = Mass × Gravity × Distance from Fulcrum (M = m · g · d)</p>
+    </header>
+
+    <div class="canvas-container">
+        <div id="statusBadge" class="status-badge balanced">Balanced</div>
+        <canvas id="seesawCanvas"></canvas>
+    </div>
+
+    <div class="readouts">
+        <div class="readout-card left">
+            <label>Counterclockwise Moment (M₁)</label>
+            <span id="leftTorque">196.20 Nm</span>
+        </div>
+        <div class="readout-card net">
+            <label>Net Moment (|M₂ - M₁|)</label>
+            <span id="netTorque">0.00 Nm</span>
+        </div>
+        <div class="readout-card right">
+            <label>Clockwise Moment (M₂)</label>
+            <span id="rightTorque">196.20 Nm</span>
+        </div>
+    </div>
+
+    <div class="controls">
+        <!-- LEFT CONTROL GROUP -->
+        <div class="control-group">
+            <h3 style="color: var(--accent-blue);">Left Mass (m₁)</h3>
+            <div class="slider-row">
+                <div class="slider-header">
+                    <span>Mass</span>
+                    <span id="m1Val">10.00 kg</span>
+                </div>
+                <div class="stepper-container">
+                    <button class="step-btn" onclick="stepVal('m1', -0.01)">−0.01</button>
+                    <input type="range" id="m1" min="1" max="50" step="0.01" value="10">
+                    <button class="step-btn" onclick="stepVal('m1', 0.01)">+0.01</button>
+                </div>
+            </div>
+            <div class="slider-row">
+                <div class="slider-header">
+                    <span>Position on Beam (Left Side)</span>
+                    <span id="pos1Val">2.00 m</span>
+                </div>
+                <div class="stepper-container">
+                    <button class="step-btn" onclick="stepVal('pos1', -0.01)">−0.01</button>
+                    <input type="range" id="pos1" min="0.5" max="3.8" step="0.01" value="2.0">
+                    <button class="step-btn" onclick="stepVal('pos1', 0.01)">+0.01</button>
+                </div>
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">
+                Distance to Fulcrum (d₁): <strong id="d1Val" style="color: var(--accent-blue);">2.00 m</strong>
+            </div>
+        </div>
+
+        <!-- RIGHT CONTROL GROUP -->
+        <div class="control-group">
+            <h3 style="color: var(--accent-pink);">Right Mass (m₂)</h3>
+            <div class="slider-row">
+                <div class="slider-header">
+                    <span>Mass</span>
+                    <span id="m2Val">20.00 kg</span>
+                </div>
+                <div class="stepper-container">
+                    <button class="step-btn" onclick="stepVal('m2', -0.01)">−0.01</button>
+                    <input type="range" id="m2" min="1" max="50" step="0.01" value="20">
+                    <button class="step-btn" onclick="stepVal('m2', 0.01)">+0.01</button>
+                </div>
+            </div>
+            <div class="slider-row">
+                <div class="slider-header">
+                    <span>Position on Beam (Right Side)</span>
+                    <span id="pos2Val">1.00 m</span>
+                </div>
+                <div class="stepper-container">
+                    <button class="step-btn" onclick="stepVal('pos2', -0.01)">−0.01</button>
+                    <input type="range" id="pos2" min="0.5" max="3.8" step="0.01" value="1.0">
+                    <button class="step-btn" onclick="stepVal('pos2', 0.01)">+0.01</button>
+                </div>
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">
+                Distance to Fulcrum (d₂): <strong id="d2Val" style="color: var(--accent-pink);">1.00 m</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- FULCRUM CONTROL -->
+    <div class="control-group fulcrum-control">
+        <div class="slider-header">
+            <h3 style="color: #a855f7;">Fulcrum Position (Shift from Beam Center)</h3>
+            <span id="fulcrumVal">0.00 m</span>
+        </div>
+        <div class="stepper-container">
+            <button class="step-btn" onclick="stepVal('fulcrumShift', -0.01)">−0.01</button>
+            <input type="range" id="fulcrumShift" min="-2.0" max="2.0" step="0.01" value="0.0">
+            <button class="step-btn" onclick="stepVal('fulcrumShift', 0.01)">+0.01</button>
+        </div>
+    </div>
+
+    <!-- PRESETS & TOOLS -->
+    <div class="presets">
+        <button class="action-btn solve-btn" onclick="autoBalanceFulcrum()">⚡ Balance by Moving Fulcrum</button>
+        <button class="action-btn" onclick="setPreset(10, 2.0, 20, 1.0, 0)">Preset: Balanced (Center Pivot)</button>
+        <button class="action-btn" onclick="setPreset(30, 2.0, 10, 2.0, -1.0)">Preset: Balanced via Fulcrum Shift</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('seesawCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // DOM Elements
+    const m1Input = document.getElementById('m1');
+    const pos1Input = document.getElementById('pos1');
+    const m2Input = document.getElementById('m2');
+    const pos2Input = document.getElementById('pos2');
+    const fulcrumInput = document.getElementById('fulcrumShift');
+
+    const m1Val = document.getElementById('m1Val');
+    const pos1Val = document.getElementById('pos1Val');
+    const d1Val = document.getElementById('d1Val');
+
+    const m2Val = document.getElementById('m2Val');
+    const pos2Val = document.getElementById('pos2Val');
+    const d2Val = document.getElementById('d2Val');
+
+    const fulcrumVal = document.getElementById('fulcrumVal');
+
+    const leftTorqueEl = document.getElementById('leftTorque');
+    const rightTorqueEl = document.getElementById('rightTorque');
+    const netTorqueEl = document.getElementById('netTorque');
+    const statusBadge = document.getElementById('statusBadge');
+
+    // State Variables
+    let currentAngle = 0;
+    let targetAngle = 0;
+    const g = 9.81; // Gravity constant
+    const scale = 70; // Pixels per meter
+
+    function resizeCanvas() {
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function stepVal(inputId, amount) {
+        const input = document.getElementById(inputId);
+        const min = parseFloat(input.min);
+        const max = parseFloat(input.max);
+        let newVal = parseFloat(input.value) + amount;
+        
+        // Round to 2 decimal places to avoid IEEE 754 float inaccuracies
+        newVal = Math.round(newVal * 100) / 100;
+        
+        if (newVal >= min && newVal <= max) {
+            input.value = newVal;
+            update();
+        }
+    }
+
+    function autoBalanceFulcrum() {
+        const m1 = parseFloat(m1Input.value);
+        const p1 = parseFloat(pos1Input.value);
+        const m2 = parseFloat(m2Input.value);
+        const p2 = parseFloat(pos2Input.value);
+
+        let idealF = (m2 * p2 - m1 * p1) / (m1 + m2);
+        idealF = Math.round(idealF * 100) / 100;
+
+        const minF = parseFloat(fulcrumInput.min);
+        const maxF = parseFloat(fulcrumInput.max);
+
+        if (idealF >= minF && idealF <= maxF) {
+            fulcrumInput.value = idealF;
+            update();
+        }
+    }
+
+    function setPreset(m1, pos1, m2, pos2, fulcrum) {
+        m1Input.value = m1;
+        pos1Input.value = pos1;
+        m2Input.value = m2;
+        pos2Input.value = pos2;
+        fulcrumInput.value = fulcrum;
+        update();
+    }
+
+    function update() {
+        const m1 = parseFloat(m1Input.value);
+        const pos1 = parseFloat(pos1Input.value);
+        const m2 = parseFloat(m2Input.value);
+        const pos2 = parseFloat(pos2Input.value);
+        const fShift = parseFloat(fulcrumInput.value);
+
+        const d1 = pos1 + fShift;
+        const d2 = pos2 - fShift;
+
+        m1Val.textContent = `${m1.toFixed(2)} kg`;
+        pos1Val.textContent = `${pos1.toFixed(2)} m`;
+        d1Val.textContent = `${Math.max(0, d1).toFixed(2)} m`;
+
+        m2Val.textContent = `${m2.toFixed(2)} kg`;
+        pos2Val.textContent = `${pos2.toFixed(2)} m`;
+        d2Val.textContent = `${Math.max(0, d2).toFixed(2)} m`;
+
+        fulcrumVal.textContent = `${fShift.toFixed(2)} m`;
+
+        // Moments = Mass * g * Distance
+        const leftMoment = m1 * g * Math.max(0, d1);
+        const rightMoment = m2 * g * Math.max(0, d2);
+        const netMoment = rightMoment - leftMoment;
+
+        leftTorqueEl.textContent = `${leftMoment.toFixed(2)} Nm`;
+        rightTorqueEl.textContent = `${rightMoment.toFixed(2)} Nm`;
+        netTorqueEl.textContent = `${Math.abs(netMoment).toFixed(2)} Nm`;
+
+        // Check Balance
+        const isBalanced = Math.abs(netMoment) < 0.5;
+
+        if (isBalanced) {
+            statusBadge.textContent = "Balanced";
+            statusBadge.className = "status-badge balanced";
+            targetAngle = 0;
+        } else {
+            statusBadge.textContent = "Unbalanced";
+            statusBadge.className = "status-badge unbalanced";
+            targetAngle = Math.max(-0.31, Math.min(0.31, netMoment / 100));
+        }
+    }
+
+    [m1Input, pos1Input, m2Input, pos2Input, fulcrumInput].forEach(input => {
+        input.addEventListener('input', update);
+    });
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        currentAngle += (targetAngle - currentAngle) * 0.1;
+
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2 + 50;
+
+        const fShift = parseFloat(fulcrumInput.value);
+        const fulcrumX = centerX + (fShift * scale);
+
+        // Ground
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(40, centerY + 60);
+        ctx.lineTo(canvas.width - 40, centerY + 60);
+        ctx.stroke();
+
+        // Fulcrum Base
+        ctx.fillStyle = '#a855f7';
+        ctx.beginPath();
+        ctx.moveTo(fulcrumX, centerY);
+        ctx.lineTo(fulcrumX - 30, centerY + 60);
+        ctx.lineTo(fulcrumX + 30, centerY + 60);
+        ctx.closePath();
+        ctx.fill();
+
+        // Seesaw Beam
+        ctx.save();
+        ctx.translate(fulcrumX, centerY);
+        ctx.rotate(currentAngle);
+
+        const beamCenterRel = -fShift * scale;
+        const beamHalfLength = 4.0 * scale;
+
+        ctx.fillStyle = '#e2e8f0';
+        ctx.shadowColor = 'rgba(0,0,0,0.4)';
+        ctx.shadowBlur = 10;
+        ctx.fillRect(beamCenterRel - beamHalfLength, -8, beamHalfLength * 2, 16);
+        ctx.shadowBlur = 0;
+
+        // Center Marker on Beam
+        ctx.fillStyle = '#a855f7';
+        ctx.fillRect(beamCenterRel - 2, -8, 4, 16);
+
+        // Masses
+        const m1 = parseFloat(m1Input.value);
+        const pos1 = parseFloat(pos1Input.value);
+        const m2 = parseFloat(m2Input.value);
+        const pos2 = parseFloat(pos2Input.value);
+
+        // Left Mass
+        const posX1 = beamCenterRel - (pos1 * scale);
+        const size1 = 20 + Math.sqrt(m1) * 5;
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillRect(posX1 - size1 / 2, -8 - size1, size1, size1);
+
+        ctx.fillStyle = '#0f172a';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${m1.toFixed(2)}kg`, posX1, -12 - size1 / 2);
+
+        // Right Mass
+        const posX2 = beamCenterRel + (pos2 * scale);
+        const size2 = 20 + Math.sqrt(m2) * 5;
+        ctx.fillStyle = '#f43f5e';
+        ctx.fillRect(posX2 - size2 / 2, -8 - size2, size2, size2);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(`${m2.toFixed(2)}kg`, posX2, -12 - size2 / 2);
+
+        ctx.restore();
+
+        requestAnimationFrame(draw);
+    }
+
+    update();
+    draw();
+</script>
+
+</body>
+</html>

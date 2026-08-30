@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VSEPR 3D Simulation & Interactive Guide</title>
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --card-bg: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-blue: #38bdf8;
+      --accent-green: #4ade80;
+      --border-color: #334155;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    header {
+      text-align: center;
+      padding: 10px 0;
+    }
+
+    header h1 {
+      font-size: 2.2rem;
+      color: var(--accent-blue);
+      margin-bottom: 8px;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+    }
+
+    /* App Layout */
+    .app-layout {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .app-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Simulation Viewport */
+    .viewport-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+      height: 600px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+
+    #webgl-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Controls Overlay */
+    .controls-panel {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    select {
+      background-color: #0f172a;
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      outline: none;
+    }
+
+    select:focus {
+      border-color: var(--accent-blue);
+    }
+
+    .toggle-group {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 0;
+    }
+
+    .toggle-group span {
+      font-size: 0.95rem;
+    }
+
+    /* Switch styling */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #334155;
+      transition: .3s;
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--accent-blue);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    /* Info Badge Table */
+    .info-card {
+      background-color: #0f172a;
+      border-radius: 8px;
+      padding: 14px;
+      margin-top: 10px;
+      border: 1px solid var(--border-color);
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.88rem;
+      padding: 6px 0;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      color: var(--text-muted);
+    }
+
+    .info-value {
+      font-weight: 600;
+      color: var(--accent-green);
+      text-align: right;
+    }
+
+    /* Theory Section */
+    .theory-section {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 28px;
+      margin-top: 10px;
+    }
+
+    .theory-section h2 {
+      color: var(--accent-blue);
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 8px;
+    }
+
+    .theory-section h3 {
+      color: var(--accent-green);
+      margin: 18px 0 10px 0;
+    }
+
+    .theory-section p {
+      margin-bottom: 12px;
+      color: #cbd5e1;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      margin: 20px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.95rem;
+    }
+
+    th, td {
+      padding: 12px 16px;
+      border: 1px solid var(--border-color);
+    }
+
+    th {
+      background-color: #0f172a;
+      color: var(--accent-blue);
+    }
+
+    tr:nth-child(even) {
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    .instruction-overlay {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      background-color: rgba(15, 23, 42, 0.75);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+  </style>
+
+  <!-- Include Three.js and OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>VSEPR 3D Simulation & Visualizer</h1>
+      <p>Interactive exploration of Valence Shell Electron Pair Repulsion geometry</p>
+    </header>
+
+    <div class="app-layout">
+      <!-- 3D Canvas Container -->
+      <div class="viewport-card">
+        <canvas id="webgl-canvas"></canvas>
+        <div class="instruction-overlay">Drag to rotate | Scroll to zoom</div>
+      </div>
+
+      <!-- Interactive Controls Panel -->
+      <div class="controls-panel">
+        <div class="control-group">
+          <label for="molecule-select">Select Molecule</label>
+          <select id="molecule-select">
+            <option value="CO2">Carbon Dioxide (CO₂)</option>
+            <option value="CH4" selected>Methane (CH₄)</option>
+            <option value="NH3">Ammonia (NH₃)</option>
+            <option value="H2O">Water (H₂O)</option>
+            <option value="PCl5">Phosphorus Pentachloride (PCl₅)</option>
+            <option value="SF4">Sulfur Tetrafluoride (SF₄)</option>
+            <option value="XeF2">Xenon Difluoride (XeF₂)</option>
+            <option value="SF6">Sulfur Hexafluoride (SF₆)</option>
+            <option value="XeF4">Xenon Tetrafluoride (XeF₄)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label>Visual Toggles</label>
+          
+          <div class="toggle-group">
+            <span>Show Lone Pair Clouds</span>
+            <label class="switch">
+              <input type="checkbox" id="toggle-lone-pairs" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-group">
+            <span>Show Geometry Frame</span>
+            <label class="switch">
+              <input type="checkbox" id="toggle-frame" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-group">
+            <span>Show Bond Angles</span>
+            <label class="switch">
+              <input type="checkbox" id="toggle-angles" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Molecular Property Badges -->
+        <div class="info-card">
+          <div class="info-row">
+            <span class="info-label">Steric Number</span>
+            <span class="info-value" id="info-steric">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Bonding / Lone Pairs</span>
+            <span class="info-value" id="info-pairs">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Electron Geometry</span>
+            <span class="info-value" id="info-electron-geom">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Molecular Geometry</span>
+            <span class="info-value" id="info-molecular-geom">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Hybridization</span>
+            <span class="info-value" id="info-hybrid">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Actual Bond Angle(s)</span>
+            <span class="info-value" id="info-angles">-</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Accompanying Theory & Explanation Section -->
+    <div class="theory-section">
+      <h2>VSEPR Theory & Principles</h2>
+      <p>
+        <strong>Valence Shell Electron Pair Repulsion (VSEPR)</strong> theory predicts three-dimensional arrangements of electron domains (bonding pairs and non-bonding lone pairs) around a central atom by assuming electron clouds experience mutual electrostatic repulsion and position themselves as far apart as possible.
+      </p>
+
+      <h3>1. Steric Number & Electron Geometry</h3>
+      <p>
+        The total count of bonding domains plus lone pairs attached to a central atom determines its <strong>Steric Number (SN)</strong>. The steric number defines the ideal arrangement of electron density (Electron Geometry):
+      </p>
+      <ul>
+        <li><strong>SN = 2:</strong> Linear (180°)</li>
+        <li><strong>SN = 3:</strong> Trigonal Planar (120°)</li>
+        <li><strong>SN = 4:</strong> Tetrahedral (109.5°)</li>
+        <li><strong>SN = 5:</strong> Trigonal Bipyramidal (90° axial-equatorial, 120° equatorial-equatorial)</li>
+        <li><strong>SN = 6:</strong> Octahedral (90°)</li>
+      </ul>
+
+      <h3>2. Lone Pair Repulsion & Position Preference</h3>
+      <p>
+        Non-bonding lone pairs are attracted by only one central nucleus, causing their electron density to spread out over a wider spatial volume compared to localized bonding pairs. Consequently:
+      </p>
+      <p>Lone Pair - Lone Pair Repulsion &gt; Lone Pair - Bonding Pair Repulsion &gt; Bonding Pair - Bonding Pair Repulsion</p>
+      <p>
+        In 5-coordinate trigonal bipyramidal systems (e.g., SF₄, XeF₂), lone pairs preferentially occupy <strong>equatorial positions</strong> (120° separation) to minimize severe 90° interactions. In 6-coordinate octahedral systems with two lone pairs (XeF₄), the lone pairs align opposite to each other at 180° to minimize repulsion, producing a <strong>Square Planar</strong> molecular shape.
+      </p>
+
+      <h3>Summary Table of Examples</h3>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Molecule</th>
+              <th>Steric No.</th>
+              <th>Bonding Pairs</th>
+              <th>Lone Pairs</th>
+              <th>Electron Geometry</th>
+              <th>Molecular Geometry</th>
+              <th>Bond Angle(s)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>CO₂</td>
+              <td>2</td>
+              <td>2</td>
+              <td>0</td>
+              <td>Linear</td>
+              <td>Linear</td>
+              <td>180°</td>
+            </tr>
+            <tr>
+              <td>CH₄</td>
+              <td>4</td>
+              <td>4</td>
+              <td>0</td>
+              <td>Tetrahedral</td>
+              <td>Tetrahedral</td>
+              <td>109.5°</td>
+            </tr>
+            <tr>
+              <td>NH₃</td>
+              <td>4</td>
+              <td>3</td>
+              <td>1</td>
+              <td>Tetrahedral</td>
+              <td>Trigonal Pyramidal</td>
+              <td>107°</td>
+            </tr>
+            <tr>
+              <td>H₂O</td>
+              <td>4</td>
+              <td>2</td>
+              <td>2</td>
+              <td>Tetrahedral</td>
+              <td>Bent</td>
+              <td>104.5°</td>
+            </tr>
+            <tr>
+              <td>PCl₅</td>
+              <td>5</td>
+              <td>5</td>
+              <td>0</td>
+              <td>Trigonal Bipyramidal</td>
+              <td>Trigonal Bipyramidal</td>
+              <td>90°, 120°</td>
+            </tr>
+            <tr>
+              <td>SF₄</td>
+              <td>5</td>
+              <td>4</td>
+              <td>1</td>
+              <td>Trigonal Bipyramidal</td>
+              <td>See-saw</td>
+              <td>102°, 173°</td>
+            </tr>
+            <tr>
+              <td>XeF₂</td>
+              <td>5</td>
+              <td>2</td>
+              <td>3</td>
+              <td>Trigonal Bipyramidal</td>
+              <td>Linear</td>
+              <td>180°</td>
+            </tr>
+            <tr>
+              <td>SF₆</td>
+              <td>6</td>
+              <td>6</td>
+              <td>0</td>
+              <td>Octahedral</td>
+              <td>Octahedral</td>
+              <td>90°</td>
+            </tr>
+            <tr>
+              <td>XeF₄</td>
+              <td>6</td>
+              <td>4</td>
+              <td>2</td>
+              <td>Octahedral</td>
+              <td>Square Planar</td>
+              <td>90°</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Data Store for VSEPR Preset Molecules ---
+    const MOLECULES = {
+      CO2: {
+        name: "Carbon Dioxide",
+        central: { symbol: "C", color: 0x444444, textColor: "#ffffff", radius: 0.6 },
+        outer: [
+          { symbol: "O", color: 0xef4444, textColor: "#ffffff", dir: new THREE.Vector3(1, 0, 0), radius: 0.5 },
+          { symbol: "O", color: 0xef4444, textColor: "#ffffff", dir: new THREE.Vector3(-1, 0, 0), radius: 0.5 }
+        ],
+        lonePairs: [],
+        steric: 2, bonding: 2, lone: 0,
+        electronGeom: "Linear",
+        molecularGeom: "Linear",
+        hybridization: "sp",
+        angles: "180°"
+      },
+      CH4: {
+        name: "Methane",
+        central: { symbol: "C", color: 0x444444, textColor: "#ffffff", radius: 0.6 },
+        outer: getTetrahedralVectors().map(v => ({ symbol: "H", color: 0xe2e8f0, textColor: "#0f172a", dir: v, radius: 0.35 })),
+        lonePairs: [],
+        steric: 4, bonding: 4, lone: 0,
+        electronGeom: "Tetrahedral",
+        molecularGeom: "Tetrahedral",
+        hybridization: "sp³",
+        angles: "109.5°"
+      },
+      NH3: {
+        name: "Ammonia",
+        central: { symbol: "N", color: 0x3b82f6, textColor: "#ffffff", radius: 0.55 },
+        outer: [
+          { symbol: "H", color: 0xe2e8f0, textColor: "#0f172a", dir: new THREE.Vector3(0, -0.4, 0.916), radius: 0.35 },
+          { symbol: "H", color: 0xe2e8f0, textColor: "#0f172a", dir: new THREE.Vector3(0.793, -0.4, -0.458), radius: 0.35 },
+          { symbol: "H", color: 0xe2e8f0, textColor: "#0f172a", dir: new THREE.Vector3(-0.793, -0.4, -0.458), radius: 0.35 }
+        ],
+        lonePairs: [new THREE.Vector3(0, 1, 0)],
+        steric: 4, bonding: 3, lone: 1,
+        electronGeom: "Tetrahedral",
+        molecularGeom: "Trigonal Pyramidal",
+        hybridization: "sp³",
+        angles: "107°"
+      },
+      H2O: {
+        name: "Water",
+        central: { symbol: "O", color: 0xef4444, textColor: "#ffffff", radius: 0.55 },
+        outer: [
+          { symbol: "H", color: 0xe2e8f0, textColor: "#0f172a", dir: new THREE.Vector3(0, 0.61, 0.79), radius: 0.35 },
+          { symbol: "H", color: 0xe2e8f0, textColor: "#0f172a", dir: new THREE.Vector3(0, 0.61, -0.79), radius: 0.35 }
+        ],
+        lonePairs: [
+          new THREE.Vector3(0.81, -0.58, 0),
+          new THREE.Vector3(-0.81, -0.58, 0)
+        ],
+        steric: 4, bonding: 2, lone: 2,
+        electronGeom: "Tetrahedral",
+        molecularGeom: "Bent",
+        hybridization: "sp³",
+        angles: "104.5°"
+      },
+      PCl5: {
+        name: "Phosphorus Pentachloride",
+        central: { symbol: "P", color: 0xf97316, textColor: "#ffffff", radius: 0.65 },
+        outer: getTrigonalBipyramidalVectors().map(v => ({ symbol: "Cl", color: 0x22c55e, textColor: "#ffffff", dir: v, radius: 0.45 })),
+        lonePairs: [],
+        steric: 5, bonding: 5, lone: 0,
+        electronGeom: "Trigonal Bipyramidal",
+        molecularGeom: "Trigonal Bipyramidal",
+        hybridization: "sp³d",
+        angles: "90°, 120°"
+      },
+      SF4: {
+        name: "Sulfur Tetrafluoride",
+        central: { symbol: "S", color: 0xeab308, textColor: "#0f172a", radius: 0.6 },
+        outer: [
+          { symbol: "F", color: 0x4ade80, textColor: "#0f172a", dir: new THREE.Vector3(0, 1, 0), radius: 0.4 },
+          { symbol: "F", color: 0x4ade80, textColor: "#0f172a", dir: new THREE.Vector3(0, -1, 0), radius: 0.4 },
+          { symbol: "F", color: 0x4ade80, textColor: "#0f172a", dir: new THREE.Vector3(0.95, 0, -0.3), radius: 0.4 },
+          { symbol: "F", color: 0x4ade80, textColor: "#0f172a", dir: new THREE.Vector3(-0.95, 0, -0.3), radius: 0.4 }
+        ],
+        lonePairs: [new THREE.Vector3(0, 0, 1)],
+        steric: 5, bonding: 4, lone: 1,
+        electronGeom: "Trigonal Bipyramidal",
+        molecularGeom: "See-saw",
+        hybridization: "sp³d",
+        angles: "102°, 173°"
+      },
+      XeF2: {
+        name: "Xenon Difluoride",
+        central: { symbol: "Xe", color: 0xa855f7, textColor: "#ffffff", radius: 0.7 },
+        outer: [
+          { symbol: "F", color: 0x4ade80, textColor: "#0f172a", dir: new THREE.Vector3(0, 1, 0), radius: 0.4 },
+          { symbol: "F", color: 0x4ade80, textColor: "#0f172a", dir: new THREE.Vector3(0, -1, 0), radius: 0.4 }
+        ],
+        lonePairs: [
+          new THREE.Vector3(1, 0, 0),
+          new THREE.Vector3(-0.5, 0, 0.866),
+          new THREE.Vector3(-0.5, 0, -0.866)
+        ],
+        steric: 5, bonding: 2, lone: 3,
+        electronGeom: "Trigonal Bipyramidal",
+        molecularGeom: "Linear",
+        hybridization: "sp³d",
+        angles: "180°"
+      },
+      SF6: {
+        name: "Sulfur Hexafluoride",
+        central: { symbol: "S", color: 0xeab308, textColor: "#0f172a", radius: 0.6 },
+        outer: getOctahedralVectors().map(v => ({ symbol: "F", color: 0x4ade80, textColor: "#0f172a", dir: v, radius: 0.4 })),
+        lonePairs: [],
+        steric: 6, bonding: 6, lone: 0,
+        electronGeom: "Octahedral",
+        molecularGeom: "Octahedral",
+        hybridization: "sp³d²",
+        angles: "90°"
+      },
+      XeF4: {
+        name: "Xenon Tetrafluoride",
+        central: { symbol: "Xe", color: 0xa855f7, textColor: "#ffffff", radius: 0.7 },
+        outer: [
+          { symbol: "F", color: 0x4ade80, textColor: "#0f172a", dir: new THREE.Vector3(1, 0, 0), radius: 0.4 },
+          { symbol: "F", color: 0x4ade80, textColor: "#0f172a", dir: new THREE.Vector3(-1, 0, 0), radius: 0.4 },
+          { symbol: "F", color: 0x4ade80, textColor: "#0f172a", dir: new THREE.Vector3(0, 0, 1), radius: 0.4 },
+          { symbol: "F", color: 0x4ade80, textColor: "#0f172a", dir: new THREE.Vector3(0, 0, -1), radius: 0.4 }
+        ],
+        lonePairs: [
+          new THREE.Vector3(0, 1, 0),
+          new THREE.Vector3(0, -1, 0)
+        ],
+        steric: 6, bonding: 4, lone: 2,
+        electronGeom: "Octahedral",
+        molecularGeom: "Square Planar",
+        hybridization: "sp³d²",
+        angles: "90°"
+      }
+    };
+
+    // --- Vector Utility Generators ---
+    function getTetrahedralVectors() {
+      return [
+        new THREE.Vector3(0, 1, 0),
+        new THREE.Vector3(0.943, -0.333, 0),
+        new THREE.Vector3(-0.471, -0.333, 0.816),
+        new THREE.Vector3(-0.471, -0.333, -0.816)
+      ];
+    }
+
+    function getTrigonalBipyramidalVectors() {
+      return [
+        new THREE.Vector3(0, 1, 0),
+        new THREE.Vector3(0, -1, 0),
+        new THREE.Vector3(1, 0, 0),
+        new THREE.Vector3(-0.5, 0, 0.866),
+        new THREE.Vector3(-0.5, 0, -0.866)
+      ];
+    }
+
+    function getOctahedralVectors() {
+      return [
+        new THREE.Vector3(1, 0, 0),
+        new THREE.Vector3(-1, 0, 0),
+        new THREE.Vector3(0, 1, 0),
+        new THREE.Vector3(0, -1, 0),
+        new THREE.Vector3(0, 0, 1),
+        new THREE.Vector3(0, 0, -1)
+      ];
+    }
+
+    // Helper to generate a dynamic Canvas texture with the element symbol printed on top
+    function createAtomTexture(symbol, bgColorHex, textColor = '#ffffff') {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+
+      const cssColor = '#' + bgColorHex.toString(16).padStart(6, '0');
+
+      ctx.fillStyle = cssColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.font = 'Bold 110px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = textColor;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      ctx.fillText(symbol, canvas.width * 0.25, canvas.height * 0.5);
+      ctx.fillText(symbol, canvas.width * 0.75, canvas.height * 0.5);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.needUpdate = true;
+      return texture;
+    }
+
+    // Bare text sprite without circular platform background
+    function createBareTextSprite(text, textColor = '#38bdf8', fontSize = 52) {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = 256;
+      canvas.height = 128;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.font = `Bold ${fontSize}px system-ui, -apple-system, sans-serif`;
+      ctx.fillStyle = textColor;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      // Crisp outline for readability over dark background
+      ctx.strokeStyle = 'rgba(15, 23, 42, 0.9)';
+      ctx.lineWidth = 6;
+      ctx.strokeText(text, 128, 64);
+      ctx.fillText(text, 128, 64);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      const spriteMaterial = new THREE.SpriteMaterial({ map: texture, depthTest: false, depthWrite: false });
+      const sprite = new THREE.Sprite(spriteMaterial);
+      sprite.scale.set(0.9, 0.45, 1);
+      return sprite;
+    }
+
+    // Creates dynamic curved line arc between two bond vectors
+    function createAngleArcMesh(vecA, vecB, radius = 0.9, color = 0x38bdf8) {
+      const angleRad = vecA.angleTo(vecB);
+      const points = [];
+      const segments = 32;
+
+      const normA = vecA.clone().normalize();
+      const normB = vecB.clone().normalize();
+
+      for (let i = 0; i <= segments; i++) {
+        const t = i / segments;
+        const currentVec = new THREE.Vector3().addScaledVector(normA, Math.sin((1 - t) * angleRad) / Math.sin(angleRad))
+                                              .addScaledVector(normB, Math.sin(t * angleRad) / Math.sin(angleRad));
+        currentVec.multiplyScalar(radius);
+        points.push(currentVec);
+      }
+
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const material = new THREE.LineBasicMaterial({ color: color, linewidth: 2, transparent: true, opacity: 0.85 });
+      return new THREE.Line(geometry, material);
+    }
+
+    // --- Three.js Application State ---
+    let scene, camera, renderer, controls;
+    let moleculeGroup, frameGroup, lonePairsGroup, anglesGroup;
+    const BOND_LENGTH = 2.2;
+
+    function init() {
+      const container = document.querySelector('.viewport-card');
+      const canvas = document.getElementById('webgl-canvas');
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0f172a);
+
+      camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+      camera.position.set(0, 2, 6);
+
+      renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+
+      // Lights
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+      scene.add(ambientLight);
+
+      const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+      dirLight1.position.set(5, 10, 7);
+      scene.add(dirLight1);
+
+      const dirLight2 = new THREE.DirectionalLight(0x38bdf8, 0.3);
+      dirLight2.position.set(-5, -5, -5);
+      scene.add(dirLight2);
+
+      // Parent Groups
+      moleculeGroup = new THREE.Group();
+      frameGroup = new THREE.Group();
+      lonePairsGroup = new THREE.Group();
+      anglesGroup = new THREE.Group();
+      
+      scene.add(moleculeGroup);
+      scene.add(frameGroup);
+      scene.add(lonePairsGroup);
+      scene.add(anglesGroup);
+
+      // Event Listeners
+      document.getElementById('molecule-select').addEventListener('change', (e) => loadMolecule(e.target.value));
+      document.getElementById('toggle-lone-pairs').addEventListener('change', (e) => {
+        lonePairsGroup.visible = e.target.checked;
+      });
+      document.getElementById('toggle-frame').addEventListener('change', (e) => {
+        frameGroup.visible = e.target.checked;
+      });
+      document.getElementById('toggle-angles').addEventListener('change', (e) => {
+        anglesGroup.visible = e.target.checked;
+      });
+
+      window.addEventListener('resize', onWindowResize);
+
+      // Initial Load
+      loadMolecule('CH4');
+      animate();
+    }
+
+    function loadMolecule(key) {
+      const data = MOLECULES[key];
+      if (!data) return;
+
+      // Clear existing meshes
+      while (moleculeGroup.children.length > 0) moleculeGroup.remove(moleculeGroup.children[0]);
+      while (frameGroup.children.length > 0) frameGroup.remove(frameGroup.children[0]);
+      while (lonePairsGroup.children.length > 0) lonePairsGroup.remove(lonePairsGroup.children[0]);
+      while (anglesGroup.children.length > 0) anglesGroup.remove(anglesGroup.children[0]);
+
+      const domainEndpoints = [];
+
+      // 1. Render Central Atom
+      const centralGeo = new THREE.SphereGeometry(data.central.radius, 32, 32);
+      const centralTexture = createAtomTexture(data.central.symbol, data.central.color, data.central.textColor);
+      const centralMat = new THREE.MeshStandardMaterial({ map: centralTexture, roughness: 0.3, metalness: 0.1 });
+      const centralMesh = new THREE.Mesh(centralGeo, centralMat);
+      moleculeGroup.add(centralMesh);
+
+      // 2. Render Outer Bonded Atoms & Bonds
+      const outerPositions = [];
+      data.outer.forEach(atom => {
+        const targetPos = atom.dir.clone().normalize().multiplyScalar(BOND_LENGTH);
+        domainEndpoints.push(targetPos);
+        outerPositions.push(targetPos);
+
+        const atomGeo = new THREE.SphereGeometry(atom.radius, 32, 32);
+        const atomTexture = createAtomTexture(atom.symbol, atom.color, atom.textColor || '#ffffff');
+        const atomMat = new THREE.MeshStandardMaterial({ map: atomTexture, roughness: 0.4 });
+        const atomMesh = new THREE.Mesh(atomGeo, atomMat);
+        atomMesh.position.copy(targetPos);
+        atomMesh.lookAt(targetPos.clone().multiplyScalar(2));
+        moleculeGroup.add(atomMesh);
+
+        const bondVector = targetPos.clone();
+        const bondLength = bondVector.length();
+        const bondGeo = new THREE.CylinderGeometry(0.08, 0.08, bondLength, 16);
+        const bondMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.5 });
+        const bondMesh = new THREE.Mesh(bondGeo, bondMat);
+
+        bondMesh.position.copy(bondVector.clone().multiplyScalar(0.5));
+        bondMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), bondVector.clone().normalize());
+        moleculeGroup.add(bondMesh);
+      });
+
+      // 3. Render Bare Bond Angle Text & Curvature Arc
+      if (outerPositions.length >= 2) {
+        const angleValues = data.angles.split(',').map(a => a.trim());
+        let angleIdx = 0;
+
+        for (let i = 0; i < outerPositions.length; i++) {
+          for (let j = i + 1; j < outerPositions.length; j++) {
+            const vecA = outerPositions[i].clone().normalize();
+            const vecB = outerPositions[j].clone().normalize();
+            const angleRad = vecA.angleTo(vecB);
+            const angleDeg = Math.round((angleRad * 180) / Math.PI);
+
+            if (outerPositions.length > 2 && angleDeg < 50) continue; 
+
+            // Render curvature arc line at arc radius 0.95
+            const ARC_RADIUS = 0.95;
+            const arcMesh = createAngleArcMesh(vecA, vecB, ARC_RADIUS, 0x38bdf8);
+            anglesGroup.add(arcMesh);
+
+            // Position bare angle text right outside arc curvature (radius 1.25)
+            const midVec = vecA.clone().add(vecB).normalize().multiplyScalar(1.25);
+            const angleText = angleValues[angleIdx % angleValues.length] || `${angleDeg}°`;
+            const angleSprite = createBareTextSprite(angleText, '#38bdf8', 52);
+            angleSprite.position.copy(midVec);
+            anglesGroup.add(angleSprite);
+
+            angleIdx++;
+            if (outerPositions.length > 3 && angleIdx >= 2) break;
+          }
+          if (outerPositions.length > 3 && anglesGroup.children.length >= 4) break;
+        }
+      }
+
+      // 4. Render Lone Pair Electron Density Clouds
+      data.lonePairs.forEach(dir => {
+        const targetPos = dir.clone().normalize().multiplyScalar(BOND_LENGTH);
+        domainEndpoints.push(targetPos);
+
+        const lobeGroup = new THREE.Group();
+        const lobeGeo = new THREE.SphereGeometry(0.55, 32, 32);
+        lobeGeo.scale(0.8, 1.4, 0.8);
+
+        const lobeMat = new THREE.MeshStandardMaterial({
+          color: 0x38bdf8,
+          transparent: true,
+          opacity: 0.45,
+          roughness: 0.1,
+          wireframe: false
+        });
+
+        const lobeMesh = new THREE.Mesh(lobeGeo, lobeMat);
+        lobeMesh.position.set(0, 0.7, 0);
+        lobeGroup.add(lobeMesh);
+
+        lobeGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+        lonePairsGroup.add(lobeGroup);
+      });
+
+      // 5. Render Geometry Frame Lines
+      for (let i = 0; i < domainEndpoints.length; i++) {
+        for (let j = i + 1; j < domainEndpoints.length; j++) {
+          const points = [domainEndpoints[i], domainEndpoints[j]];
+          const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
+          const lineMat = new THREE.LineDashedMaterial({
+            color: 0x38bdf8,
+            dashSize: 0.15,
+            gapSize: 0.1,
+            opacity: 0.5,
+            transparent: true
+          });
+          const line = new THREE.Line(lineGeo, lineMat);
+          line.computeLineDistances();
+          frameGroup.add(line);
+        }
+      }
+
+      // Update HUD Info Text
+      document.getElementById('info-steric').textContent = data.steric;
+      document.getElementById('info-pairs').textContent = `${data.bonding} / ${data.lone}`;
+      document.getElementById('info-electron-geom').textContent = data.electronGeom;
+      document.getElementById('info-molecular-geom').textContent = data.molecularGeom;
+      document.getElementById('info-hybrid').textContent = data.hybridization;
+      document.getElementById('info-angles').textContent = data.angles;
+
+      // Sync visibility checkboxes
+      lonePairsGroup.visible = document.getElementById('toggle-lone-pairs').checked;
+      frameGroup.visible = document.getElementById('toggle-frame').checked;
+      const angleToggle = document.getElementById('toggle-angles');
+      if (angleToggle) anglesGroup.visible = angleToggle.checked;
+    }
+
+    function onWindowResize() {
+      const container = document.querySelector('.viewport-card');
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>

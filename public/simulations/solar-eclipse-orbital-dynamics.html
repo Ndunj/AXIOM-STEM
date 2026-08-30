@@ -106,16 +106,29 @@
             color: #e0e0e0;
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.8);
         }
-        #info-panel h2 {
-            font-size: 15px;
+        #info-toggle {
+            width: 100%;
+            text-align: left;
+            background: rgba(255, 215, 0, 0.15);
             color: #ffd700;
-            margin: 0 0 10px 0;
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            padding: 10px 12px;
+            font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 1px;
-            border-bottom: 1px solid rgba(255, 215, 0, 0.2);
-            padding-bottom: 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
         }
-        #info-panel p {
+        #info-toggle:hover {
+            background: rgba(255, 215, 0, 0.3);
+            color: #fff;
+        }
+        #info-content {
+            margin-top: 12px;
+            display: none;
+        }
+        #info-content p {
             margin: 0 0 10px 0;
         }
         .info-section {
@@ -199,39 +212,41 @@
 
     <!-- Explanatory Write-Up Panel -->
     <div id="info-panel">
-        <h2>Understanding Solar Eclipses</h2>
+        <button id="info-toggle">Understanding Solar Eclipses</button>
         
-        <div class="info-section">
-            <p>A <strong>solar eclipse</strong> occurs when the Moon passes directly between the Earth and the Sun, temporarily blocking all or part of the Sun's light from reaching Earth.</p>
-        </div>
+        <div id="info-content">
+            <div class="info-section">
+                <p>A <strong>solar eclipse</strong> occurs when the Moon passes directly between the Earth and the Sun, temporarily blocking all or part of the Sun's light from reaching Earth.</p>
+            </div>
 
-        <div class="info-section">
-            <div class="info-title">Types of Solar Eclipses</div>
-            <ul class="info-list">
-                <li><strong>Total Eclipse:</strong> The Moon completely covers the Sun's bright disk, revealing the faint outer atmosphere (corona).</li>
-                <li><strong>Partial Eclipse:</strong> The Moon and Sun are not perfectly aligned, creating a crescent-shaped Sun.</li>
-                <li><strong>Annular Eclipse:</strong> The Moon is at apogee (farther from Earth) and appears smaller than the Sun, creating a "ring of fire".</li>
-                <li><strong>Hybrid Eclipse:</strong> Shifts between an annular and total eclipse along different parts of its path.</li>
-            </ul>
-        </div>
+            <div class="info-section">
+                <div class="info-title">Types of Solar Eclipses</div>
+                <ul class="info-list">
+                    <li><strong>Total Eclipse:</strong> The Moon completely covers the Sun's bright disk, revealing the faint outer atmosphere (corona).</li>
+                    <li><strong>Partial Eclipse:</strong> The Moon and Sun are not perfectly aligned, creating a crescent-shaped Sun.</li>
+                    <li><strong>Annular Eclipse:</strong> The Moon is at apogee (farther from Earth) and appears smaller than the Sun, creating a "ring of fire".</li>
+                    <li><strong>Hybrid Eclipse:</strong> Shifts between an annular and total eclipse along different parts of its path.</li>
+                </ul>
+            </div>
 
-        <div class="info-section">
-            <div class="info-title">Shadow Dynamics</div>
-            <p>The Moon casts two main shadows onto Earth during an alignment:</p>
-            <ul class="info-list">
-                <li><strong>Umbra:</strong> The dark inner core shadow. Observers within this zone experience a total solar eclipse.</li>
-                <li><strong>Penumbra:</strong> The lighter outer shadow region where observers see a partial solar eclipse.</li>
-            </ul>
-        </div>
+            <div class="info-section">
+                <div class="info-title">Shadow Dynamics</div>
+                <p>The Moon casts two main shadows onto Earth during an alignment:</p>
+                <ul class="info-list">
+                    <li><strong>Umbra:</strong> The dark inner core shadow. Observers within this zone experience a total solar eclipse.</li>
+                    <li><strong>Penumbra:</strong> The lighter outer shadow region where observers see a partial solar eclipse.</li>
+                </ul>
+            </div>
 
-        <div class="info-section">
-            <div class="info-title">Orbital Mechanics</div>
-            <p>Earth revolves around the Sun in an <strong>anticlockwise direction</strong> (when viewed from above the North Pole). Solar eclipses do not occur every month because the Moon's orbit is tilted at approximately 5 degrees relative to Earth's orbital plane (the ecliptic).</p>
-        </div>
+            <div class="info-section">
+                <div class="info-title">Orbital Mechanics</div>
+                <p>Earth revolves around the Sun in an <strong>anticlockwise direction</strong> (when viewed from above the North Pole). Solar eclipses do not occur every month because the Moon's orbit is tilted at approximately 5 degrees relative to Earth's orbital plane (the ecliptic).</p>
+            </div>
 
-        <div class="info-section">
-            <div class="info-title">Viewing Safety</div>
-            <p>Never look directly at the Sun without ISO 12312-2 certified solar viewing glasses. Standard sunglasses are not safe for direct solar observation.</p>
+            <div class="info-section">
+                <div class="info-title">Viewing Safety</div>
+                <p>Never look directly at the Sun without ISO 12312-2 certified solar viewing glasses. Standard sunglasses are not safe for direct solar observation.</p>
+            </div>
         </div>
     </div>
 
@@ -249,6 +264,16 @@
     </div>
 
     <script>
+        // --- Explanatory Panel Toggle Logic ---
+        const infoToggle = document.getElementById('info-toggle');
+        const infoContent = document.getElementById('info-content');
+        let isInfoOpen = false;
+
+        infoToggle.addEventListener('click', () => {
+            isInfoOpen = !isInfoOpen;
+            infoContent.style.display = isInfoOpen ? 'block' : 'none';
+        });
+
         // --- Procedural Textures ---
         function createEarthTexture() {
             const canvas = document.createElement('canvas');

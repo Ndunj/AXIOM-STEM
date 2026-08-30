@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Statistical Data Lab with Outliers & Skewness</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --accent-cyan: #38bdf8;
+      --accent-pink: #f43f5e;
+      --accent-purple: #a855f7;
+      --accent-green: #34d399;
+      --accent-orange: #fb923c;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    header {
+      margin-bottom: 20px;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      color: var(--accent-cyan);
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    @media (min-width: 1024px) {
+      .dashboard-grid {
+        grid-template-columns: 320px 1fr;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 18px;
+    }
+
+    .controls-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .controls-card h2 {
+      font-size: 1.2rem;
+      color: var(--accent-pink);
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 8px;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .control-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .control-label span.val {
+      color: var(--accent-cyan);
+      font-family: monospace;
+    }
+
+    .radio-group {
+      display: flex;
+      gap: 15px;
+      font-size: 0.9rem;
+    }
+
+    .radio-group label {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent-cyan);
+    }
+
+    button {
+      background: linear-gradient(135deg, var(--accent-purple), #7c3aed);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+
+    button:hover { opacity: 0.9; }
+    button:active { transform: scale(0.98); }
+
+    textarea {
+      background: #020617;
+      border: 1px solid var(--card-border);
+      color: var(--accent-cyan);
+      border-radius: 6px;
+      padding: 8px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .main-content {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Formulas Section */
+    .formulas-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+    }
+
+    .formula-card {
+      background: #020617;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .formula-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      color: var(--accent-green);
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .formula-expr {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.8rem;
+      color: var(--accent-cyan);
+      background: rgba(56, 189, 248, 0.05);
+      padding: 6px;
+      border-radius: 4px;
+      border: 1px dashed var(--card-border);
+    }
+
+    .formula-substitution {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      word-break: break-all;
+      max-height: 60px;
+      overflow-y: auto;
+    }
+
+    .formula-result {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent-pink);
+      font-family: monospace;
+      margin-top: auto;
+    }
+
+    /* Charts Section */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    @media (min-width: 768px) {
+      .charts-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .chart-card {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chart-card.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .chart-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 12px;
+    }
+
+    .canvas-holder {
+      position: relative;
+      width: 100%;
+      height: 250px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>📊 Statistical Data Lab (Outliers & Skewness)</h1>
+  </header>
+
+  <div class="dashboard-grid">
+    <!-- Controls Panel -->
+    <div class="card controls-card">
+      <h2>Data Controls</h2>
+
+      <div class="control-group">
+        <div class="control-label">Data Type</div>
+        <div class="radio-group">
+          <label><input type="radio" name="dataType" value="discrete" checked> Discrete</label>
+          <label><input type="radio" name="dataType" value="continuous"> Continuous</label>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">Sample Size (n): <span id="lblCount" class="val">10</span></div>
+        <input type="range" id="paramCount" min="7" max="30" value="10">
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">Min Value: <span id="lblMin" class="val">10</span></div>
+        <input type="range" id="paramMin" min="0" max="50" value="10">
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">Max Value: <span id="lblMax" class="val">30</span></div>
+        <input type="range" id="paramMax" min="10" max="100" value="30">
+      </div>
+
+      <button id="btnGenerate">🎲 Generate Random Data</button>
+
+      <div class="control-group">
+        <div class="control-label">Edit Dataset (Comma Separated)</div>
+        <textarea id="dataDisplay"></textarea>
+      </div>
+    </div>
+
+    <!-- Main Content Panel -->
+    <div class="main-content">
+      <!-- Formulas Section -->
+      <div class="formulas-grid">
+        <div class="formula-card">
+          <div class="formula-title">Mean (μ)</div>
+          <div class="formula-expr">μ = (Σ x_i) / n</div>
+          <div id="subMean" class="formula-substitution">...</div>
+          <div id="resMean" class="formula-result">= 0</div>
+        </div>
+
+        <div class="formula-card">
+          <div class="formula-title">Median</div>
+          <div class="formula-expr">Sorted Middle Position</div>
+          <div id="subMedian" class="formula-substitution">...</div>
+          <div id="resMedian" class="formula-result">= 0</div>
+        </div>
+
+        <div class="formula-card">
+          <div class="formula-title">Skewness</div>
+          <div class="formula-expr">[Σ(x_i - μ)³ / n] / σ³</div>
+          <div id="subSkewness" class="formula-substitution">...</div>
+          <div id="resSkewness" class="formula-result">= 0</div>
+        </div>
+
+        <div class="formula-card">
+          <div class="formula-title">Quartiles & IQR</div>
+          <div class="formula-expr">IQR = Q3 - Q1</div>
+          <div id="subQuartiles" class="formula-substitution">...</div>
+          <div id="resQuartiles" class="formula-result">= 0</div>
+        </div>
+
+        <div class="formula-card">
+          <div class="formula-title">Outliers (1.5 × IQR)</div>
+          <div class="formula-expr">&lt; Q1 - 1.5·IQR or &gt; Q3 + 1.5·IQR</div>
+          <div id="subOutliers" class="formula-substitution">...</div>
+          <div id="resOutliers" class="formula-result">= None</div>
+        </div>
+
+        <div class="formula-card">
+          <div class="formula-title">Standard Deviation (σ)</div>
+          <div class="formula-expr">σ = √(Σ(x_i - μ)² / n)</div>
+          <div id="subStdDev" class="formula-substitution">...</div>
+          <div id="resStdDev" class="formula-result">= 0</div>
+        </div>
+
+        <div class="formula-card">
+          <div class="formula-title">Range</div>
+          <div class="formula-expr">Range = Max - Min</div>
+          <div id="subRange" class="formula-substitution">...</div>
+          <div id="resRange" class="formula-result">= 0</div>
+        </div>
+      </div>
+
+      <!-- Charts Section -->
+      <div class="charts-grid">
+        <div class="card chart-card full-width">
+          <div class="chart-title">Box & Whisker Plot (With Dynamic Outliers)</div>
+          <div class="canvas-holder"><canvas id="boxChart"></canvas></div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="chart-title">Bar Graph (Categorical Frequencies)</div>
+          <div class="canvas-holder"><canvas id="barChart"></canvas></div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="chart-title">Histogram (Binned Distribution)</div>
+          <div class="canvas-holder"><canvas id="histogramChart"></canvas></div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="chart-title">Frequency Polygon</div>
+          <div class="canvas-holder"><canvas id="polygonChart"></canvas></div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="chart-title">Pie Chart (Relative Frequencies)</div>
+          <div class="canvas-holder"><canvas id="pieChart"></canvas></div>
+        </div>
+
+        <div class="card chart-card full-width">
+          <div class="chart-title">Line Graph (Raw Data Points)</div>
+          <div class="canvas-holder"><canvas id="lineChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let dataPoints = [];
+    let chartInstances = {};
+
+    const paramCount = document.getElementById('paramCount');
+    const paramMin = document.getElementById('paramMin');
+    const paramMax = document.getElementById('paramMax');
+    const btnGenerate = document.getElementById('btnGenerate');
+    const dataDisplay = document.getElementById('dataDisplay');
+
+    const lblCount = document.getElementById('lblCount');
+    const lblMin = document.getElementById('lblMin');
+    const lblMax = document.getElementById('lblMax');
+
+    const palette = [
+      '#38bdf8', '#f43f5e', '#a855f7', '#34d399', '#fb923c',
+      '#eab308', '#ec4899', '#6366f1', '#14b8a6', '#f97316'
+    ];
+
+    function getSelectedDataType() {
+      return document.querySelector('input[name="dataType"]:checked').value;
+    }
+
+    function generateData() {
+      const n = parseInt(paramCount.value);
+      const min = parseFloat(paramMin.value);
+      const max = Math.max(min + 1, parseFloat(paramMax.value));
+      const type = getSelectedDataType();
+
+      dataPoints = [];
+      
+      // Standard random distribution generation
+      for (let i = 0; i < n; i++) {
+        let val = Math.random() * (max - min) + min;
+        val = type === 'discrete' ? Math.round(val) : parseFloat(val.toFixed(2));
+        dataPoints.push(val);
+      }
+
+      dataDisplay.value = dataPoints.join(', ');
+      updateDashboard();
+    }
+
+    function parseInputData() {
+      const raw = dataDisplay.value;
+      const parsed = raw.split(',')
+        .map(v => parseFloat(v.trim()))
+        .filter(v => !isNaN(v));
+
+      if (parsed.length >= 2) {
+        dataPoints = parsed;
+        updateDashboard();
+      }
+    }
+
+    function calculateMedian(arr) {
+      if (arr.length === 0) return 0;
+      const mid = Math.floor(arr.length / 2);
+      return arr.length % 2 !== 0 ? arr[mid] : (arr[mid - 1] + arr[mid]) / 2;
+    }
+
+    function calculateQuartilesAndOutliers(sorted) {
+      const n = sorted.length;
+      const median = calculateMedian(sorted);
+      let lowerHalf = n % 2 === 0 ? sorted.slice(0, n / 2) : sorted.slice(0, Math.floor(n / 2));
+      let upperHalf = n % 2 === 0 ? sorted.slice(n / 2) : sorted.slice(Math.ceil(n / 2));
+
+      const q1 = calculateMedian(lowerHalf);
+      const q3 = calculateMedian(upperHalf);
+      const iqr = q3 - q1;
+
+      const lowerFence = q1 - 1.5 * iqr;
+      const upperFence = q3 + 1.5 * iqr;
+
+      const outliers = sorted.filter(v => v < lowerFence || v > upperFence);
+      const nonOutliers = sorted.filter(v => v >= lowerFence && v <= upperFence);
+
+      const whiskerMin = nonOutliers.length > 0 ? nonOutliers[0] : sorted[0];
+      const whiskerMax = nonOutliers.length > 0 ? nonOutliers[nonOutliers.length - 1] : sorted[n - 1];
+
+      return { min: sorted[0], q1, median, q3, max: sorted[n - 1], iqr, lowerFence, upperFence, outliers, whiskerMin, whiskerMax };
+    }
+
+    function calculateDynamicFormulas() {
+      const n = dataPoints.length;
+      if (n === 0) return;
+
+      const sorted = [...dataPoints].sort((a, b) => a - b);
+      
+      // 1. Mean
+      const sum = dataPoints.reduce((acc, v) => acc + v, 0);
+      const mean = sum / n;
+      document.getElementById('subMean').textContent = `(${dataPoints.join(' + ')}) / ${n}`;
+      document.getElementById('resMean').textContent = `= ${mean.toFixed(2)}`;
+
+      // 2. Median
+      const median = calculateMedian(sorted);
+      document.getElementById('subMedian').textContent = `Sorted: [${sorted.join(', ')}]`;
+      document.getElementById('resMedian').textContent = `= ${median.toFixed(2)}`;
+
+      // 3. Quartiles & IQR
+      const stats = calculateQuartilesAndOutliers(sorted);
+      document.getElementById('subQuartiles').textContent = `Q1: ${stats.q1.toFixed(2)}, Q3: ${stats.q3.toFixed(2)} | IQR = ${stats.q3.toFixed(2)} - ${stats.q1.toFixed(2)}`;
+      document.getElementById('resQuartiles').textContent = `= ${stats.iqr.toFixed(2)}`;
+
+      // 4. Outliers
+      document.getElementById('subOutliers').textContent = `Fences: [${stats.lowerFence.toFixed(2)}, ${stats.upperFence.toFixed(2)}]`;
+      document.getElementById('resOutliers').textContent = stats.outliers.length > 0 ? `= [ ${stats.outliers.join(', ')} ]` : '= None';
+
+      // 5. Standard Deviation
+      const sqDiffs = dataPoints.map(v => Math.pow(v - mean, 2));
+      const variance = sqDiffs.reduce((acc, v) => acc + v, 0) / n;
+      const stdDev = Math.sqrt(variance);
+      document.getElementById('subStdDev').textContent = `√(${variance.toFixed(2)})`;
+      document.getElementById('resStdDev').textContent = `= ${stdDev.toFixed(2)}`;
+
+      // 6. Skewness
+      if (stdDev > 0) {
+        const cubedDiffsSum = dataPoints.reduce((acc, v) => acc + Math.pow(v - mean, 3), 0);
+        const skewness = (cubedDiffsSum / n) / Math.pow(stdDev, 3);
+        let type = 'Symmetric';
+        if (skewness > 0.3) type = 'Positive (Right)';
+        else if (skewness < -0.3) type = 'Negative (Left)';
+        
+        document.getElementById('subSkewness').textContent = `m3 / σ³ = ${(cubedDiffsSum / n).toFixed(2)} / ${Math.pow(stdDev, 3).toFixed(2)}`;
+        document.getElementById('resSkewness').textContent = `= ${skewness.toFixed(2)} (${type})`;
+      } else {
+        document.getElementById('subSkewness').textContent = `No Variation`;
+        document.getElementById('resSkewness').textContent = `= 0.00`;
+      }
+
+      // 7. Range
+      const minVal = sorted[0];
+      const maxVal = sorted[n - 1];
+      const range = maxVal - minVal;
+      document.getElementById('subRange').textContent = `${maxVal} - ${minVal}`;
+      document.getElementById('resRange').textContent = `= ${range.toFixed(2)}`;
+    }
+
+    function buildFrequencies() {
+      const counts = {};
+      dataPoints.forEach(v => counts[v] = (counts[v] || 0) + 1);
+      const labels = Object.keys(counts).sort((a, b) => Number(a) - Number(b));
+      const values = labels.map(k => counts[k]);
+      return { labels, values };
+    }
+
+    function buildHistogramBins(binCount = 5) {
+      const min = Math.min(...dataPoints);
+      const max = Math.max(...dataPoints);
+      const step = (max - min) / binCount || 1;
+
+      const bins = Array(binCount).fill(0);
+      const labels = [];
+
+      for (let i = 0; i < binCount; i++) {
+        const bMin = min + i * step;
+        const bMax = min + (i + 1) * step;
+        labels.push(`${bMin.toFixed(1)}-${bMax.toFixed(1)}`);
+      }
+
+      dataPoints.forEach(v => {
+        let idx = Math.floor((v - min) / step);
+        if (idx >= binCount) idx = binCount - 1;
+        bins[idx]++;
+      });
+
+      return { labels, bins };
+    }
+
+    // Custom Boxplot Drawer with Dynamic Outlier Support
+    const boxPlotDrawer = {
+      id: 'boxPlotDrawer',
+      afterDraw(chart) {
+        if (!chart.config.options.plugins.statsData) return;
+        const stats = chart.config.options.plugins.statsData;
+        const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
+
+        const yMid = (top + bottom) / 2;
+        const h = 40;
+
+        const pWMin = x.getPixelForValue(stats.whiskerMin);
+        const pQ1 = x.getPixelForValue(stats.q1);
+        const pMed = x.getPixelForValue(stats.median);
+        const pQ3 = x.getPixelForValue(stats.q3);
+        const pWMax = x.getPixelForValue(stats.whiskerMax);
+
+        ctx.save();
+
+        // Whiskers Line (Stops at non-outlier min/max)
+        ctx.beginPath();
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 2;
+        ctx.moveTo(pWMin, yMid);
+        ctx.lineTo(pWMax, yMid);
+        ctx.stroke();
+
+        // Caps
+        ctx.beginPath();
+        ctx.moveTo(pWMin, yMid - 12); ctx.lineTo(pWMin, yMid + 12);
+        ctx.moveTo(pWMax, yMid - 12); ctx.lineTo(pWMax, yMid + 12);
+        ctx.stroke();
+
+        // Box
+        ctx.fillStyle = 'rgba(168, 85, 247, 0.35)';
+        ctx.strokeStyle = '#a855f7';
+        ctx.lineWidth = 2;
+        const width = Math.max(pQ3 - pQ1, 2);
+        ctx.fillRect(pQ1, yMid - h / 2, width, h);
+        ctx.strokeRect(pQ1, yMid - h / 2, width, h);
+
+        // Median Line
+        ctx.beginPath();
+        ctx.strokeStyle = '#34d399';
+        ctx.lineWidth = 3;
+        ctx.moveTo(pMed, yMid - h / 2);
+        ctx.lineTo(pMed, yMid + h / 2);
+        ctx.stroke();
+
+        // Dynamically plot outliers if any exist in the dataset
+        stats.outliers.forEach(outlierVal => {
+          const pOutlier = x.getPixelForValue(outlierVal);
+          ctx.beginPath();
+          ctx.arc(pOutlier, yMid, 6, 0, Math.PI * 2);
+          ctx.fillStyle = '#f43f5e';
+          ctx.fill();
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+
+          // Outlier label
+          ctx.fillStyle = '#f43f5e';
+          ctx.font = 'bold 10px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(`Outlier (${outlierVal})`, pOutlier, yMid - 14);
+        });
+
+        // Value Labels
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '11px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Q1: ${stats.q1.toFixed(1)}`, pQ1, yMid + h / 2 + 18);
+        ctx.fillText(`Med: ${stats.median.toFixed(1)}`, pMed, yMid - 22);
+        ctx.fillText(`Q3: ${stats.q3.toFixed(1)}`, pQ3, yMid + h / 2 + 18);
+
+        ctx.restore();
+      }
+    };
+
+    function renderCharts() {
+      const freq = buildFrequencies();
+      const hist = buildHistogramBins(5);
+      const sorted = [...dataPoints].sort((a, b) => a - b);
+      const stats = calculateQuartilesAndOutliers(sorted);
+
+      const commonOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+          y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+        }
+      };
+
+      // 1. Box Plot
+      if (chartInstances.box) chartInstances.box.destroy();
+      const pad = (stats.max - stats.min) * 0.1 || 1;
+      chartInstances.box = new Chart(document.getElementById('boxChart'), {
+        type: 'scatter',
+        data: {
+          datasets: [{
+            data: [{ x: stats.min, y: 0 }, { x: stats.max, y: 0 }],
+            pointRadius: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: false },
+            statsData: stats
+          },
+          scales: {
+            x: {
+              type: 'linear',
+              min: stats.min - pad,
+              max: stats.max + pad,
+              ticks: { color: '#94a3b8' },
+              grid: { color: '#334155' }
+            },
+            y: { display: false, min: -1, max: 1 }
+          }
+        },
+        plugins: [boxPlotDrawer]
+      });
+
+      // 2. Bar Chart
+      if (chartInstances.bar) chartInstances.bar.destroy();
+      chartInstances.bar = new Chart(document.getElementById('barChart'), {
+        type: 'bar',
+        data: {
+          labels: freq.labels,
+          datasets: [{ data: freq.values, backgroundColor: palette, borderRadius: 6 }]
+        },
+        options: commonOptions
+      });
+
+      // 3. Histogram
+      if (chartInstances.histogram) chartInstances.histogram.destroy();
+      chartInstances.histogram = new Chart(document.getElementById('histogramChart'), {
+        type: 'bar',
+        data: {
+          labels: hist.labels,
+          datasets: [{
+            data: hist.bins,
+            backgroundColor: '#a855f7',
+            barPercentage: 1.0,
+            categoryPercentage: 1.0,
+            borderWidth: 1,
+            borderColor: '#0f172a'
+          }]
+        },
+        options: commonOptions
+      });
+
+      // 4. Frequency Polygon
+      if (chartInstances.polygon) chartInstances.polygon.destroy();
+      chartInstances.polygon = new Chart(document.getElementById('polygonChart'), {
+        type: 'line',
+        data: {
+          labels: ['Start', ...hist.labels, 'End'],
+          datasets: [{
+            data: [0, ...hist.bins, 0],
+            borderColor: '#34d399',
+            backgroundColor: 'rgba(52, 211, 153, 0.2)',
+            fill: true,
+            tension: 0.2,
+            pointRadius: 5
+          }]
+        },
+        options: commonOptions
+      });
+
+      // 5. Pie Chart
+      if (chartInstances.pie) chartInstances.pie.destroy();
+      chartInstances.pie = new Chart(document.getElementById('pieChart'), {
+        type: 'pie',
+        data: {
+          labels: freq.labels,
+          datasets: [{ data: freq.values, backgroundColor: palette }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'right', labels: { color: '#f8fafc' } } }
+        }
+      });
+
+      // 6. Line Chart
+      if (chartInstances.line) chartInstances.line.destroy();
+      chartInstances.line = new Chart(document.getElementById('lineChart'), {
+        type: 'line',
+        data: {
+          labels: dataPoints.map((_, i) => `#${i + 1}`),
+          datasets: [{
+            data: dataPoints,
+            borderColor: '#38bdf8',
+            backgroundColor: 'rgba(56, 189, 248, 0.1)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 4
+          }]
+        },
+        options: commonOptions
+      });
+    }
+
+    function updateDashboard() {
+      calculateDynamicFormulas();
+      renderCharts();
+    }
+
+    // Event Listeners
+    [paramCount, paramMin, paramMax].forEach(elem => {
+      elem.addEventListener('input', () => {
+        lblCount.textContent = paramCount.value;
+        lblMin.textContent = paramMin.value;
+        lblMax.textContent = paramMax.value;
+        generateData();
+      });
+    });
+
+    document.querySelectorAll('input[name="dataType"]').forEach(elem => {
+      elem.addEventListener('change', generateData);
+    });
+
+    btnGenerate.addEventListener('click', generateData);
+    dataDisplay.addEventListener('input', parseInputData);
+
+    // Initial Execution
+    window.onload = () => {
+      generateData();
+    };
+  </script>
+</body>
+</html>

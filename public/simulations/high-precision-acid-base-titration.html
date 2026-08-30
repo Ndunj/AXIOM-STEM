@@ -1,0 +1,1801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>High-Precision Acid-Base Titration Simulator</title>
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --panel-dark: #131c2e;
+      --card-dark: #1e293b;
+      --accent-blue: #38bdf8;
+      --accent-blue-glow: rgba(56, 189, 248, 0.35);
+      --accent-green: #10b981;
+      --accent-green-glow: rgba(16, 185, 129, 0.35);
+      --accent-amber: #f59e0b;
+      --accent-amber-glow: rgba(245, 158, 11, 0.35);
+      --accent-red: #ef4444;
+      --accent-red-glow: rgba(239, 68, 68, 0.35);
+      --accent-purple: #a855f7;
+      --accent-purple-glow: rgba(168, 85, 247, 0.35);
+      --text-light: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-light);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+    }
+
+    header {
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 4px;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .app-layout {
+      display: grid;
+      grid-template-columns: 320px 1fr 380px;
+      gap: 18px;
+      max-width: 1650px;
+      width: 100%;
+      margin: 0 auto;
+      flex: 1;
+    }
+
+    @media (max-width: 1200px) {
+      .app-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background-color: var(--panel-dark);
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+
+    .panel-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-light);
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 8px;
+      letter-spacing: 0.3px;
+    }
+
+    .control-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .control-item label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    select, input[type="number"] {
+      background-color: var(--bg-dark);
+      border: 1px solid #334155;
+      color: var(--text-light);
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    select:focus, input[type="number"]:focus {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 2px var(--accent-blue-glow);
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      background: #334155;
+      border-radius: 4px;
+      outline: none;
+      margin: 6px 0;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--accent-blue);
+      cursor: pointer;
+      box-shadow: 0 0 8px var(--accent-blue-glow);
+      transition: transform 0.1s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .slider-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .vol-input-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .vol-input-group input {
+      flex: 1;
+    }
+
+    .vol-unit-badge {
+      background-color: var(--card-dark);
+      border: 1px solid #334155;
+      color: var(--accent-blue);
+      font-weight: 600;
+      font-size: 0.8rem;
+      padding: 8px 10px;
+      border-radius: 8px;
+    }
+
+    .quick-vol-pills {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .btn-pill {
+      background-color: var(--card-dark);
+      border: 1px solid #334155;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      padding: 4px 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .btn-pill:hover {
+      border-color: var(--accent-blue);
+      color: var(--text-light);
+    }
+
+    .btn-pill.active {
+      background-color: var(--accent-blue);
+      color: #0f172a;
+      border-color: var(--accent-blue);
+      font-weight: 700;
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      color: var(--text-light);
+      font-weight: 600;
+      border: 1px solid #334155;
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn:hover:not(:disabled) {
+      border-color: #475569;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn:disabled {
+      background: #1e293b;
+      color: #475569;
+      border-color: #1e293b;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+      color: #ffffff;
+      border: none;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      box-shadow: 0 0 12px var(--accent-blue-glow);
+    }
+
+    .btn-guide {
+      background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+      color: #ffffff;
+      border: none;
+    }
+
+    .btn-guide:hover:not(:disabled) {
+      box-shadow: 0 0 12px var(--accent-purple-glow);
+    }
+
+    .btn-stop {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: #ffffff;
+      border: none;
+    }
+
+    .btn-stop:hover:not(:disabled) {
+      box-shadow: 0 0 12px var(--accent-red-glow);
+    }
+
+    .btn-open {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #ffffff;
+      border: none;
+    }
+
+    .btn-open:hover:not(:disabled) {
+      box-shadow: 0 0 12px var(--accent-green-glow);
+    }
+
+    .btn-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .stage-container {
+      background-color: #060911;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      min-height: 640px;
+    }
+
+    #labCanvas {
+      background: transparent;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .metric-card {
+      background-color: var(--card-dark);
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .metric-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .metric-value {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--accent-blue);
+    }
+
+    .calc-box {
+      background-color: var(--card-dark);
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .calc-formula {
+      font-family: Consolas, Monaco, monospace;
+      font-size: 0.95rem;
+      font-weight: bold;
+      color: var(--accent-green);
+      text-align: center;
+      background: rgba(16, 185, 129, 0.1);
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px dashed var(--accent-green);
+    }
+
+    .calc-steps {
+      font-size: 0.8rem;
+      color: var(--text-light);
+      line-height: 1.6;
+    }
+
+    .calc-steps .highlight {
+      color: var(--accent-blue);
+      font-weight: 600;
+    }
+
+    .calc-steps .result-highlight {
+      color: var(--accent-green);
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .alert-banner {
+      display: none;
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.2) 100%);
+      border: 1px solid var(--accent-amber);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.8rem;
+      color: #fef3c7;
+      line-height: 1.4;
+      animation: pulseAlert 1.5s infinite alternate;
+    }
+
+    .success-banner {
+      display: none;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.2) 100%);
+      border: 1px solid var(--accent-green);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.8rem;
+      color: #d1fae5;
+      line-height: 1.4;
+    }
+
+    @keyframes pulseAlert {
+      0% { box-shadow: 0 0 4px var(--accent-amber-glow); }
+      100% { box-shadow: 0 0 14px var(--accent-amber-glow); }
+    }
+
+    .graph-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 180px;
+      background-color: var(--card-dark);
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    #curveCanvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    .status-box {
+      font-size: 0.8rem;
+      background-color: var(--card-dark);
+      border-left: 3px solid var(--accent-blue);
+      padding: 10px;
+      color: var(--text-muted);
+      border-radius: 0 8px 8px 0;
+      line-height: 1.4;
+    }
+
+    .status-box strong {
+      color: var(--text-light);
+    }
+
+    .status-success {
+      color: var(--accent-green) !important;
+    }
+
+    /* Feedback System Styling */
+    .student-feedback-card {
+      margin-top: 6px;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      line-height: 1.4;
+      display: none;
+    }
+
+    .student-feedback-card.correct {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid var(--accent-green);
+      color: #d1fae5;
+    }
+
+    .student-feedback-card.incorrect {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid var(--accent-red);
+      color: #fecaca;
+    }
+
+    /* Modal Styling */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(9, 13, 22, 0.85);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .modal-content {
+      background-color: var(--panel-dark);
+      border: 1px solid #334155;
+      border-radius: 14px;
+      max-width: 720px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 24px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 12px;
+    }
+
+    .modal-header h2 {
+      font-size: 1.3rem;
+      color: var(--accent-purple);
+    }
+
+    .close-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .close-btn:hover {
+      color: var(--text-light);
+    }
+
+    .guide-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .guide-section h3 {
+      font-size: 1rem;
+      color: var(--accent-blue);
+    }
+
+    .guide-section p {
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: var(--text-muted);
+    }
+
+    .guide-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 6px;
+      font-size: 0.8rem;
+    }
+
+    .guide-table th, .guide-table td {
+      border: 1px solid #334155;
+      padding: 8px 10px;
+      text-align: left;
+    }
+
+    .guide-table th {
+      background-color: var(--card-dark);
+      color: var(--text-light);
+    }
+
+    .guide-table td {
+      color: var(--text-muted);
+    }
+
+    .concept-card {
+      background-color: var(--card-dark);
+      border-left: 3px solid var(--accent-purple);
+      padding: 12px;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>High-Precision Acid-Base Titration Lab</h1>
+    <p>Calibrated Volumetric Glassware • Dynamic CaVa = CbVb Calculations • Real-Time Indicators</p>
+  </header>
+
+  <div class="app-layout">
+    
+    <!-- LEFT PANEL: SETUP & CONTROLS -->
+    <div class="panel">
+      <div class="panel-title">1. Setup Flask & Analyte Volume</div>
+
+      <div class="control-item">
+        <label for="systemSelect">Reaction System</label>
+        <select id="systemSelect">
+          <option value="0">Unknown Molarity Acid Sample (Flask) + 0.10M Standard NaOH (Buret)</option>
+          <option value="1">Unknown Molarity HCl Sample (Flask) + 0.10M Standard NaOH (Buret)</option>
+          <option value="2">Unknown Molarity CH3COOH Sample (Flask) + 0.10M Standard NaOH (Buret)</option>
+          <option value="3">Unknown Molarity NH3 Sample (Flask) + 0.12M Standard HCl (Buret)</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label for="indicatorSelect">Chemical Indicator</label>
+        <select id="indicatorSelect">
+          <option value="0">Phenolphthalein (Clear → Pink)</option>
+          <option value="1">Methyl Orange (Red → Orange/Yellow)</option>
+          <option value="2">Bromothymol Blue (Yellow → Blue)</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label for="acidVol">Fixed Analyte Volume in Flask (Va)</label>
+        <div class="vol-input-group">
+          <input type="number" id="acidVol" value="25.0" min="1.0" max="100.0" step="0.5">
+          <span class="vol-unit-badge">cm³</span>
+        </div>
+        <div class="quick-vol-pills">
+          <button class="btn-pill" onclick="setQuickVol(10.0)">10 cm³</button>
+          <button class="btn-pill" onclick="setQuickVol(20.0)">20 cm³</button>
+          <button class="btn-pill active" id="pill25" onclick="setQuickVol(25.0)">25 cm³</button>
+          <button class="btn-pill" onclick="setQuickVol(50.0)">50 cm³</button>
+        </div>
+      </div>
+
+      <button id="prepAction" class="btn btn-primary">
+        <span>Pipette Analyte & Indicator Drop</span>
+      </button>
+
+      <!-- EDUCATIONAL GUIDE BUTTON -->
+      <button id="openGuide" class="btn btn-guide">
+        <span>📘 Educational Chemistry Guide</span>
+      </button>
+
+      <div class="panel-title" style="margin-top: 6px;">2. Valve & Flow Controls</div>
+
+      <div class="control-item">
+        <label>Magnetic Stirrer Speed</label>
+        <button id="toggleStir" class="btn">Stirrer: OFF</button>
+      </div>
+
+      <!-- DYNAMIC FLOW RATE SLIDER -->
+      <div class="control-item">
+        <label for="flowSlider">
+          <span>Valve Opening (Flow Rate)</span>
+          <span id="flowDisplay" style="color: var(--accent-blue); font-weight: 600;">0.020 cm³/step</span>
+        </label>
+        <input type="range" id="flowSlider" min="0.005" max="0.080" step="0.005" value="0.020">
+        <div class="slider-labels">
+          <span>Dropwise (Slow)</span>
+          <span>Moderate</span>
+          <span>Fast Stream</span>
+        </div>
+      </div>
+
+      <div class="control-item">
+        <label>Buret Stopcock Valve</label>
+        <div class="btn-grid-2">
+          <button id="flowOpen" class="btn btn-open" disabled>Open Buret Valve</button>
+          <button id="flowStop" class="btn btn-stop" disabled>Close Valve</button>
+        </div>
+      </div>
+
+      <button id="resetLab" class="btn" style="margin-top: auto;">Reset Station</button>
+    </div>
+
+    <!-- CENTER VISUAL STAGE -->
+    <div class="stage-container">
+      <canvas id="labCanvas" width="580" height="640"></canvas>
+    </div>
+
+    <!-- RIGHT PANEL: METRICS & STOICHIOMETRIC CALCULATOR -->
+    <div class="panel">
+      <div class="panel-title">Real-Time Measurements</div>
+
+      <div class="metric-grid">
+        <div class="metric-card">
+          <span class="metric-label">pH Level</span>
+          <span class="metric-value" id="valPH">1.00</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Titrant Delivered (Vb)</span>
+          <span class="metric-value" id="valDelivered">0.00 cm³</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Flask Volume (Va)</span>
+          <span class="metric-value" id="valAnalyte">0.00 cm³</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Buret Level</span>
+          <span class="metric-value" id="valBuretLeft">50.00 cm³</span>
+        </div>
+      </div>
+
+      <!-- DYNAMIC Ca Va = Cb Vb CALCULATOR -->
+      <div class="panel-title" style="margin-top: 4px;">Dynamic Stoichiometric Analysis</div>
+      <div class="calc-box">
+        <div class="control-item" style="margin-bottom: 4px;">
+          <label for="calcMode">Target Parameter</label>
+          <select id="calcMode">
+            <option value="Ca">Concentration of Unknown Sample (Ca)</option>
+            <option value="Va">Volume of Acid (Va)</option>
+            <option value="Cb">Concentration of Base (Cb)</option>
+            <option value="Vb">Volume of Base / Equivalence Vol (Vb)</option>
+          </select>
+        </div>
+
+        <div class="calc-formula" id="formulaDisplay">
+          Ca × Va = Cb × Vb
+        </div>
+
+        <div class="calc-steps" id="calcSteps">
+          <em>Run titration to complete endpoint reaction and derive dynamic calculations.</em>
+        </div>
+
+        <!-- STUDENT FEEDBACK / EVALUATION SYSTEM -->
+        <div class="control-item" style="margin-top: 8px; border-top: 1px dashed #334155; padding-top: 8px;">
+          <label for="studentAnswerInput">
+            <span>Student Experimental Guess / Result:</span>
+          </label>
+          <div class="vol-input-group">
+            <input type="number" id="studentAnswerInput" placeholder="Enter calculated value" step="0.001">
+            <button id="btnCheckAnswer" class="btn btn-primary" style="padding: 6px 12px;">Check</button>
+          </div>
+        </div>
+        <div id="studentFeedbackCard" class="student-feedback-card"></div>
+      </div>
+
+      <div class="alert-banner" id="endpointAlert">
+        ⚠️ <strong>ENDPOINT APPROACHING!</strong> Slow down to dropwise flow and watch for permanent color change!
+      </div>
+
+      <div class="success-banner" id="neutralAlert">
+        ✅ <strong>NEUTRALIZATION REACTION COMPLETE!</strong> (Equivalence Point Reached). Moles H+ = Moles OH-. Close the buret valve now when the indicator color stabilizes.
+      </div>
+
+      <div class="status-box" id="statusDesc">
+        <strong>Status:</strong> Station ready. Click 'Pipette Analyte & Indicator Drop' to prepare flask.
+      </div>
+
+      <div class="graph-wrapper">
+        <span class="metric-label" style="margin-bottom: 8px;">Titration Curve (pH vs Buret Volume in cm³)</span>
+        <canvas id="curveCanvas"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- EDUCATIONAL MODAL -->
+  <div class="modal-overlay" id="guideModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Chemistry Concept Guide</h2>
+        <button class="close-btn" id="closeGuide">&times;</button>
+      </div>
+
+      <div class="concept-card">
+        <strong>Endpoint vs. Equivalence Point:</strong><br>
+        • <strong>Equivalence Point:</strong> The theoretical point where moles of hydrogen ions equal moles of hydroxide ions, marking 100% complete chemical neutralization.<br>
+        • <strong>Endpoint:</strong> The physical observation point where the indicator visually changes color.<br>
+        • <strong>Experimental Rule:</strong> Turn OFF the buret pipe at the <strong>ENDPOINT (first permanent color change)</strong>. In actual practice, you cannot see the equivalence point directly; you rely on the indicator's endpoint to signal that neutralization is complete.
+      </div>
+
+      <div class="guide-section">
+        <h3>Expected pH at Complete Neutralization (Equivalence Point)</h3>
+        <p>The pH at neutralization depends on the strengths of the reacting acid and base, as salt hydrolysis affects the final ion concentration:</p>
+        
+        <table class="guide-table">
+          <thead>
+            <tr>
+              <th>System Type</th>
+              <th>pH at Neutralization</th>
+              <th>Reasoning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Strong Acid + Strong Base</td>
+              <td>pH = 7.00</td>
+              <td>Salt ions do not undergo hydrolysis in water.</td>
+            </tr>
+            <tr>
+              <td>Weak Acid + Strong Base</td>
+              <td>pH > 7.00 (Basic)</td>
+              <td>Conjugate base of weak acid reacts with water to produce excess OH- ions.</td>
+            </tr>
+            <tr>
+              <td>Strong Acid + Weak Base</td>
+              <td>pH < 7.00 (Acidic)</td>
+              <td>Conjugate acid of weak base reacts with water to produce excess H+ ions.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="guide-section">
+        <h3>Choosing the Right Indicator</h3>
+        <p>An indicator is accurate only when its pH color transition range encompasses the equivalence point of the specific reaction system.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Helper Function: Clamped pH ---
+    function clampPH(ph) {
+      if (isNaN(ph) || !isFinite(ph)) return 7.0;
+      return Math.max(0.0, Math.min(14.0, ph));
+    }
+
+    // --- Helper Function: Linear Interpolation for Colors ---
+    function lerpColor(c1, c2, t) {
+      t = Math.max(0, Math.min(1, t));
+      return {
+        r: Math.round(c1.r + (c2.r - c1.r) * t),
+        g: Math.round(c1.g + (c2.g - c1.g) * t),
+        b: Math.round(c1.b + (c2.b - c1.b) * t),
+        a: c1.a + (c2.a - c1.a) * t
+      };
+    }
+
+    // --- Indicator Physics ---
+    // Corrected Methyl Orange to remain distinctly RED at acidic pH <= 3.1
+    const INDICATORS = [
+      {
+        name: "Phenolphthalein",
+        shortCode: "PHENOL.",
+        getColor: (ph) => {
+          if (ph < 8.2) return { r: 245, g: 247, b: 250, a: 0.12 };
+          if (ph >= 10.0) return { r: 236, g: 72, b: 153, a: 0.88 };
+          let t = (ph - 8.2) / 1.8;
+          return lerpColor({ r: 245, g: 247, b: 250, a: 0.12 }, { r: 236, g: 72, b: 153, a: 0.88 }, t);
+        },
+        getEndpointColor: () => ({ r: 236, g: 72, b: 153, a: 0.88 }),
+        nearEndpoint: (ph) => ph >= 7.5 && ph < 8.5
+      },
+      {
+        name: "Methyl Orange",
+        shortCode: "M.ORANGE",
+        getColor: (ph) => {
+          if (ph <= 3.1) return { r: 220, g: 38, b: 38, a: 0.88 }; // Distinct Red in Acid
+          if (ph >= 4.4) return { r: 251, g: 191, b: 36, a: 0.88 }; // Yellow/Orange in Base
+          let t = (ph - 3.1) / 1.3;
+          return lerpColor({ r: 220, g: 38, b: 38, a: 0.88 }, { r: 251, g: 191, b: 36, a: 0.88 }, t);
+        },
+        getEndpointColor: () => ({ r: 245, g: 158, b: 11, a: 0.88 }),
+        nearEndpoint: (ph) => ph >= 2.8 && ph <= 4.8
+      },
+      {
+        name: "Bromothymol Blue",
+        shortCode: "B.BLUE",
+        getColor: (ph) => {
+          if (ph <= 6.0) return { r: 251, g: 191, b: 36, a: 0.85 };
+          if (ph >= 7.6) return { r: 37, g: 99, b: 235, a: 0.85 };
+          let t = (ph - 6.0) / 1.6;
+          return lerpColor({ r: 251, g: 191, b: 36, a: 0.85 }, { r: 37, g: 99, b: 235, a: 0.85 }, t);
+        },
+        getEndpointColor: () => ({ r: 16, g: 185, b: 129, a: 0.9 }),
+        nearEndpoint: (ph) => ph >= 5.8 && ph <= 7.8
+      }
+    ];
+
+    // Randomized Unknown Concentrations for Unknown Samples
+    let unknownAcidMolarity0 = 0.08 + Math.random() * 0.06; // ~0.08 - 0.14 M
+    let unknownAcidMolarity1 = 0.07 + Math.random() * 0.06; // ~0.07 - 0.13 M
+    let unknownAcidMolarity2 = 0.10 + Math.random() * 0.08; // ~0.10 - 0.18 M
+    let unknownAcidMolarity3 = 0.06 + Math.random() * 0.06; // ~0.06 - 0.12 M
+
+    // --- Calibrated Stoichiometric Systems with Unknown Samples ---
+    const SYSTEMS = [
+      {
+        name: "Unknown Molarity Acid Sample + 0.10M Standard NaOH", acidFormula: "Unknown Acid", baseFormula: "NaOH", 
+        getAcidC: () => unknownAcidMolarity0, baseC: 0.10,
+        calcPH: (vA, cA, vB, cB) => {
+          if (vA <= 0) return 7.0;
+          let nA = (vA / 1000) * cA, nB = (vB / 1000) * cB, totalV = (vA + vB) / 1000;
+          let diff = nB - nA;
+          if (Math.abs(diff) < 1e-9) return 7.0;
+          if (diff < 0) {
+            let concH = Math.abs(diff) / totalV;
+            return clampPH(-Math.log10(concH));
+          } else {
+            let concOH = diff / totalV;
+            let pOH = -Math.log10(concOH);
+            return clampPH(14.0 - pOH);
+          }
+        }
+      },
+      {
+        name: "Unknown Molarity HCl Sample + 0.10M Standard NaOH", acidFormula: "Unk. HCl", baseFormula: "NaOH", 
+        getAcidC: () => unknownAcidMolarity1, baseC: 0.10,
+        calcPH: (vA, cA, vB, cB) => {
+          if (vA <= 0) return 7.0;
+          let nA = (vA / 1000) * cA, nB = (vB / 1000) * cB, totalV = (vA + vB) / 1000;
+          let diff = nB - nA;
+          if (Math.abs(diff) < 1e-9) return 7.0;
+          if (diff < 0) {
+            let concH = Math.abs(diff) / totalV;
+            return clampPH(-Math.log10(concH));
+          } else {
+            let concOH = diff / totalV;
+            let pOH = -Math.log10(concOH);
+            return clampPH(14.0 - pOH);
+          }
+        }
+      },
+      {
+        name: "Unknown Molarity CH3COOH Sample + 0.10M Standard NaOH", acidFormula: "Unk. CH3COOH", baseFormula: "NaOH", 
+        getAcidC: () => unknownAcidMolarity2, baseC: 0.10,
+        calcPH: (vA, cA, vB, cB) => {
+          if (vA <= 0) return 7.0;
+          let nA = (vA / 1000) * cA, nB = (vB / 1000) * cB, totalV = (vA + vB) / 1000, Ka = 1.74e-5;
+          let pKa = -Math.log10(Ka);
+
+          if (vB === 0) {
+            let concH = Math.sqrt(Ka * cA);
+            return clampPH(-Math.log10(concH));
+          }
+          if (nB < nA) {
+            let conjBase = nB / totalV;
+            let weakAcid = (nA - nB) / totalV;
+            if (weakAcid <= 1e-9) return clampPH(pKa + 3);
+            return clampPH(pKa + Math.log10(conjBase / weakAcid));
+          }
+          if (Math.abs(nB - nA) < 1e-9) {
+            let concSalt = nA / totalV;
+            let concOH = Math.sqrt((1e-14 / Ka) * concSalt);
+            let pOH = -Math.log10(concOH);
+            return clampPH(14.0 - pOH);
+          }
+          let excessOH = (nB - nA) / totalV;
+          let pOH = -Math.log10(excessOH);
+          return clampPH(14.0 - pOH);
+        }
+      },
+      {
+        name: "Unknown Molarity NH3 Sample + 0.12M Standard HCl", acidFormula: "Unk. NH3", baseFormula: "HCl", 
+        getAcidC: () => unknownAcidMolarity3, baseC: 0.12,
+        calcPH: (vA, cA, vB, cB) => {
+          if (vA <= 0) return 7.0;
+          let nA = (vA / 1000) * cA, nB = (vB / 1000) * cB, totalV = (vA + vB) / 1000, Kb = 1.8e-5;
+          let pKb = -Math.log10(Kb);
+
+          if (vB === 0) {
+            let concOH = Math.sqrt(Kb * cA);
+            let pOH = -Math.log10(concOH);
+            return clampPH(14.0 - pOH);
+          }
+          if (nB < nA) {
+            let conjAcid = nB / totalV;
+            let weakBase = (nA - nB) / totalV;
+            if (weakBase <= 1e-9) return clampPH(14.0 - (pKb + 3));
+            let pOH = pKb + Math.log10(conjAcid / weakBase);
+            return clampPH(14.0 - pOH);
+          }
+          if (Math.abs(nB - nA) < 1e-9) {
+            let concSalt = nA / totalV;
+            let concH = Math.sqrt((1e-14 / Kb) * concSalt);
+            return clampPH(-Math.log10(concH));
+          }
+          let excessH = (nB - nA) / totalV;
+          return clampPH(-Math.log10(excessH));
+        }
+      }
+    ];
+
+    // --- State Variables ---
+    let sysIndex = 0;
+    let indicatorIndex = 0;
+    let volAcidTarget = 25.0; 
+    let currentAnalyteVol = 0; 
+    let volBase = 0;    
+    let indicatorVolAdded = 0;
+    let buretMax = 50.0; 
+    
+    // Animation Controls
+    let prepState = 0; 
+    let prepProgress = 0;
+    let flaskX = 430; 
+    let flaskY = 510;
+    let buretFlaskX = 260; 
+    let prepCompleted = false;
+
+    let stirring = false;
+    let stirAngle = 0;
+    let isValveOpen = false; 
+    let targetFlowRate = 0.020; 
+    let currentPH = 7.0;
+    let curveHistory = [];
+    let swirlOffset = 0;
+
+    let flashIntensity = 0;
+    let dropProgressTimer = 0;
+
+    // --- DOM Elements ---
+    const systemSelect = document.getElementById('systemSelect');
+    const indicatorSelect = document.getElementById('indicatorSelect');
+    const acidVol = document.getElementById('acidVol');
+    const prepAction = document.getElementById('prepAction');
+    const toggleStir = document.getElementById('toggleStir');
+    const flowStop = document.getElementById('flowStop');
+    const flowOpen = document.getElementById('flowOpen');
+    const flowSlider = document.getElementById('flowSlider');
+    const flowDisplay = document.getElementById('flowDisplay');
+    const resetLab = document.getElementById('resetLab');
+
+    const calcModeSelect = document.getElementById('calcMode');
+    const formulaDisplay = document.getElementById('formulaDisplay');
+    const calcSteps = document.getElementById('calcSteps');
+    const studentAnswerInput = document.getElementById('studentAnswerInput');
+    const btnCheckAnswer = document.getElementById('btnCheckAnswer');
+    const studentFeedbackCard = document.getElementById('studentFeedbackCard');
+
+    const valPH = document.getElementById('valPH');
+    const valDelivered = document.getElementById('valDelivered');
+    const valAnalyte = document.getElementById('valAnalyte');
+    const valBuretLeft = document.getElementById('valBuretLeft');
+    const statusDesc = document.getElementById('statusDesc');
+    const endpointAlert = document.getElementById('endpointAlert');
+    const neutralAlert = document.getElementById('neutralAlert');
+
+    const guideModal = document.getElementById('guideModal');
+    const openGuide = document.getElementById('openGuide');
+    const closeGuide = document.getElementById('closeGuide');
+
+    const labCanvas = document.getElementById('labCanvas');
+    const labCtx = labCanvas.getContext('2d');
+    const curveCanvas = document.getElementById('curveCanvas');
+    const curveCtx = curveCanvas.getContext('2d');
+
+    // --- Handlers ---
+    systemSelect.addEventListener('change', (e) => { 
+      sysIndex = parseInt(e.target.value); 
+      resetStation(); 
+    });
+    indicatorSelect.addEventListener('change', (e) => { indicatorIndex = parseInt(e.target.value); recalc(); });
+    calcModeSelect.addEventListener('change', () => { updateStoichiometricCalc(); });
+
+    acidVol.addEventListener('change', (e) => {
+      let v = Math.max(1.0, Math.min(100.0, parseFloat(e.target.value) || 25.0));
+      acidVol.value = v.toFixed(1);
+      volAcidTarget = v;
+      updatePillHighlight(v);
+      recalc();
+    });
+
+    flowSlider.addEventListener('input', (e) => {
+      targetFlowRate = parseFloat(e.target.value);
+      flowDisplay.textContent = `${targetFlowRate.toFixed(3)} cm³/step`;
+    });
+
+    openGuide.addEventListener('click', () => { guideModal.style.display = 'flex'; });
+    closeGuide.addEventListener('click', () => { guideModal.style.display = 'none'; });
+    guideModal.addEventListener('click', (e) => { if (e.target === guideModal) guideModal.style.display = 'none'; });
+
+    function setQuickVol(v) {
+      if (prepState !== 0 || prepCompleted) return;
+      acidVol.value = v.toFixed(1);
+      volAcidTarget = v;
+      updatePillHighlight(v);
+      recalc();
+    }
+
+    function updatePillHighlight(v) {
+      document.querySelectorAll('.btn-pill').forEach(btn => btn.classList.remove('active'));
+      if (v === 10) document.querySelectorAll('.btn-pill')[0].classList.add('active');
+      else if (v === 20) document.querySelectorAll('.btn-pill')[1].classList.add('active');
+      else if (v === 25) document.querySelectorAll('.btn-pill')[2].classList.add('active');
+      else if (v === 50) document.querySelectorAll('.btn-pill')[3].classList.add('active');
+    }
+
+    prepAction.addEventListener('click', () => {
+      if (prepCompleted || prepState !== 0) return;
+      prepState = 1; 
+      prepProgress = 0;
+      prepAction.disabled = true;
+      acidVol.disabled = true;
+      systemSelect.disabled = true;
+      indicatorSelect.disabled = true;
+      document.querySelectorAll('.btn-pill').forEach(b => b.style.pointerEvents = 'none');
+      statusDesc.innerHTML = "<strong>Status:</strong> Dispensing analyte volume into flask...";
+    });
+
+    toggleStir.addEventListener('click', () => {
+      stirring = !stirring;
+      toggleStir.textContent = `Stirrer: ${stirring ? 'ON' : 'OFF'}`;
+      toggleStir.style.background = stirring ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)';
+      toggleStir.style.color = '#ffffff';
+    });
+
+    flowStop.addEventListener('click', () => {
+      isValveOpen = false;
+      statusDesc.innerHTML = "<strong>Status:</strong> Buret valve closed manually.";
+    });
+    
+    flowOpen.addEventListener('click', () => { 
+      if (prepCompleted) {
+        isValveOpen = true;
+        statusDesc.innerHTML = "<strong>Status:</strong> Buret valve opened. Titrant dispensing into flask...";
+      } 
+    });
+
+    resetLab.addEventListener('click', resetStation);
+
+    btnCheckAnswer.addEventListener('click', checkStudentAnswer);
+
+    function enableControls(enable) {
+      flowStop.disabled = !enable;
+      flowOpen.disabled = !enable;
+    }
+
+    function resetStation() {
+      // Regenerate unknown molarities on station reset
+      unknownAcidMolarity0 = 0.08 + Math.random() * 0.06;
+      unknownAcidMolarity1 = 0.07 + Math.random() * 0.06;
+      unknownAcidMolarity2 = 0.10 + Math.random() * 0.08;
+      unknownAcidMolarity3 = 0.06 + Math.random() * 0.06;
+
+      volBase = 0;
+      isValveOpen = false;
+      prepState = 0;
+      prepProgress = 0;
+      prepCompleted = false;
+      currentAnalyteVol = 0;
+      indicatorVolAdded = 0;
+      flaskX = 430;
+      flaskY = 510;
+      curveHistory = [];
+      dropProgressTimer = 0;
+      flashIntensity = 0;
+
+      prepAction.disabled = false;
+      acidVol.disabled = false;
+      systemSelect.disabled = false;
+      indicatorSelect.disabled = false;
+      document.querySelectorAll('.btn-pill').forEach(b => b.style.pointerEvents = 'auto');
+      enableControls(false);
+
+      endpointAlert.style.display = 'none';
+      neutralAlert.style.display = 'none';
+      studentFeedbackCard.style.display = 'none';
+      studentAnswerInput.value = '';
+      statusDesc.innerHTML = "<strong>Status:</strong> Station reset. Click 'Pipette Analyte & Indicator Drop' to begin.";
+      valDelivered.textContent = '0.00 cm³';
+      valAnalyte.textContent = '0.00 cm³';
+      valBuretLeft.textContent = '50.00 cm³';
+
+      recalc();
+      drawGraph();
+    }
+
+    // Dynamic Ca Va = Cb Vb Computation Engine
+    function updateStoichiometricCalc() {
+      const sys = SYSTEMS[sysIndex];
+      const mode = calcModeSelect.value;
+      const Ca = sys.getAcidC();
+      const Va = currentAnalyteVol;
+      const Cb = sys.baseC;
+      const Vb = volBase;
+
+      if (mode === "Ca") {
+        formulaDisplay.innerHTML = `Ca = (Cb × Vb) / Va`;
+      } else if (mode === "Va") {
+        formulaDisplay.innerHTML = `Va = (Cb × Vb) / Ca`;
+      } else if (mode === "Cb") {
+        formulaDisplay.innerHTML = `Cb = (Ca × Va) / Vb`;
+      } else if (mode === "Vb") {
+        formulaDisplay.innerHTML = `Vb = (Ca × Va) / Cb`;
+      }
+
+      if (Vb <= 0) {
+        calcSteps.innerHTML = `<em>Run titration to complete endpoint reaction and derive dynamic calculations.</em>`;
+        return;
+      }
+
+      let stepHTML = "";
+      if (mode === "Ca") {
+        let numerator = Cb * Vb;
+        let calculatedCa = numerator / (Va || 1);
+        stepHTML = `
+          <strong>1. Known Values:</strong><br>
+          • Titrant Volume (Vb) = <span class="highlight">${Vb.toFixed(2)} cm³</span><br>
+          • Titrant Concentration (Cb) = <span class="highlight">${Cb.toFixed(2)} M</span><br>
+          • Analyte Volume (Va) = <span class="highlight">${Va.toFixed(1)} cm³</span><br><br>
+          <strong>2. Variable Plug-in:</strong><br>
+          Ca = (${Cb.toFixed(2)} M × ${Vb.toFixed(2)} cm³) / ${Va.toFixed(1)} cm³<br><br>
+          <strong>3. Step-by-Step Calculation:</strong><br>
+          • Numerator (Cb × Vb): ${Cb.toFixed(2)} × ${Vb.toFixed(2)} = <strong>${numerator.toFixed(4)}</strong><br>
+          • Division by Va: ${numerator.toFixed(4)} / ${Va.toFixed(1)}<br>
+          • <strong>Calculated Sample Conc (Ca):</strong> <span class="result-highlight">${calculatedCa.toFixed(4)} M</span>
+        `;
+      } else if (mode === "Va") {
+        let numerator = Cb * Vb;
+        let calculatedVa = numerator / Ca;
+        stepHTML = `
+          <strong>1. Known Values:</strong><br>
+          • Titrant Volume (Vb) = <span class="highlight">${Vb.toFixed(2)} cm³</span><br>
+          • Titrant Concentration (Cb) = <span class="highlight">${Cb.toFixed(2)} M</span><br>
+          • Analyte Concentration (Ca) = <span class="highlight">${Ca.toFixed(3)} M</span><br><br>
+          <strong>2. Variable Plug-in:</strong><br>
+          Va = (${Cb.toFixed(2)} M × ${Vb.toFixed(2)} cm³) / ${Ca.toFixed(3)} M<br><br>
+          <strong>3. Step-by-Step Calculation:</strong><br>
+          • Numerator (Cb × Vb): ${Cb.toFixed(2)} × ${Vb.toFixed(2)} = <strong>${numerator.toFixed(4)}</strong><br>
+          • Division by Ca: ${numerator.toFixed(4)} / ${Ca.toFixed(3)}<br>
+          • <strong>Resulting Volume (Va):</strong> <span class="result-highlight">${calculatedVa.toFixed(2)} cm³</span>
+        `;
+      } else if (mode === "Cb") {
+        let numerator = Ca * Va;
+        let calculatedCb = numerator / Vb;
+        stepHTML = `
+          <strong>1. Known Values:</strong><br>
+          • Titrant Volume (Vb) = <span class="highlight">${Vb.toFixed(2)} cm³</span><br>
+          • Sample Concentration (Ca) = <span class="highlight">${Ca.toFixed(3)} M</span><br>
+          • Sample Volume (Va) = <span class="highlight">${Va.toFixed(1)} cm³</span><br><br>
+          <strong>2. Variable Plug-in:</strong><br>
+          Cb = (${Ca.toFixed(3)} M × ${Va.toFixed(1)} cm³) / ${Vb.toFixed(2)} cm³<br><br>
+          <strong>3. Step-by-Step Calculation:</strong><br>
+          • Numerator (Ca × Va): ${Ca.toFixed(3)} × ${Va.toFixed(1)} = <strong>${numerator.toFixed(4)}</strong><br>
+          • Division by Vb: ${numerator.toFixed(4)} / ${Vb.toFixed(2)}<br>
+          • <strong>Resulting Titrant Conc (Cb):</strong> <span class="result-highlight">${calculatedCb.toFixed(4)} M</span>
+        `;
+      } else if (mode === "Vb") {
+        let numerator = Ca * Va;
+        let calculatedVb = numerator / Cb;
+        stepHTML = `
+          <strong>1. Known Values:</strong><br>
+          • Sample Concentration (Ca) = <span class="highlight">${Ca.toFixed(3)} M</span><br>
+          • Sample Volume (Va) = <span class="highlight">${Va.toFixed(1)} cm³</span><br>
+          • Titrant Concentration (Cb) = <span class="highlight">${Cb.toFixed(2)} M</span><br><br>
+          <strong>2. Variable Plug-in:</strong><br>
+          Vb = (${Ca.toFixed(3)} M × ${Va.toFixed(1)} cm³) / ${Cb.toFixed(2)} M<br><br>
+          <strong>3. Step-by-Step Calculation:</strong><br>
+          • Numerator (Ca × Va): ${Ca.toFixed(3)} × ${Va.toFixed(1)} = <strong>${numerator.toFixed(4)}</strong><br>
+          • Division by Cb: ${numerator.toFixed(4)} / ${Cb.toFixed(2)}<br>
+          • <strong>Theoretical Equivalence Vol (Vb):</strong> <span class="result-highlight">${calculatedVb.toFixed(2)} cm³</span>
+        `;
+      }
+
+      calcSteps.innerHTML = stepHTML;
+    }
+
+    // Student Evaluation & Feedback Engine
+    function checkStudentAnswer() {
+      const sys = SYSTEMS[sysIndex];
+      const actualCa = sys.getAcidC();
+      const Va = currentAnalyteVol;
+      const Cb = sys.baseC;
+      const userVal = parseFloat(studentAnswerInput.value);
+
+      if (isNaN(userVal)) {
+        studentFeedbackCard.className = "student-feedback-card incorrect";
+        studentFeedbackCard.style.display = "block";
+        studentFeedbackCard.innerHTML = "⚠️ Please enter a valid numerical value before checking!";
+        return;
+      }
+
+      if (volBase <= 0) {
+        studentFeedbackCard.className = "student-feedback-card incorrect";
+        studentFeedbackCard.style.display = "block";
+        studentFeedbackCard.innerHTML = "⚠️ You haven't performed the titration yet! Open the buret valve to deliver titrant until endpoint is observed.";
+        return;
+      }
+
+      const exactVbNeeded = (actualCa * Va) / Cb;
+      const marginOfError = 0.05; // 5% tolerance
+
+      if (calcModeSelect.value === "Ca") {
+        let percentageDiff = ((userVal - actualCa) / actualCa) * 100;
+        if (Math.abs(percentageDiff) <= 5) {
+          studentFeedbackCard.className = "student-feedback-card correct";
+          studentFeedbackCard.innerHTML = `🎯 <strong>EXCELLENT WORK!</strong><br>Your determined concentration of <strong>${userVal.toFixed(4)} M</strong> is accurate. Actual sample concentration: <strong>${actualCa.toFixed(4)} M</strong>.`;
+        } else if (userVal < actualCa) {
+          studentFeedbackCard.className = "student-feedback-card incorrect";
+          studentFeedbackCard.innerHTML = `❌ <strong>UNDER-TITRATED / UNDERESTIMATED</strong><br>Your answer (${userVal.toFixed(4)} M) is too low. Actual: <strong>${actualCa.toFixed(4)} M</strong>.<br><em>Adjustment:</em> Ensure you closed the valve only when permanent endpoint color change occurred (at ~${exactVbNeeded.toFixed(2)} cm³ titrant).`;
+        } else {
+          studentFeedbackCard.className = "student-feedback-card incorrect";
+          studentFeedbackCard.innerHTML = `❌ <strong>OVER-TITRATED / OVERESTIMATED</strong><br>Your answer (${userVal.toFixed(4)} M) is too high. Actual: <strong>${actualCa.toFixed(4)} M</strong>.<br><em>Adjustment:</em> You may have overshot the equivalence point! Use dropwise flow near the endpoint.`;
+        }
+      } else {
+        // General tolerance for other target parameters
+        const expectedVb = exactVbNeeded;
+        let diff = Math.abs(userVal - expectedVb);
+        if (diff <= 0.5) {
+          studentFeedbackCard.className = "student-feedback-card correct";
+          studentFeedbackCard.innerHTML = `🎯 <strong>ACCURATE!</strong> Your value is close to theoretical endpoint (${expectedVb.toFixed(2)} cm³).`;
+        } else {
+          studentFeedbackCard.className = "student-feedback-card incorrect";
+          studentFeedbackCard.innerHTML = `❌ <strong>INACCURATE</strong>. Theoretical expected value is ~<strong>${expectedVb.toFixed(2)}</strong>. Double-check your stoichiometry formula $C_a V_a = C_b V_b$.`;
+        }
+      }
+      studentFeedbackCard.style.display = "block";
+    }
+
+    // --- Main Loop ---
+    let prevTime = performance.now();
+
+    function loop(now) {
+      let dt = (now - prevTime) / 1000;
+      prevTime = now;
+
+      // Preparation Pipeline
+      if (prepState === 1) { 
+        prepProgress += dt * 0.35;
+        if (prepProgress >= 0.35 && prepProgress <= 0.80) {
+          currentAnalyteVol = Math.min(volAcidTarget, ((prepProgress - 0.35) / 0.45) * volAcidTarget);
+          valAnalyte.textContent = `${(currentAnalyteVol + indicatorVolAdded).toFixed(2)} cm³`;
+        }
+        if (prepProgress >= 1) {
+          currentAnalyteVol = volAcidTarget;
+          prepState = 2; 
+          prepProgress = 0;
+          statusDesc.innerHTML = "<strong>Status:</strong> Administering exactly 1 drop (0.05 cm³) of indicator...";
+        }
+      } else if (prepState === 2) { 
+        prepProgress += dt * 0.6;
+        if (prepProgress >= 0.5) {
+          indicatorVolAdded = 0.05; 
+          valAnalyte.textContent = `${(currentAnalyteVol + indicatorVolAdded).toFixed(2)} cm³`;
+        }
+        if (prepProgress >= 1) {
+          prepState = 3; 
+          prepProgress = 0;
+          statusDesc.innerHTML = "<strong>Status:</strong> Indicator drop added! Moving flask under buret...";
+        }
+      } else if (prepState === 3) { 
+        prepProgress += dt * 0.6;
+        flaskX = 430 - (430 - buretFlaskX) * Math.min(1, prepProgress);
+        if (prepProgress >= 1) {
+          flaskX = buretFlaskX;
+          prepState = 4;
+          prepCompleted = true;
+          enableControls(true);
+          statusDesc.innerHTML = "<strong>Status:</strong> Flask ready. Adjust valve opening and click 'Open Buret Valve'.";
+        }
+      }
+
+      // Calculate Equivalence Volume
+      const sys = SYSTEMS[sysIndex];
+      const ind = INDICATORS[indicatorIndex];
+      const eqVolume = (currentAnalyteVol * sys.getAcidC()) / sys.baseC;
+      const effectiveFlow = isValveOpen ? targetFlowRate : 0;
+
+      // Continuous Titrant Flow Calculation
+      if (prepCompleted && effectiveFlow > 0) {
+        if (volBase + effectiveFlow <= buretMax) {
+          volBase += effectiveFlow;
+          recalc();
+          if (Math.abs(volBase - eqVolume) < effectiveFlow) {
+            statusDesc.innerHTML = `<strong>Status:</strong> <span class='status-success'>EQUIVALENCE REACHED at ${eqVolume.toFixed(2)} cm³! Turn off buret valve at the indicator color endpoint.</span>`;
+          }
+        } else {
+          volBase = buretMax;
+          isValveOpen = false;
+          enableControls(false);
+          statusDesc.innerHTML = "<strong>Status:</strong> Buret fully emptied (50.00 cm³ delivered).";
+        }
+      }
+
+      // Dynamic Flash near Endpoint
+      if (prepCompleted && effectiveFlow > 0 && ind.nearEndpoint(currentPH)) {
+        flashIntensity = Math.min(1.0, flashIntensity + dt * 3.5);
+      } else {
+        let decaySpeed = stirring ? 4.0 : 1.2;
+        flashIntensity = Math.max(0, flashIntensity - dt * decaySpeed);
+      }
+
+      // Swirling Liquid Surface
+      let isDispensingAnalyte = (prepState === 1) && (prepProgress >= 0.35 && prepProgress <= 0.8);
+      if ((prepCompleted && effectiveFlow > 0) || isDispensingAnalyte) {
+        swirlOffset = Math.sin(now * 0.012) * 3.5; 
+      } else {
+        swirlOffset = 0;
+      }
+
+      if (stirring) stirAngle += 12;
+
+      renderScene(now, dt);
+      requestAnimationFrame(loop);
+    }
+
+    function recalc() {
+      const sys = SYSTEMS[sysIndex];
+      const effectiveFlow = isValveOpen ? targetFlowRate : 0;
+      const acidC = sys.getAcidC();
+      currentPH = sys.calcPH(currentAnalyteVol, acidC, volBase, sys.baseC);
+
+      valPH.textContent = currentPH.toFixed(2);
+      valDelivered.textContent = `${volBase.toFixed(2)} cm³`;
+      valBuretLeft.textContent = `${(buretMax - volBase).toFixed(2)} cm³`;
+      valAnalyte.textContent = `${(currentAnalyteVol + indicatorVolAdded).toFixed(2)} cm³`;
+
+      updateStoichiometricCalc();
+
+      const eqVolume = (currentAnalyteVol * acidC) / sys.baseC;
+      const volDiff = eqVolume - volBase;
+
+      // Neutralization complete notification (Equivalence point check)
+      if (prepCompleted && Math.abs(volBase - eqVolume) <= 0.15) {
+        neutralAlert.style.display = 'block';
+        endpointAlert.style.display = 'none';
+      } else if (prepCompleted && effectiveFlow > 0 && volDiff > 0) {
+        let estimatedStepsLeft = volDiff / effectiveFlow;
+        let estimatedSecondsLeft = estimatedStepsLeft * (1 / 60); 
+        if (estimatedSecondsLeft <= 10) {
+          endpointAlert.style.display = 'block';
+          neutralAlert.style.display = 'none';
+        } else {
+          endpointAlert.style.display = 'none';
+          neutralAlert.style.display = 'none';
+        }
+      } else {
+        endpointAlert.style.display = 'none';
+        if (prepCompleted && volBase > eqVolume + 0.15) {
+          neutralAlert.style.display = 'none';
+        }
+      }
+
+      if (prepCompleted && (curveHistory.length === 0 || volBase - curveHistory[curveHistory.length - 1].v >= 0.05)) {
+        curveHistory.push({ v: volBase, ph: currentPH });
+        drawGraph();
+      }
+    }
+
+    // --- Rendering Stage ---
+    function renderScene(now, dt) {
+      labCtx.clearRect(0, 0, labCanvas.width, labCanvas.height);
+
+      const sys = SYSTEMS[sysIndex];
+      const ind = INDICATORS[indicatorIndex];
+      const effectiveFlow = isValveOpen ? targetFlowRate : 0;
+
+      // Support Stand
+      labCtx.fillStyle = '#334155';
+      labCtx.fillRect(140, 580, 240, 16);
+      labCtx.fillRect(255, 30, 10, 550);
+      
+      labCtx.fillStyle = '#94a3b8';
+      labCtx.font = '10px sans-serif';
+      labCtx.fillText('SUPPORT STAND', 270, 570);
+
+      // Buret Clamps
+      labCtx.fillStyle = '#475569';
+      labCtx.fillRect(255, 80, 45, 8);
+      labCtx.fillRect(255, 290, 45, 8);
+
+      // Stand for Reagents
+      drawIndicatorStand(25, 450);
+      drawReagentBottle(35, 390, sys.acidFormula, "rgba(56, 189, 248, 0.25)");
+      drawReagentBottle(100, 390, ind.shortCode, "rgba(236, 72, 153, 0.35)");
+
+      // Magnetic Stirrer Base
+      labCtx.fillStyle = '#1e293b';
+      labCtx.strokeStyle = '#334155';
+      labCtx.lineWidth = 2;
+      labCtx.beginPath();
+      labCtx.roundRect(170, 510, 180, 70, 8);
+      labCtx.fill();
+      labCtx.stroke();
+
+      labCtx.fillStyle = '#94a3b8';
+      labCtx.font = '10px sans-serif';
+      labCtx.fillText('MAGNETIC STIRRER', 212, 565);
+
+      // Prep Stand
+      labCtx.fillStyle = '#0f172a';
+      labCtx.fillRect(380, 510, 100, 70);
+      labCtx.strokeStyle = '#334155';
+      labCtx.strokeRect(380, 510, 100, 70);
+
+      // Flask & Liquid Rendering
+      drawErlenmeyer(flaskX, flaskY);
+      drawFlaskLiquid(flaskX, flaskY, now);
+
+      // Calibrated Buret
+      drawCalibratedBuret(260, 30);
+
+      // Drop/Stream Physics
+      if (effectiveFlow > 0 && prepCompleted) {
+        const topY = 380;
+        let totalV = currentAnalyteVol + indicatorVolAdded + volBase;
+        let fillH = Math.min(54, (totalV / 120) * 50);
+        const bottomY = flaskY - fillH; 
+        const totalHeight = Math.max(10, bottomY - topY);
+
+        if (effectiveFlow <= 0.030) {
+          let dropCycleDuration = 0.22 + (0.030 - effectiveFlow) * 30.0; 
+          dropProgressTimer += dt / dropCycleDuration;
+
+          let p = dropProgressTimer % 1.0;
+
+          if (p < 0.4) {
+            let growRadius = 1.0 + (p / 0.4) * 2.8;
+            labCtx.fillStyle = 'rgba(56, 189, 248, 0.95)';
+            labCtx.beginPath();
+            labCtx.arc(260, topY + 2, growRadius, 0, Math.PI * 2);
+            labCtx.fill();
+          } else {
+            let descentP = (p - 0.4) / 0.6;
+            let currentDropY = topY + descentP * totalHeight;
+            
+            labCtx.fillStyle = 'rgba(56, 189, 248, 0.95)';
+            labCtx.beginPath();
+            labCtx.arc(260, currentDropY, 2.5, 0, Math.PI * 2);
+            labCtx.fill();
+          }
+        } else {
+          let lineWidth = 1.5 + ((effectiveFlow - 0.030) / (0.080 - 0.030)) * 3.5;
+
+          labCtx.strokeStyle = 'rgba(56, 189, 248, 0.85)';
+          labCtx.lineWidth = lineWidth;
+          labCtx.beginPath();
+          labCtx.moveTo(260, topY);
+          labCtx.lineTo(260, bottomY);
+          labCtx.stroke();
+        }
+      } else {
+        dropProgressTimer = 0;
+      }
+
+      drawPipetteSystem();
+    }
+
+    function drawIndicatorStand(x, y) {
+      labCtx.fillStyle = '#1e293b';
+      labCtx.strokeStyle = '#475569';
+      labCtx.lineWidth = 2;
+      labCtx.fillRect(x, y, 130, 12);
+      labCtx.strokeRect(x, y, 130, 12);
+      labCtx.fillRect(x + 15, y + 12, 12, 118);
+      labCtx.fillRect(x + 103, y + 12, 12, 118);
+    }
+
+    function drawReagentBottle(x, y, label, colorStr) {
+      labCtx.fillStyle = colorStr;
+      labCtx.strokeStyle = '#94a3b8';
+      labCtx.lineWidth = 1.5;
+      labCtx.fillRect(x, y, 40, 60);
+      labCtx.strokeRect(x, y, 40, 60);
+      
+      labCtx.fillStyle = '#cbd5e1';
+      labCtx.fillRect(x + 12, y - 10, 16, 10);
+      labCtx.fillStyle = '#f8fafc';
+      labCtx.font = '9px sans-serif';
+      labCtx.fillText(label, x + (label.length > 5 ? 1 : 8), y + 35);
+    }
+
+    function drawCalibratedBuret(x, y) {
+      let columnH = 330;
+      const sys = SYSTEMS[sysIndex];
+
+      labCtx.fillStyle = '#38bdf8';
+      labCtx.font = '10px sans-serif';
+      labCtx.fillText(`BURET (${sys.baseFormula})`, x - 35, y - 8);
+
+      labCtx.strokeStyle = '#94a3b8';
+      labCtx.lineWidth = 2;
+      labCtx.strokeRect(x - 12, y + 12, 24, columnH);
+
+      let fillRatio = (buretMax - volBase) / buretMax;
+      let liquidH = (columnH - 10) * fillRatio;
+      let liquidTopY = y + 17 + ((columnH - 10) - liquidH);
+
+      labCtx.fillStyle = 'rgba(56, 189, 248, 0.35)';
+      labCtx.fillRect(x - 10, liquidTopY, 20, liquidH);
+
+      labCtx.fillStyle = '#94a3b8';
+      labCtx.strokeStyle = '#64748b';
+      labCtx.lineWidth = 1;
+
+      for (let i = 0; i <= 50; i++) {
+        let markY = y + 17 + (i / 50) * (columnH - 10);
+        if (i % 5 === 0) {
+          labCtx.beginPath();
+          labCtx.moveTo(x + 12, markY);
+          labCtx.lineTo(x + 3, markY);
+          labCtx.stroke();
+          if (i % 10 === 0) labCtx.fillText(i.toString(), x + 15, markY + 3);
+        }
+      }
+
+      // Valve Handle
+      labCtx.fillStyle = isValveOpen ? '#10b981' : '#ef4444';
+      if (isValveOpen) {
+        labCtx.fillRect(x - 3, y + columnH + 3, 6, 30);
+      } else {
+        labCtx.fillRect(x - 15, y + columnH + 15, 30, 6);
+      }
+    }
+
+    function drawErlenmeyer(x, y) {
+      labCtx.strokeStyle = '#94a3b8';
+      labCtx.lineWidth = 2.5;
+      labCtx.beginPath();
+      labCtx.moveTo(x - 16, y - 100);
+      labCtx.lineTo(x + 16, y - 100);
+      labCtx.lineTo(x + 16, y - 55);
+      labCtx.lineTo(x + 62, y);
+      labCtx.lineTo(x - 62, y);
+      labCtx.lineTo(x - 16, y - 55);
+      labCtx.closePath();
+      labCtx.stroke();
+
+      labCtx.fillStyle = '#94a3b8';
+      labCtx.font = '10px sans-serif';
+      labCtx.fillText('ERLENMEYER FLASK', x - 48, y + 18);
+    }
+
+    function drawFlaskLiquid(x, y, now) {
+      const ind = INDICATORS[indicatorIndex];
+      const effectiveFlow = isValveOpen ? targetFlowRate : 0;
+
+      let baseCol = indicatorVolAdded > 0 ? ind.getColor(currentPH) : { r: 56, g: 189, b: 248, a: 0.20 };
+      let totalV = currentAnalyteVol + indicatorVolAdded + volBase;
+      let fillH = Math.min(54, (totalV / 120) * 50);
+
+      if (fillH <= 0) return;
+
+      let bottomW = 60;
+      let topW = bottomW - (fillH / 55) * (60 - 16);
+      let liquidTopY = y - fillH;
+
+      labCtx.fillStyle = `rgba(${baseCol.r}, ${baseCol.g}, ${baseCol.b}, ${baseCol.a})`;
+      labCtx.beginPath();
+      labCtx.moveTo(x - bottomW, y - 2);
+      labCtx.lineTo(x + bottomW, y - 2);
+      labCtx.lineTo(x + topW, liquidTopY);
+
+      let waveAmp = (effectiveFlow > 0 || stirring || (prepState === 1 && prepProgress >= 0.35 && prepProgress <= 0.8)) ? 2.5 : 0.8;
+      
+      for (let i = topW; i >= -topW; i -= 2) {
+        let waveY = liquidTopY + Math.sin(now * 0.008 + i * 0.15 + swirlOffset) * waveAmp;
+        labCtx.lineTo(x + i, waveY);
+      }
+
+      labCtx.closePath();
+      labCtx.fill();
+
+      labCtx.strokeStyle = `rgba(${baseCol.r}, ${baseCol.g}, ${baseCol.b}, ${Math.min(1, baseCol.a + 0.3)})`;
+      labCtx.lineWidth = 1.5;
+      labCtx.beginPath();
+      labCtx.ellipse(x + swirlOffset * 0.4, liquidTopY, topW, 3 + Math.abs(swirlOffset * 0.2), 0, 0, Math.PI * 2);
+      labCtx.stroke();
+
+      if (flashIntensity > 0 && indicatorVolAdded > 0) {
+        let epCol = ind.getEndpointColor();
+        let flashX = x + swirlOffset;
+        let flashY = liquidTopY + 10;
+        let flashRadius = 10 + flashIntensity * 18;
+
+        let grad = labCtx.createRadialGradient(flashX, flashY, 2, flashX, flashY, flashRadius);
+        grad.addColorStop(0, `rgba(${epCol.r}, ${epCol.g}, ${epCol.b}, ${0.85 * flashIntensity})`);
+        grad.addColorStop(1, `rgba(${epCol.r}, ${epCol.g}, ${epCol.b}, 0.0)`);
+
+        labCtx.fillStyle = grad;
+        labCtx.beginPath();
+        labCtx.arc(flashX, flashY, flashRadius, 0, Math.PI * 2);
+        labCtx.fill();
+      }
+
+      if (prepCompleted) {
+        labCtx.save();
+        labCtx.translate(x + swirlOffset * 0.5, y - 6);
+        labCtx.rotate((stirAngle * Math.PI) / 180);
+        labCtx.fillStyle = '#ffffff';
+        labCtx.beginPath();
+        labCtx.roundRect(-10, -3, 20, 6, 3);
+        labCtx.fill();
+        labCtx.restore();
+      }
+    }
+
+    function drawPipetteSystem() {
+      let defaultX = 55, defaultY = 410;
+
+      if (prepState === 0 || prepState === 4) {
+        drawSinglePipette(defaultX, defaultY, 0, "rgba(56, 189, 248, 0.2)");
+        return;
+      }
+
+      let startX, startY, destX, destY;
+      let colorStr;
+
+      if (prepState === 1) { 
+        startX = 55; startY = 410;
+        destX = 430; destY = 430;
+        colorStr = "rgba(56, 189, 248, 0.7)";
+      } else if (prepState === 2) { 
+        startX = 120; startY = 410;
+        destX = 430; destY = 430;
+        colorStr = "rgba(220, 38, 38, 0.9)";
+      } else {
+        return;
+      }
+
+      let curX, curY;
+
+      if (prepProgress < 0.20) {
+        let t = prepProgress / 0.20;
+        curX = startX;
+        curY = startY - (startY - 260) * t;
+      } else if (prepProgress < 0.35) {
+        let t = (prepProgress - 0.20) / 0.15;
+        curX = startX + (destX - startX) * t;
+        curY = 260 + Math.sin(t * Math.PI) * -30;
+      } else if (prepProgress < 0.80) {
+        curX = destX;
+        curY = destY;
+      } else {
+        let t = (prepProgress - 0.80) / 0.20;
+        curX = destX + (startX - destX) * t;
+        curY = destY - (destY - startY) * t;
+      }
+
+      let fluidRatio = (prepProgress >= 0.20 && prepProgress <= 0.80) ? 1.0 : 0;
+      drawSinglePipette(curX, curY, fluidRatio, colorStr);
+
+      if (prepState === 1 && prepProgress >= 0.35 && prepProgress <= 0.80) {
+        let fillH = Math.min(54, (currentAnalyteVol / 120) * 50);
+        let bottomY = flaskY - fillH;
+
+        labCtx.strokeStyle = "rgba(56, 189, 248, 0.85)";
+        labCtx.lineWidth = 3.5;
+        labCtx.beginPath();
+        labCtx.moveTo(destX, destY + 2);
+        labCtx.lineTo(destX, bottomY);
+        labCtx.stroke();
+      } else if (prepState === 2 && prepProgress >= 0.45 && prepProgress <= 0.65) {
+        let dropP = (prepProgress - 0.45) / 0.20;
+        let fillH = Math.min(54, (currentAnalyteVol / 120) * 50);
+        let bottomY = flaskY - fillH;
+        let dropY = destY + 2 + dropP * (bottomY - destY - 2);
+
+        labCtx.fillStyle = colorStr;
+        labCtx.beginPath();
+        labCtx.arc(destX, dropY, 2.5, 0, Math.PI * 2);
+        labCtx.fill();
+      }
+    }
+
+    function drawSinglePipette(x, y, fluidRatio, liquidColor) {
+      labCtx.strokeStyle = '#cbd5e1';
+      labCtx.lineWidth = 1.5;
+
+      labCtx.fillStyle = '#cbd5e1';
+      labCtx.font = '9px sans-serif';
+      labCtx.fillText('PIPETTE', x - 18, y - 128);
+
+      labCtx.beginPath();
+      labCtx.moveTo(x - 4, y - 110);
+      labCtx.lineTo(x + 4, y - 110);
+      labCtx.lineTo(x + 2, y);
+      labCtx.lineTo(x - 2, y);
+      labCtx.closePath();
+
+      if (fluidRatio > 0) {
+        labCtx.fillStyle = liquidColor;
+        labCtx.fill();
+      }
+
+      labCtx.stroke();
+
+      labCtx.fillStyle = '#ef4444';
+      labCtx.beginPath();
+      labCtx.arc(x, y - 116, 8, 0, Math.PI * 2);
+      labCtx.fill();
+    }
+
+    function drawGraph() {
+      let w = curveCanvas.width = curveCanvas.clientWidth;
+      let h = curveCanvas.height = curveCanvas.clientHeight;
+
+      curveCtx.clearRect(0, 0, w, h);
+
+      let p = 25;
+      let gW = w - p * 2;
+      let gH = h - p * 2;
+
+      curveCtx.strokeStyle = '#475569';
+      curveCtx.lineWidth = 1;
+      curveCtx.beginPath();
+      curveCtx.moveTo(p, p);
+      curveCtx.lineTo(p, h - p);
+      curveCtx.lineTo(w - p, h - p);
+      curveCtx.stroke();
+
+      curveCtx.fillStyle = '#94a3b8';
+      curveCtx.font = '9px sans-serif';
+      curveCtx.fillText('14', 8, p + 4);
+      curveCtx.fillText('7', 12, p + gH / 2 + 3);
+      curveCtx.fillText('0', 12, h - p);
+      curveCtx.fillText('50cm³', w - p - 26, h - 8);
+
+      if (curveHistory.length < 2) return;
+
+      curveCtx.strokeStyle = '#38bdf8';
+      curveCtx.lineWidth = 2;
+      curveCtx.beginPath();
+
+      for (let i = 0; i < curveHistory.length; i++) {
+        let pt = curveHistory[i];
+        let x = p + (pt.v / 50) * gW;
+        let y = (h - p) - (pt.ph / 14) * gH;
+
+        if (i === 0) curveCtx.moveTo(x, y);
+        else curveCtx.lineTo(x, y);
+      }
+      curveCtx.stroke();
+    }
+
+    // Init Engine
+    resetStation();
+    requestAnimationFrame(loop);
+    window.addEventListener('resize', drawGraph);
+  </script>
+</body>
+</html>

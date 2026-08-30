@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lissajous Curves & Parametric Harmonics Lab</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #090d16; color: #e2e8f0; font-family: system-ui, -apple-system, sans-serif; }
+    canvas { background-color: #0f172a; border-radius: 0.75rem; }
+  </style>
+</head>
+<body class="p-4 select-none">
+  <div class="max-w-7xl mx-auto space-y-4">
+    <!-- Header -->
+    <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-900/80 p-4 rounded-xl border border-slate-800 backdrop-blur">
+      <div>
+        <h1 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-rose-300 to-amber-400">
+          Lissajous Curves & Parametric Harmonics Lab
+        </h1>
+        <p class="text-xs text-slate-400">Orthogonal Simple Harmonic Oscillations: x(t) = A·sin(a·t + δ), y(t) = B·sin(b·t)</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="btnAutoPhase" class="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg transition flex items-center gap-1 shadow-lg shadow-rose-900/40">
+          ▶ Continuous Phase Drift (Δδ)
+        </button>
+        <button id="btnReset" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg border border-slate-700 transition">
+          ↺ Reset
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <!-- Left: Lissajous Figure Canvas -->
+      <div class="lg:col-span-8 space-y-3">
+        <div class="relative bg-slate-900 p-2 rounded-xl border border-slate-800 shadow-2xl">
+          <canvas id="lissajousCanvas" width="780" height="480" class="w-full h-auto block"></canvas>
+          <div class="absolute top-4 left-4 bg-slate-950/80 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-800 text-xs flex gap-3 text-slate-300 font-mono">
+            <span class="text-pink-400">Frequency Ratio (a : b) = <span id="ratioLabel">1 : 2</span></span>
+            <span class="text-amber-400">Phase Shift (δ) = <span id="phaseLabel">0.50π rad (90°)</span></span>
+          </div>
+        </div>
+
+        <!-- Frequency & Phase Sliders -->
+        <div class="grid grid-cols-3 gap-3 bg-slate-900 p-4 rounded-xl border border-slate-800 text-xs">
+          <div class="space-y-1.5">
+            <div class="flex justify-between font-bold text-slate-300">
+              <span>X Frequency (a):</span>
+              <span id="freqAval" class="text-pink-400 font-mono">1</span>
+            </div>
+            <input id="sliderA" type="range" min="1" max="9" step="1" value="1" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-pink-500">
+          </div>
+          <div class="space-y-1.5">
+            <div class="flex justify-between font-bold text-slate-300">
+              <span>Y Frequency (b):</span>
+              <span id="freqBval" class="text-cyan-400 font-mono">2</span>
+            </div>
+            <input id="sliderB" type="range" min="1" max="9" step="1" value="2" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500">
+          </div>
+          <div class="space-y-1.5">
+            <div class="flex justify-between font-bold text-slate-300">
+              <span>Phase Shift (δ):</span>
+              <span id="phaseVal" class="text-amber-400 font-mono">90° (π/2)</span>
+            </div>
+            <input id="sliderDelta" type="range" min="0" max="360" step="5" value="90" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500">
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Harmonic Presets & Physics Analysis -->
+      <div class="lg:col-span-4 space-y-4">
+        <!-- Frequency Ratio Presets -->
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Classical Harmonics Presets</h2>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <button class="ratio-btn px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 text-left font-medium text-slate-300" data-a="1" data-b="1" data-d="90">
+              ⚪ 1:1 Circle / Ellipse<br><span class="text-[10px] text-slate-400">δ = 90° circular orbit</span>
+            </button>
+            <button class="ratio-btn px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-pink-500/50 text-left font-medium text-pink-300 active" data-a="1" data-b="2" data-d="90">
+              ♾ 1:2 Figure-Eight<br><span class="text-[10px] text-slate-400">Parabolic 2nd harmonic</span>
+            </button>
+            <button class="ratio-btn px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 text-left font-medium text-slate-300" data-a="3" data-b="2" data-d="90">
+              🥨 3:2 Pretzel Knot<br><span class="text-[10px] text-slate-400">3 X lobes, 2 Y lobes</span>
+            </button>
+            <button class="ratio-btn px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 text-left font-medium text-slate-300" data-a="5" data-b="6" data-d="45">
+              🕸 5:6 High Order<br><span class="text-[10px] text-slate-400">Dense resonance mesh</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Waveform Projections HUD -->
+        <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 space-y-3 text-xs">
+          <div class="flex justify-between items-center border-b border-slate-800 pb-2 font-bold text-slate-300">
+            <span>Orthogonal Projections</span>
+            <span class="text-rose-400 font-mono">2D Phase Portrait</span>
+          </div>
+          <div class="space-y-2 text-[11px] text-slate-400">
+            <p>
+              • <strong class="text-pink-300">X(t) = A·sin(a·t + δ)</strong> represents horizontal motion driven by a tuned harmonic oscillator.
+            </p>
+            <p>
+              • <strong class="text-cyan-300">Y(t) = B·sin(b·t)</strong> represents vertical motion driven by a perpendicular oscillator.
+            </p>
+            <p>
+              • When the ratio <strong class="text-slate-200">a/b is rational</strong>, the trajectory forms a closed loop. The number of horizontal tangency points equals <strong class="text-pink-300">b</strong>, and vertical tangencies equal <strong class="text-cyan-300">a</strong>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('lissajousCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let freqA = 1;
+    let freqB = 2;
+    let deltaDeg = 90;
+    let time = 0;
+    let isAutoPhase = false;
+    let animReq = null;
+
+    const AMP = 150;
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const w = canvas.width;
+      const h = canvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
+
+      // Coordinate axes
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
+
+      const deltaRad = (deltaDeg * Math.PI) / 180;
+
+      // Draw Lissajous Curve Path
+      ctx.strokeStyle = '#f43f5e';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      const steps = 1000;
+      for (let i = 0; i <= steps; i++) {
+        const t = (i / steps) * (2 * Math.PI);
+        const x = cx + AMP * Math.sin(freqA * t + deltaRad);
+        const y = cy - AMP * Math.sin(freqB * t);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // Current Particle Tracer
+      const currentX = cx + AMP * Math.sin(freqA * time + deltaRad);
+      const currentY = cy - AMP * Math.sin(freqB * time);
+
+      // Dashed projection lines to axes
+      ctx.strokeStyle = 'rgba(251, 191, 36, 0.4)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.moveTo(currentX, 0); ctx.lineTo(currentX, h); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, currentY); ctx.lineTo(w, currentY); ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Top X-Harmonic Indicator
+      ctx.beginPath(); ctx.arc(currentX, 30, 6, 0, Math.PI * 2);
+      ctx.fillStyle = '#ec4899'; ctx.fill();
+
+      // Right Y-Harmonic Indicator
+      ctx.beginPath(); ctx.arc(w - 30, currentY, 6, 0, Math.PI * 2);
+      ctx.fillStyle = '#06b6d4'; ctx.fill();
+
+      // 2D Particle Point
+      ctx.beginPath(); ctx.arc(currentX, currentY, 7, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff'; ctx.fill();
+      ctx.strokeStyle = '#f43f5e'; ctx.lineWidth = 2; ctx.stroke();
+    }
+
+    function update() {
+      document.getElementById('ratioLabel').textContent = `${freqA} : ${freqB}`;
+      const piFraction = (deltaDeg / 180).toFixed(2);
+      document.getElementById('phaseLabel').textContent = `${piFraction}π rad (${deltaDeg.toFixed(0)}°)`;
+      document.getElementById('freqAval').textContent = freqA;
+      document.getElementById('freqBval').textContent = freqB;
+      document.getElementById('phaseVal').textContent = `${deltaDeg.toFixed(0)}° (${piFraction}π)`;
+      draw();
+    }
+
+    function animate() {
+      time += 0.03;
+      if (isAutoPhase) {
+        deltaDeg = (deltaDeg + 0.5) % 360;
+        document.getElementById('sliderDelta').value = deltaDeg;
+      }
+      update();
+      animReq = requestAnimationFrame(animate);
+    }
+
+    document.getElementById('sliderA').addEventListener('input', (e) => {
+      freqA = parseInt(e.target.value, 10);
+      update();
+    });
+
+    document.getElementById('sliderB').addEventListener('input', (e) => {
+      freqB = parseInt(e.target.value, 10);
+      update();
+    });
+
+    document.getElementById('sliderDelta').addEventListener('input', (e) => {
+      deltaDeg = parseFloat(e.target.value);
+      update();
+    });
+
+    document.querySelectorAll('.ratio-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.ratio-btn').forEach(b => {
+          b.className = 'ratio-btn px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 text-left font-medium text-slate-300';
+        });
+        const cur = e.currentTarget;
+        cur.className = 'ratio-btn px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-pink-500/50 text-left font-medium text-pink-300';
+        freqA = parseInt(cur.dataset.a, 10);
+        freqB = parseInt(cur.dataset.b, 10);
+        deltaDeg = parseFloat(cur.dataset.d);
+        document.getElementById('sliderA').value = freqA;
+        document.getElementById('sliderB').value = freqB;
+        document.getElementById('sliderDelta').value = deltaDeg;
+        update();
+      });
+    });
+
+    document.getElementById('btnAutoPhase').addEventListener('click', () => {
+      isAutoPhase = !isAutoPhase;
+      const btn = document.getElementById('btnAutoPhase');
+      if (isAutoPhase) {
+        btn.textContent = '⏸ Pause Phase Drift';
+        btn.className = 'px-3.5 py-1.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-lg transition flex items-center gap-1 shadow-lg';
+      } else {
+        btn.textContent = '▶ Continuous Phase Drift (Δδ)';
+        btn.className = 'px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg transition flex items-center gap-1 shadow-lg';
+      }
+    });
+
+    document.getElementById('btnReset').addEventListener('click', () => {
+      isAutoPhase = false;
+      document.getElementById('btnAutoPhase').textContent = '▶ Continuous Phase Drift (Δδ)';
+      freqA = 1;
+      freqB = 2;
+      deltaDeg = 90;
+      document.getElementById('sliderA').value = 1;
+      document.getElementById('sliderB').value = 2;
+      document.getElementById('sliderDelta').value = 90;
+      update();
+    });
+
+    animate();
+  </script>
+</body>
+</html>

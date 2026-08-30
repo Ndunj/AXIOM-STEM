@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Set Theory & Venn Diagram Visualizer</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --card-glass: rgba(255, 255, 255, 0.08);
+            --text-dark: #0f172a;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-light: rgba(255, 255, 255, 0.15);
+            
+            /* Radiant Palette */
+            --color-a: #ec4899;      /* Hot Pink */
+            --color-b: #3b82f6;      /* Electric Blue */
+            --color-c: #8b5cf6;      /* Vibrant Purple */
+            --accent-green: #10b981; /* Emerald Green */
+            --accent-amber: #f59e0b; /* Golden Amber */
+            --highlight: #6366f1;    /* Indigo Highlight */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-light);
+            min-height: 100vh;
+            padding: 32px 24px;
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-light);
+            border-radius: 20px;
+            padding: 24px 36px;
+            margin-bottom: 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, #38bdf8, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        header .subtitle {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .badge {
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 28px;
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 28px;
+            color: var(--text-dark);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(10px);
+        }
+
+        .panel-header {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .mode-toggle {
+            display: flex;
+            background: #f1f5f9;
+            padding: 5px;
+            border-radius: 14px;
+            gap: 6px;
+            margin-bottom: 20px;
+        }
+
+        .mode-toggle button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #64748b;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .mode-toggle button.active {
+            background: #ffffff;
+            color: var(--highlight);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .dot-a { width: 10px; height: 10px; border-radius: 50%; background: var(--color-a); display: inline-block; }
+        .dot-b { width: 10px; height: 10px; border-radius: 50%; background: var(--color-b); display: inline-block; }
+        .dot-c { width: 10px; height: 10px; border-radius: 50%; background: var(--color-c); display: inline-block; }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            background-color: #f8fafc;
+            color: var(--text-dark);
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        input[type="text"]:focus, select:focus {
+            border-color: var(--highlight);
+            background-color: #ffffff;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .btn-group button {
+            padding: 11px 14px;
+            background: #f1f5f9;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #475569;
+            transition: all 0.2s ease;
+        }
+
+        .btn-group button:hover {
+            background: #e2e8f0;
+            color: var(--text-dark);
+        }
+
+        .btn-group button.active {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: #ffffff;
+            border-color: #4f46e5;
+            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn-random {
+            width: 100%;
+            margin-top: 16px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-weight: 800;
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-random:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(16, 185, 129, 0.4);
+        }
+
+        .venn-container {
+            position: relative;
+            width: 100%;
+            height: 480px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            border: 2px solid #e2e8f0;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .atomic-region {
+            fill: #f1f5f9;
+            fill-opacity: 0.2;
+            stroke: transparent;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .atomic-region.op-active {
+            fill: url(#activeGradient);
+            fill-opacity: 0.65;
+        }
+
+        .atomic-region:hover {
+            fill: #f59e0b !important;
+            fill-opacity: 0.75 !important;
+            filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.5));
+        }
+
+        .atomic-region.locked {
+            fill: #f59e0b !important;
+            fill-opacity: 0.85 !important;
+            stroke: #d97706 !important;
+            stroke-width: 3px !important;
+            stroke-dasharray: 6,4;
+        }
+
+        .circle-stroke-a { fill: none; stroke: var(--color-a); stroke-width: 3.5; pointer-events: none; }
+        .circle-stroke-b { fill: none; stroke: var(--color-b); stroke-width: 3.5; pointer-events: none; }
+        .circle-stroke-c { fill: none; stroke: var(--color-c); stroke-width: 3.5; pointer-events: none; }
+
+        .circle-label {
+            font-weight: 800;
+            font-size: 1.15rem;
+            pointer-events: none;
+        }
+
+        .element-text {
+            font-size: 0.85rem;
+            fill: #1e293b;
+            font-weight: 800;
+            pointer-events: none;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+        }
+
+        .inspector-card {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border: 2px solid #86efac;
+            border-left: 8px solid var(--accent-green);
+            border-radius: 16px;
+            padding: 18px 22px;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .inspector-card.locked-card {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-color: #fcd34d;
+            border-left-color: var(--accent-amber);
+        }
+
+        .inspector-card h4 {
+            color: #14532d;
+            font-size: 1rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .inspector-card.locked-card h4 {
+            color: #78350f;
+        }
+
+        .inspector-card p {
+            color: #166534;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            font-weight: 500;
+        }
+
+        .inspector-card.locked-card p {
+            color: #92400e;
+        }
+
+        .region-tag {
+            background: #bbf7d0;
+            color: #14532d;
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-family: monospace;
+            font-weight: 800;
+        }
+
+        .locked-card .region-tag {
+            background: #fde68a;
+            color: #78350f;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 180px;
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .result-box {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 16px;
+        }
+
+        .result-title {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: var(--highlight);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .result-value {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1>Set Theory Visualizer</h1>
+            <div class="subtitle">Interactive Venn Diagrams & Standard Set Operations</div>
+        </div>
+        <div class="badge">PRO SIMULATOR</div>
+    </header>
+
+    <div class="container">
+        <!-- Controls Panel -->
+        <div class="panel">
+            <div class="panel-header">Configuration</div>
+
+            <div class="mode-toggle">
+                <button id="btn-2sets" onclick="setSetCount(2)">2 Sets (A, B)</button>
+                <button id="btn-3sets" class="active" onclick="setSetCount(3)">3 Sets (A, B, C)</button>
+            </div>
+
+            <div class="form-group">
+                <label for="preset-select">Presets & Scenarios</label>
+                <select id="preset-select" onchange="applyPreset(this.value)">
+                    <option value="custom">Custom Input</option>
+                    <option value="intersecting" selected>Standard Overlapping Sets</option>
+                    <option value="disjoint">Disjoint Sets (No Overlap)</option>
+                    <option value="subset">Subset (A ⊆ B)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Universal Set (U)</label>
+                <input type="text" id="input-U" value="1, 2, 3, 4, 5, 6, 7, 8, 9, 10" oninput="updateSimulation()">
+            </div>
+
+            <div class="form-group">
+                <label><span class="dot-a"></span> Set A</label>
+                <input type="text" id="input-A" value="1, 2, 3, 4, 5" oninput="updateSimulation()">
+            </div>
+
+            <div class="form-group">
+                <label><span class="dot-b"></span> Set B</label>
+                <input type="text" id="input-B" value="4, 5, 6, 7" oninput="updateSimulation()">
+            </div>
+
+            <div class="form-group" id="group-C">
+                <label><span class="dot-c"></span> Set C</label>
+                <input type="text" id="input-C" value="5, 6, 8, 9" oninput="updateSimulation()">
+            </div>
+
+            <button class="btn-random" onclick="generateRandomSets()">
+                ✨ Generate Random Sets
+            </button>
+
+            <div class="panel-header" style="margin-top: 24px;">Set Operations</div>
+
+            <div class="btn-group" id="op-buttons-2" style="display: none;">
+                <button onclick="setOperation('A_UNION_B')" id="op-A_UNION_B">A ∪ B</button>
+                <button onclick="setOperation('A_INTER_B')" id="op-A_INTER_B">A ∩ B</button>
+                <button onclick="setOperation('A_DIFF_B')" id="op-A_DIFF_B">A - B</button>
+                <button onclick="setOperation('B_DIFF_A')" id="op-B_DIFF_A">B - A</button>
+                <button onclick="setOperation('A_COMP')" id="op-A_COMP">A' (Aᶜ)</button>
+                <button onclick="setOperation('B_COMP')" id="op-B_COMP">B' (Bᶜ)</button>
+                <button onclick="setOperation('NONE')" id="op-NONE">Clear</button>
+            </div>
+
+            <div class="btn-group" id="op-buttons-3">
+                <button onclick="setOperation('ABC_UNION')" id="op-ABC_UNION" class="active">A ∪ B ∪ C</button>
+                <button onclick="setOperation('ABC_INTER')" id="op-ABC_INTER">A ∩ B ∩ C</button>
+                <button onclick="setOperation('A_ONLY')" id="op-A_ONLY">A - (B ∪ C)</button>
+                <button onclick="setOperation('NONE')" id="op-NONE-3">Clear</button>
+            </div>
+        </div>
+
+        <!-- Visualization Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                Interactive Canvas
+                <span style="font-size: 0.8rem; font-weight: 600; color: #64748b;">Hover or click regions to inspect</span>
+            </div>
+
+            <div class="venn-container">
+                <svg id="venn-svg" viewBox="0 0 600 420">
+                    <defs>
+                        <!-- Radiant Active Region Gradient -->
+                        <linearGradient id="activeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#6366f1" />
+                            <stop offset="100%" stop-color="#a855f7" />
+                        </linearGradient>
+
+                        <!-- 2-Set Geometry -->
+                        <circle id="c2A" cx="230" cy="210" r="120" />
+                        <circle id="c2B" cx="370" cy="210" r="120" />
+
+                        <!-- 3-Set Geometry (r=90) -->
+                        <circle id="c3A" cx="260" cy="180" r="90" />
+                        <circle id="c3B" cx="340" cy="180" r="90" />
+                        <circle id="c3C" cx="300" cy="240" r="90" />
+
+                        <!-- Clip Paths -->
+                        <clipPath id="clipA"><use href="#c3A" /></clipPath>
+                        <clipPath id="clipB"><use href="#c3B" /></clipPath>
+                        <clipPath id="clipC"><use href="#c3C" /></clipPath>
+
+                        <!-- Outer Subtraction Masks -->
+                        <mask id="maskNotA"><rect width="600" height="420" fill="white"/><use href="#c3A" fill="black"/></mask>
+                        <mask id="maskNotB"><rect width="600" height="420" fill="white"/><use href="#c3B" fill="black"/></mask>
+                        <mask id="maskNotC"><rect width="600" height="420" fill="white"/><use href="#c3C" fill="black"/></mask>
+                        
+                        <mask id="maskNotBC">
+                            <rect width="600" height="420" fill="white"/>
+                            <use href="#c3B" fill="black"/>
+                            <use href="#c3C" fill="black"/>
+                        </mask>
+                        <mask id="maskNotAC">
+                            <rect width="600" height="420" fill="white"/>
+                            <use href="#c3A" fill="black"/>
+                            <use href="#c3C" fill="black"/>
+                        </mask>
+                        <mask id="maskNotAB">
+                            <rect width="600" height="420" fill="white"/>
+                            <use href="#c3A" fill="black"/>
+                            <use href="#c3B" fill="black"/>
+                        </mask>
+                        <mask id="maskNotABC">
+                            <rect width="600" height="420" fill="white"/>
+                            <use href="#c3A" fill="black"/>
+                            <use href="#c3B" fill="black"/>
+                            <use href="#c3C" fill="black"/>
+                        </mask>
+                    </defs>
+
+                    <g id="regions-layer"></g>
+                </svg>
+            </div>
+
+            <!-- Inspector Card -->
+            <div class="inspector-card" id="region-inspector">
+                <h4 id="inspector-title">
+                    <span>Region Inspector</span>
+                    <span class="region-tag" id="inspector-tag">Hover or Click Region</span>
+                </h4>
+                <p id="inspector-desc">Move your cursor or click on any isolated region above to view its set notation and element composition.</p>
+            </div>
+
+            <div class="results-grid">
+                <div class="result-box">
+                    <div class="result-title">Active Operation Result</div>
+                    <div class="result-value" id="result-set">{ }</div>
+                </div>
+
+                <div class="result-box">
+                    <div class="result-title">Cardinality |Result|</div>
+                    <div class="result-value" id="result-cardinality">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let mode = 3;
+        let currentOp = 'ABC_UNION';
+        let currentRegions = {};
+        let lockedRegionKey = null;
+
+        const regionMetadata = {
+            onlyA: { title: "Set A Only", notation: "A - B", desc: "Elements exclusive to Set A." },
+            onlyB: { title: "Set B Only", notation: "B - A", desc: "Elements exclusive to Set B." },
+            AB: { title: "Intersection A & B", notation: "A ∩ B", desc: "Elements common to A and B." },
+            outside: { title: "Exterior Universe", notation: "(A ∪ B)'", desc: "Elements in U outside A and B." },
+            
+            onlyA3: { title: "Set A Only", notation: "A - (B ∪ C)", desc: "Top-left area exclusive to Circle A." },
+            onlyB3: { title: "Set B Only", notation: "B - (A ∪ C)", desc: "Top-right area exclusive to Circle B." },
+            onlyC3: { title: "Set C Only", notation: "C - (A ∪ B)", desc: "Bottom area exclusive to Circle C." },
+            AB3: { title: "Intersection A & B Only", notation: "(A ∩ B) - C", desc: "Top-center overlap between A and B." },
+            AC3: { title: "Intersection A & C Only", notation: "(A ∩ C) - B", desc: "Mid-left overlap between A and C." },
+            BC3: { title: "Intersection B & C Only", notation: "(B ∩ C) - A", desc: "Mid-right overlap between B and C." },
+            ABC3: { title: "Triple Intersection", notation: "A ∩ B ∩ C", desc: "Symmetric center region shared by A, B, and C." },
+            outside3: { title: "Exterior Universe", notation: "(A ∪ B ∪ C)'", desc: "Elements in Universal set U outside all circles." }
+        };
+
+        function parseSet(inputId) {
+            const raw = document.getElementById(inputId).value;
+            if (!raw.trim()) return [];
+            return Array.from(new Set(raw.split(',').map(s => s.trim()).filter(s => s.length > 0)));
+        }
+
+        function generateRandomSets() {
+            document.getElementById('preset-select').value = 'custom';
+            const uSize = Math.floor(Math.random() * 6) + 8;
+            const universalPool = Array.from({length: uSize}, (_, i) => i + 1);
+
+            const getRandomSubset = () => {
+                const count = Math.floor(Math.random() * (uSize - 3)) + 3;
+                const shuffled = [...universalPool].sort(() => 0.5 - Math.random());
+                return shuffled.slice(0, count).sort((a, b) => a - b);
+            };
+
+            document.getElementById('input-U').value = universalPool.join(', ');
+            document.getElementById('input-A').value = getRandomSubset().join(', ');
+            document.getElementById('input-B').value = getRandomSubset().join(', ');
+            if (mode === 3) {
+                document.getElementById('input-C').value = getRandomSubset().join(', ');
+            }
+            updateSimulation();
+        }
+
+        function setSetCount(n) {
+            mode = n;
+            lockedRegionKey = null;
+            document.getElementById('btn-2sets').classList.toggle('active', n === 2);
+            document.getElementById('btn-3sets').classList.toggle('active', n === 3);
+            document.getElementById('group-C').style.display = n === 3 ? 'block' : 'none';
+            document.getElementById('op-buttons-2').style.display = n === 2 ? 'grid' : 'none';
+            document.getElementById('op-buttons-3').style.display = n === 3 ? 'grid' : 'none';
+            currentOp = n === 2 ? 'A_UNION_B' : 'ABC_UNION';
+            updateSimulation();
+            updateInspectorUI(null);
+        }
+
+        function setOperation(op) {
+            currentOp = op;
+            const container = mode === 2 ? 'op-buttons-2' : 'op-buttons-3';
+            document.querySelectorAll(`#${container} button`).forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.getElementById(`op-${op}`);
+            if (activeBtn) activeBtn.classList.add('active');
+            updateSimulation();
+        }
+
+        function handleRegionClick(key, event) {
+            if (event) event.stopPropagation();
+            lockedRegionKey = (lockedRegionKey === key) ? null : key;
+            updateInspectorUI(key);
+            renderSVG(currentRegions, getActiveHighlightMap());
+        }
+
+        function handleRegionHover(key) {
+            if (lockedRegionKey) return;
+            updateInspectorUI(key);
+        }
+
+        function updateInspectorUI(key) {
+            const cardEl = document.getElementById('region-inspector');
+            const titleEl = document.getElementById('inspector-title');
+            const descEl = document.getElementById('inspector-desc');
+            const tagEl = document.getElementById('inspector-tag');
+
+            const activeKey = lockedRegionKey || key;
+
+            if (!activeKey || !regionMetadata[activeKey]) {
+                cardEl.classList.remove('locked-card');
+                tagEl.innerText = "Hover or Click Region";
+                titleEl.querySelector('span:first-child').innerText = "Region Inspector";
+                descEl.innerText = "Move your cursor or click on any isolated region above to view its set notation and element composition.";
+                return;
+            }
+
+            const info = regionMetadata[activeKey];
+            const elements = currentRegions[activeKey] || [];
+            const elText = elements.length > 0 ? `{ ${elements.join(', ')} }` : '∅ (Empty Set)';
+
+            if (lockedRegionKey) {
+                cardEl.classList.add('locked-card');
+                tagEl.innerText = `${info.notation} [🔒 Locked]`;
+            } else {
+                cardEl.classList.remove('locked-card');
+                tagEl.innerText = info.notation;
+            }
+
+            titleEl.querySelector('span:first-child').innerText = info.title;
+            descEl.innerHTML = `${info.desc}<br><br><strong style="opacity: 0.9;">Elements in Region:</strong> <span style="font-family: monospace; font-weight: bold;">${elText}</span>`;
+        }
+
+        function applyPreset(type) {
+            if (type === 'custom') return;
+            if (type === 'intersecting') {
+                document.getElementById('input-U').value = "1, 2, 3, 4, 5, 6, 7, 8, 9, 10";
+                document.getElementById('input-A').value = "1, 2, 3, 4, 5";
+                document.getElementById('input-B').value = "4, 5, 6, 7";
+                document.getElementById('input-C').value = "5, 6, 8, 9";
+            } else if (type === 'disjoint') {
+                document.getElementById('input-U').value = "1, 2, 3, 4, 5, 6, 7, 8";
+                document.getElementById('input-A').value = "1, 2, 3";
+                document.getElementById('input-B').value = "4, 5, 6";
+                document.getElementById('input-C').value = "7, 8";
+            } else if (type === 'subset') {
+                document.getElementById('input-U').value = "1, 2, 3, 4, 5, 6, 7, 8";
+                document.getElementById('input-A').value = "2, 3";
+                document.getElementById('input-B').value = "1, 2, 3, 4, 5";
+            }
+            updateSimulation();
+        }
+
+        function getActiveHighlightMap() {
+            let highlightMap = {};
+            if (mode === 2) {
+                switch (currentOp) {
+                    case 'A_UNION_B': highlightMap = { onlyA: true, onlyB: true, AB: true }; break;
+                    case 'A_INTER_B': highlightMap = { AB: true }; break;
+                    case 'A_DIFF_B': highlightMap = { onlyA: true }; break;
+                    case 'B_DIFF_A': highlightMap = { onlyB: true }; break;
+                    case 'A_COMP': highlightMap = { onlyB: true, outside: true }; break;
+                    case 'B_COMP': highlightMap = { onlyA: true, outside: true }; break;
+                }
+            } else {
+                switch (currentOp) {
+                    case 'ABC_UNION': highlightMap = { onlyA3: true, onlyB3: true, onlyC3: true, AB3: true, AC3: true, BC3: true, ABC3: true }; break;
+                    case 'ABC_INTER': highlightMap = { ABC3: true }; break;
+                    case 'A_ONLY': highlightMap = { onlyA3: true }; break;
+                }
+            }
+            return highlightMap;
+        }
+
+        function updateSimulation() {
+            const U = parseSet('input-U');
+            const A = parseSet('input-A');
+            const B = parseSet('input-B');
+            const C = parseSet('input-C');
+
+            if (mode === 2) {
+                currentRegions = {
+                    onlyA: A.filter(x => !B.includes(x) && U.includes(x)),
+                    onlyB: B.filter(x => !A.includes(x) && U.includes(x)),
+                    AB: A.filter(x => B.includes(x) && U.includes(x)),
+                    outside: U.filter(x => !A.includes(x) && !B.includes(x))
+                };
+            } else {
+                currentRegions = {
+                    onlyA3: A.filter(x => !B.includes(x) && !C.includes(x) && U.includes(x)),
+                    onlyB3: B.filter(x => !A.includes(x) && !C.includes(x) && U.includes(x)),
+                    onlyC3: C.filter(x => !A.includes(x) && !B.includes(x) && U.includes(x)),
+                    AB3: A.filter(x => B.includes(x) && !C.includes(x) && U.includes(x)),
+                    AC3: A.filter(x => C.includes(x) && !B.includes(x) && U.includes(x)),
+                    BC3: B.filter(x => C.includes(x) && !A.includes(x) && U.includes(x)),
+                    ABC3: A.filter(x => B.includes(x) && C.includes(x) && U.includes(x)),
+                    outside3: U.filter(x => !A.includes(x) && !B.includes(x) && !C.includes(x))
+                };
+            }
+
+            const highlightMap = getActiveHighlightMap();
+            let resultSet = [];
+            
+            Object.keys(highlightMap).forEach(key => {
+                if (highlightMap[key] && currentRegions[key]) {
+                    resultSet = resultSet.concat(currentRegions[key]);
+                }
+            });
+
+            renderSVG(currentRegions, highlightMap);
+
+            document.getElementById('result-set').innerText = resultSet.length > 0 ? `{ ${resultSet.join(', ')} }` : '∅ (Empty Set)';
+            document.getElementById('result-cardinality').innerText = resultSet.length;
+
+            if (lockedRegionKey) updateInspectorUI(lockedRegionKey);
+        }
+
+        function renderSVG(regions, highlight) {
+            const container = document.getElementById('regions-layer');
+            let html = '';
+
+            if (mode === 2) {
+                const dOnlyA = "M 300 112.68 A 120 120 0 1 0 300 307.32 A 120 120 0 0 1 300 112.68 Z";
+                const dOnlyB = "M 300 112.68 A 120 120 0 0 1 300 307.32 A 120 120 0 1 0 300 112.68 Z";
+                const dAB = "M 300 112.68 A 120 120 0 0 1 300 307.32 A 120 120 0 0 1 300 112.68 Z";
+
+                html += `<rect x="10" y="10" width="580" height="400" rx="14" class="atomic-region ${highlight.outside ? 'op-active' : ''} ${lockedRegionKey === 'outside' ? 'locked' : ''}" onclick="handleRegionClick('outside', event)" onmouseenter="handleRegionHover('outside')" onmouseleave="handleRegionHover(null)" />`;
+                html += `<text x="25" y="38" class="circle-label" fill="#64748b">Universal Set (U)</text>`;
+
+                html += `<path d="${dOnlyA}" class="atomic-region ${highlight.onlyA ? 'op-active' : ''} ${lockedRegionKey === 'onlyA' ? 'locked' : ''}" onclick="handleRegionClick('onlyA', event)" onmouseenter="handleRegionHover('onlyA')" onmouseleave="handleRegionHover(null)" />`;
+                html += `<path d="${dOnlyB}" class="atomic-region ${highlight.onlyB ? 'op-active' : ''} ${lockedRegionKey === 'onlyB' ? 'locked' : ''}" onclick="handleRegionClick('onlyB', event)" onmouseenter="handleRegionHover('onlyB')" onmouseleave="handleRegionHover(null)" />`;
+                html += `<path d="${dAB}" class="atomic-region ${highlight.AB ? 'op-active' : ''} ${lockedRegionKey === 'AB' ? 'locked' : ''}" onclick="handleRegionClick('AB', event)" onmouseenter="handleRegionHover('AB')" onmouseleave="handleRegionHover(null)" />`;
+
+                html += `<circle cx="230" cy="210" r="120" class="circle-stroke-a" />`;
+                html += `<circle cx="370" cy="210" r="120" class="circle-stroke-b" />`;
+
+                html += `<text x="140" y="110" class="circle-label" fill="var(--color-a)">Set A</text>`;
+                html += `<text x="410" y="110" class="circle-label" fill="var(--color-b)">Set B</text>`;
+                html += `<text x="180" y="215" class="element-text" text-anchor="middle">${formatElements(regions.onlyA)}</text>`;
+                html += `<text x="420" y="215" class="element-text" text-anchor="middle">${formatElements(regions.onlyB)}</text>`;
+                html += `<text x="300" y="215" class="element-text" text-anchor="middle">${formatElements(regions.AB)}</text>`;
+                html += `<text x="50" y="380" class="element-text">${formatElements(regions.outside, 'Exterior U: ')}</text>`;
+
+            } else {
+                const rClass = (key) => `atomic-region ${highlight[key] ? 'op-active' : ''} ${lockedRegionKey === key ? 'locked' : ''}`;
+                const ev = (key) => `onclick="handleRegionClick('${key}', event)" onmouseenter="handleRegionHover('${key}')" onmouseleave="handleRegionHover(null)"`;
+
+                // Outside Region
+                html += `<rect x="10" y="10" width="580" height="400" rx="14" mask="url(#maskNotABC)" class="${rClass('outside3')}" ${ev('outside3')} />`;
+                html += `<text x="25" y="38" class="circle-label" fill="#64748b">Universal Set (U)</text>`;
+
+                // Exclusive Regions
+                html += `<use href="#c3A" mask="url(#maskNotBC)" class="${rClass('onlyA3')}" ${ev('onlyA3')} />`;
+                html += `<use href="#c3B" mask="url(#maskNotAC)" class="${rClass('onlyB3')}" ${ev('onlyB3')} />`;
+                html += `<use href="#c3C" mask="url(#maskNotAB)" class="${rClass('onlyC3')}" ${ev('onlyC3')} />`;
+
+                // Pairwise Intersections
+                html += `<g clip-path="url(#clipA)">`;
+                html += `  <use href="#c3B" mask="url(#maskNotC)" class="${rClass('AB3')}" ${ev('AB3')} />`;
+                html += `  <use href="#c3C" mask="url(#maskNotB)" class="${rClass('AC3')}" ${ev('AC3')} />`;
+                html += `</g>`;
+
+                html += `<g clip-path="url(#clipB)">`;
+                html += `  <use href="#c3C" mask="url(#maskNotA)" class="${rClass('BC3')}" ${ev('BC3')} />`;
+                html += `</g>`;
+
+                // Triple Intersection
+                html += `<g clip-path="url(#clipA)">`;
+                html += `  <g clip-path="url(#clipB)">`;
+                html += `    <use href="#c3C" class="${rClass('ABC3')}" ${ev('ABC3')} />`;
+                html += `  </g>`;
+                html += `</g>`;
+
+                // Colored Circle Outlines (Radius = 90)
+                html += `<circle cx="260" cy="180" r="90" class="circle-stroke-a" />`;
+                html += `<circle cx="340" cy="180" r="90" class="circle-stroke-b" />`;
+                html += `<circle cx="300" cy="240" r="90" class="circle-stroke-c" />`;
+
+                // Circle Labels
+                html += `<text x="200" y="120" class="circle-label" fill="var(--color-a)">Set A</text>`;
+                html += `<text x="360" y="120" class="circle-label" fill="var(--color-b)">Set B</text>`;
+                html += `<text x="300" y="355" class="circle-label" fill="var(--color-c)" text-anchor="middle">Set C</text>`;
+
+                // Region Element Labels
+                html += `<text x="220" y="160" class="element-text" text-anchor="middle">${formatElements(regions.onlyA3)}</text>`;
+                html += `<text x="380" y="160" class="element-text" text-anchor="middle">${formatElements(regions.onlyB3)}</text>`;
+                html += `<text x="300" y="295" class="element-text" text-anchor="middle">${formatElements(regions.onlyC3)}</text>`;
+                html += `<text x="300" y="150" class="element-text" text-anchor="middle">${formatElements(regions.AB3)}</text>`;
+                html += `<text x="250" y="225" class="element-text" text-anchor="middle">${formatElements(regions.AC3)}</text>`;
+                html += `<text x="350" y="225" class="element-text" text-anchor="middle">${formatElements(regions.BC3)}</text>`;
+                html += `<text x="300" y="200" class="element-text" text-anchor="middle">${formatElements(regions.ABC3)}</text>`;
+                html += `<text x="50" y="380" class="element-text">${formatElements(regions.outside3, 'Exterior U: ')}</text>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function formatElements(arr, prefix = '') {
+            if (!arr || arr.length === 0) return '∅';
+            return prefix + '{ ' + arr.join(', ') + ' }';
+        }
+
+        updateSimulation();
+    </script>
+</body>
+</html>
