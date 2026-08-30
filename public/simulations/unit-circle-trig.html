@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unit Circle Trigonometry Explorer</title>
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --card-bg: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-cos: #ef4444;
+      --accent-sin: #3b82f6;
+      --accent-tan: #10b981;
+      --accent-vec: #f59e0b;
+      --border-color: #334155;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      line-height: 1.5;
+      padding: 16px;
+    }
+
+    .container {
+      max-width: 1250px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    header { text-align: center; }
+    header h1 { color: var(--text-main); font-size: 1.8rem; }
+    header p { color: var(--text-muted); font-size: 0.95rem; }
+
+    .app-layout {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 16px;
+    }
+
+    @media (max-width: 960px) {
+      .app-layout { grid-template-columns: 1fr; }
+    }
+
+    .viewport-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      height: 600px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .controls-panel {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      accent-color: var(--accent-sin);
+      cursor: pointer;
+    }
+
+    .range-val {
+      font-weight: 700;
+      color: var(--accent-vec);
+      min-width: 75px;
+      text-align: right;
+      font-size: 1.05rem;
+    }
+
+    .btn-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    .btn-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    button {
+      background-color: #0f172a;
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 8px 6px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    button:hover {
+      border-color: var(--accent-sin);
+      color: var(--accent-sin);
+    }
+
+    .step-selector {
+      display: flex;
+      background: #0f172a;
+      border-radius: 6px;
+      padding: 3px;
+      border: 1px solid var(--border-color);
+    }
+
+    .step-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 6px;
+      color: var(--text-muted);
+      border-radius: 4px;
+    }
+
+    .step-btn.active {
+      background: var(--accent-sin);
+      color: #ffffff;
+    }
+
+    .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: #0f172a;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .checkbox-item input {
+      cursor: pointer;
+    }
+
+    .readout-card {
+      background-color: #0f172a;
+      border-radius: 6px;
+      padding: 12px;
+      border: 1px solid var(--border-color);
+    }
+
+    .readout-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.88rem;
+      padding: 4px 0;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .readout-row:last-child { border-bottom: none; }
+    .val-cos { color: var(--accent-cos); font-weight: 700; }
+    .val-sin { color: var(--accent-sin); font-weight: 700; }
+    .val-tan { color: var(--accent-tan); font-weight: 700; }
+
+    .theory-section {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .theory-section h2 { color: var(--accent-sin); font-size: 1.2rem; margin-bottom: 8px; }
+    .theory-section p { font-size: 0.9rem; margin-bottom: 8px; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>Unit Circle &amp; Trigonometric Functions Interactive Explorer</h1>
+      <p>Precision Angle Selection &amp; Wave/Phasor Mapping (0&deg; &rarr; 360&deg;)</p>
+    </header>
+
+    <div class="app-layout">
+      <div class="viewport-card">
+        <canvas id="simCanvas"></canvas>
+      </div>
+
+      <div class="controls-panel">
+        <div class="control-group">
+          <label for="angle-slider">Angle Adjustment (&theta;)</label>
+          <div class="slider-container">
+            <input type="range" id="angle-slider" min="0" max="360" step="1" value="45.0">
+            <span class="range-val" id="angle-val">45.0&deg;</span>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label>Slider Precision Step</label>
+          <div class="step-selector">
+            <button class="step-btn active" id="btn-step-1">1.0&deg; Step</button>
+            <button class="step-btn" id="btn-step-01">0.1&deg; Step</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label>Nudge Angle</label>
+          <div class="btn-grid-2">
+            <button id="btn-dec-step">- Step</button>
+            <button id="btn-inc-step">+ Step</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label>Quick Reference Points</label>
+          <div class="btn-grid">
+            <button id="btn-zero">0&deg;</button>
+            <button id="btn-90">90&deg;</button>
+            <button id="btn-180">180&deg;</button>
+            <button id="btn-270">270&deg;</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label>Display View Mode</label>
+          <div class="btn-grid-2">
+            <button id="mode-wave" style="border-color: var(--accent-sin);">Wave Plot</button>
+            <button id="mode-phasor">EM Phasor</button>
+          </div>
+        </div>
+
+        <div class="checkbox-group">
+          <label>Visible Component Vectors</label>
+          <label class="checkbox-item" style="color: var(--accent-cos);">
+            <input type="checkbox" id="chk-cos" checked> Cosine (x = cos &theta;)
+          </label>
+          <label class="checkbox-item" style="color: var(--accent-sin);">
+            <input type="checkbox" id="chk-sin" checked> Sine (y = sin &theta;)
+          </label>
+          <label class="checkbox-item" style="color: var(--accent-tan);">
+            <input type="checkbox" id="chk-tan" checked> Tangent (tan &theta;)
+          </label>
+        </div>
+
+        <div class="readout-card">
+          <div class="readout-row">
+            <span>Angle in Radians</span>
+            <span id="read-rad" style="color: var(--text-main); font-weight:700;">0.79 rad (0.25&pi;)</span>
+          </div>
+          <div class="readout-row">
+            <span>Cosine (x-coord)</span>
+            <span id="read-cos" class="val-cos">0.7071</span>
+          </div>
+          <div class="readout-row">
+            <span>Sine (y-coord)</span>
+            <span id="read-sin" class="val-sin">0.7071</span>
+          </div>
+          <div class="readout-row">
+            <span>Tangent (y/x)</span>
+            <span id="read-tan" class="val-tan">1.0000</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="theory-section">
+      <h2>Mathematical &amp; Physical Principles</h2>
+      <p>
+        <strong>Unit Circle Coordinates:</strong> A point on the unit circle (radius R = 1) centered at (0,0) has coordinates (x, y) = (cos&theta;, sin&theta;). Quadrant I ranges from 0&deg; to 90&deg;, Quadrant II from 90&deg; to 180&deg;, Quadrant III from 180&deg; to 270&deg;, and Quadrant IV from 270&deg; to 360&deg;.
+      </p>
+      <p>
+        <strong>Simple Harmonic Motion &amp; Waves:</strong> Manually advancing the angle &theta; maps the vertical sine height onto the continuous wave display on the right, directly illustrating wave amplitude oscillation.
+      </p>
+      <p>
+        <strong>Phasor Vectors in Electromagnetism:</strong> In AC circuit analysis and physics optics, time-varying signals are modeled as rotating phasors. The physical measurable quantity corresponds to the real-axis horizontal cosine projection E(t) = E<sub>0</sub> cos(&theta;).
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let degAngle = 45.0; 
+    let stepSize = 1.0; 
+    let viewMode = 'wave'; 
+
+    let showCos = true;
+    let showSin = true;
+    let showTan = true;
+
+    // UI Elements
+    const angleSlider = document.getElementById('angle-slider');
+    const angleVal = document.getElementById('angle-val');
+
+    const btnStep1 = document.getElementById('btn-step-1');
+    const btnStep01 = document.getElementById('btn-step-01');
+
+    const btnIncStep = document.getElementById('btn-inc-step');
+    const btnDecStep = document.getElementById('btn-dec-step');
+
+    const btnZero = document.getElementById('btn-zero');
+    const btn90 = document.getElementById('btn-90');
+    const btn180 = document.getElementById('btn-180');
+    const btn270 = document.getElementById('btn-270');
+
+    const btnModeWave = document.getElementById('mode-wave');
+    const btnModePhasor = document.getElementById('mode-phasor');
+
+    const chkCos = document.getElementById('chk-cos');
+    const chkSin = document.getElementById('chk-sin');
+    const chkTan = document.getElementById('chk-tan');
+
+    const readRad = document.getElementById('read-rad');
+    const readCos = document.getElementById('read-cos');
+    const readSin = document.getElementById('read-sin');
+    const readTan = document.getElementById('read-tan');
+
+    function resizeCanvas() {
+      canvas.width = canvas.parentElement.clientWidth;
+      canvas.height = canvas.parentElement.clientHeight;
+      draw();
+    }
+
+    function formatRad(rad) {
+      const piFrac = rad / Math.PI;
+      return `${rad.toFixed(3)} rad (${piFrac.toFixed(2)}π)`;
+    }
+
+    function updateReadouts() {
+      // Clamp angle between 0 and 360
+      degAngle = Math.max(0, Math.min(360, Math.round(degAngle / stepSize) * stepSize));
+      
+      const rad = (degAngle * Math.PI) / 180;
+      const cosVal = Math.cos(rad);
+      const sinVal = Math.sin(rad);
+      const tanVal = Math.abs(cosVal) < 1e-4 ? Infinity : Math.tan(rad);
+
+      angleSlider.value = degAngle;
+      angleVal.innerHTML = stepSize === 0.1 ? `${degAngle.toFixed(1)}&deg;` : `${Math.round(degAngle)}&deg;`;
+
+      readRad.innerHTML = `${rad.toFixed(3)} rad (${(rad / Math.PI).toFixed(2)}&pi;)`;
+      readCos.textContent = cosVal.toFixed(4);
+      readSin.textContent = sinVal.toFixed(4);
+      readTan.textContent = tanVal === Infinity ? "Undefined" : tanVal.toFixed(4);
+    }
+
+    // Set Step Precision
+    function setStepSize(size) {
+      stepSize = size;
+      angleSlider.step = size;
+      if (size === 1.0) {
+        btnStep1.classList.add('active');
+        btnStep01.classList.remove('active');
+        btnIncStep.innerHTML = "+1.0&deg;";
+        btnDecStep.innerHTML = "-1.0&deg;";
+      } else {
+        btnStep01.classList.add('active');
+        btnStep1.classList.remove('active');
+        btnIncStep.innerHTML = "+0.1&deg;";
+        btnDecStep.innerHTML = "-0.1&deg;";
+      }
+      updateReadouts();
+      draw();
+    }
+
+    btnStep1.addEventListener('click', () => setStepSize(1.0));
+    btnStep01.addEventListener('click', () => setStepSize(0.1));
+
+    // Slider Event Listener
+    angleSlider.addEventListener('input', (e) => {
+      degAngle = parseFloat(e.target.value);
+      updateReadouts();
+      draw();
+    });
+
+    // Step Increments
+    btnIncStep.addEventListener('click', () => {
+      degAngle = Math.min(360, degAngle + stepSize);
+      updateReadouts();
+      draw();
+    });
+
+    btnDecStep.addEventListener('click', () => {
+      degAngle = Math.max(0, degAngle - stepSize);
+      updateReadouts();
+      draw();
+    });
+
+    // Reference Point Buttons
+    btnZero.addEventListener('click', () => { degAngle = 0; updateReadouts(); draw(); });
+    btn90.addEventListener('click', () => { degAngle = 90; updateReadouts(); draw(); });
+    btn180.addEventListener('click', () => { degAngle = 180; updateReadouts(); draw(); });
+    btn270.addEventListener('click', () => { degAngle = 270; updateReadouts(); draw(); });
+
+    // Mode Buttons
+    btnModeWave.addEventListener('click', () => {
+      viewMode = 'wave';
+      btnModeWave.style.borderColor = "var(--accent-sin)";
+      btnModePhasor.style.borderColor = "var(--border-color)";
+      draw();
+    });
+
+    btnModePhasor.addEventListener('click', () => {
+      viewMode = 'phasor';
+      btnModePhasor.style.borderColor = "var(--accent-sin)";
+      btnModeWave.style.borderColor = "var(--border-color)";
+      draw();
+    });
+
+    chkCos.addEventListener('change', (e) => { showCos = e.target.checked; draw(); });
+    chkSin.addEventListener('change', (e) => { showSin = e.target.checked; draw(); });
+    chkTan.addEventListener('change', (e) => { showTan = e.target.checked; draw(); });
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const w = canvas.width;
+      const h = canvas.height;
+
+      const radius = Math.min(w, h) * 0.22;
+      const centerX = viewMode === 'wave' ? w * 0.28 : w * 0.35;
+      const centerY = h * 0.5;
+
+      const rad = (degAngle * Math.PI) / 180;
+      const cosVal = Math.cos(rad);
+      const sinVal = Math.sin(rad);
+
+      const px = centerX + radius * cosVal;
+      const py = centerY - radius * sinVal; // Canvas y is inverted
+
+      // 1. Axes for Unit Circle
+      ctx.strokeStyle = "#334155";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(centerX - radius * 1.35, centerY);
+      ctx.lineTo(centerX + radius * 1.5, centerY);
+      ctx.moveTo(centerX, centerY - radius * 1.35);
+      ctx.lineTo(centerX, centerY + radius * 1.35);
+      ctx.stroke();
+
+      // Axis Degree Markers
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "bold 12px system-ui";
+      ctx.textAlign = "left";
+      ctx.fillText("0° / 360°", centerX + radius + 10, centerY + 4);
+      ctx.textAlign = "center";
+      ctx.fillText("90°", centerX, centerY - radius - 12);
+      ctx.textAlign = "right";
+      ctx.fillText("180°", centerX - radius - 10, centerY + 4);
+      ctx.textAlign = "center";
+      ctx.fillText("270°", centerX, centerY + radius + 22);
+
+      // Quadrant Identifiers
+      ctx.fillStyle = "rgba(148, 163, 184, 0.25)";
+      ctx.font = "bold 14px system-ui";
+      ctx.fillText("QI", centerX + radius * 0.5, centerY - radius * 0.5);
+      ctx.fillText("QII", centerX - radius * 0.5, centerY - radius * 0.5);
+      ctx.fillText("QIII", centerX - radius * 0.5, centerY + radius * 0.5);
+      ctx.fillText("QIV", centerX + radius * 0.5, centerY + radius * 0.5);
+
+      // 2. Unit Circle Perimeter
+      ctx.strokeStyle = "#475569";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // 3. Counterclockwise Arc Fill
+      ctx.fillStyle = "rgba(245, 158, 11, 0.15)";
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.arc(centerX, centerY, radius * 0.3, 0, -rad, true);
+      ctx.closePath();
+      ctx.fill();
+
+      // Degree label rendered inside arc
+      if (degAngle > 0) {
+        const labelAngle = -rad / 2;
+        const labelX = centerX + radius * 0.45 * Math.cos(labelAngle);
+        const labelY = centerY + radius * 0.45 * Math.sin(labelAngle);
+        ctx.fillStyle = "#f59e0b";
+        ctx.font = "bold 12px system-ui";
+        ctx.textAlign = "center";
+        ctx.fillText(`${stepSize === 0.1 ? degAngle.toFixed(1) : Math.round(degAngle)}°`, labelX, labelY);
+      }
+
+      // 4. Trigonometric Components
+      if (showCos) {
+        ctx.strokeStyle = "#ef4444";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(px, centerY);
+        ctx.stroke();
+      }
+
+      if (showSin) {
+        ctx.strokeStyle = "#3b82f6";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(px, centerY);
+        ctx.lineTo(px, py);
+        ctx.stroke();
+      }
+
+      if (showTan && Math.abs(cosVal) > 0.05) {
+        const tanX = centerX + radius;
+        const tanY = centerY - radius * Math.tan(rad);
+
+        ctx.strokeStyle = "#10b981";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(tanX, tanY);
+        ctx.moveTo(tanX, centerY);
+        ctx.lineTo(tanX, tanY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // Radius Vector / Phasor
+      ctx.strokeStyle = "#f59e0b";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(px, py);
+      ctx.stroke();
+
+      // Terminal Point
+      ctx.fillStyle = "#f8fafc";
+      ctx.beginPath();
+      ctx.arc(px, py, 6, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Modes
+      if (viewMode === 'wave') {
+        const waveStartX = centerX + radius * 1.6;
+        const waveWidth = w - waveStartX - 30;
+
+        // Axis
+        ctx.strokeStyle = "#334155";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(waveStartX, centerY);
+        ctx.lineTo(waveStartX + waveWidth, centerY);
+        ctx.stroke();
+
+        // Sync Tracker Line
+        ctx.strokeStyle = "rgba(59, 130, 246, 0.4)";
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(waveStartX, py);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Reference Wave Curve
+        ctx.strokeStyle = "#3b82f6";
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+
+        const samples = 180;
+        for (let i = 0; i <= samples; i++) {
+          const dx = (i / samples) * waveWidth;
+          const sampleRad = (i / samples) * (2 * Math.PI);
+          const dy = centerY - radius * Math.sin(sampleRad);
+
+          if (i === 0) ctx.moveTo(waveStartX + dx, dy);
+          else ctx.lineTo(waveStartX + dx, dy);
+        }
+        ctx.stroke();
+
+        // Active Marker Dot
+        const activeX = waveStartX + (rad / (2 * Math.PI)) * waveWidth;
+        if (activeX <= waveStartX + waveWidth) {
+          ctx.fillStyle = "#f59e0b";
+          ctx.beginPath();
+          ctx.arc(activeX, py, 6, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = "#f8fafc";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+
+      } else if (viewMode === 'phasor') {
+        const projY = centerY + radius * 1.6;
+
+        ctx.strokeStyle = "rgba(239, 68, 68, 0.4)";
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(px, projY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.strokeStyle = "#475569";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(centerX - radius * 1.35, projY);
+        ctx.lineTo(centerX + radius * 1.35, projY);
+        ctx.stroke();
+
+        ctx.strokeStyle = "#ef4444";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(centerX, projY);
+        ctx.lineTo(px, projY);
+        ctx.stroke();
+
+        ctx.fillStyle = "#ef4444";
+        ctx.beginPath();
+        ctx.arc(px, projY, 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#f8fafc";
+        ctx.font = "bold 12px system-ui";
+        ctx.textAlign = "center";
+        ctx.fillText("Real Axis Projection: E(t) = E₀ cos(θ)", centerX, projY + 25);
+      }
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    setStepSize(1.0);
+    resizeCanvas();
+  </script>
+</body>
+</html>

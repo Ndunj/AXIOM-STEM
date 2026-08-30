@@ -10,6 +10,7 @@ import {
 } from "firebase/auth";
 import { auth, provider, isUserCancelledAuthError, isPopupBlockedError } from "./googleAuth";
 import { UserProfile, UserRole } from "../types";
+import { syncUserProfileToFirestore, getUserProfileFromFirestore } from "./firebase";
 
 const LOCAL_USER_PROFILE_KEY = "axiom_user_profile_v1";
 const LOCAL_ACCOUNTS_KEY = "axiom_registered_accounts_v1";
@@ -105,6 +106,11 @@ export const saveUserProfile = (profile: UserProfile | null) => {
   try {
     if (profile) {
       localStorage.setItem(LOCAL_USER_PROFILE_KEY, JSON.stringify(profile));
+      if (!profile.isDemo && auth.currentUser && auth.currentUser.uid === profile.uid) {
+        syncUserProfileToFirestore(profile).catch((err) => {
+          console.warn("Firestore profile background sync notice:", err);
+        });
+      }
     } else {
       localStorage.removeItem(LOCAL_USER_PROFILE_KEY);
     }
@@ -360,13 +366,26 @@ export const logOutUser = async (): Promise<void> => {
 export const subscribeToAuthChanges = (
   onUserChanged: (profile: UserProfile | null) => void
 ) => {
-  return onAuthStateChanged(auth, (firebaseUser) => {
+  return onAuthStateChanged(auth, async (firebaseUser) => {
     if (firebaseUser) {
       const existing = getSavedUserProfile();
+      let firestoreProfile: Partial<UserProfile> | null = null;
+      try {
+        firestoreProfile = await getUserProfileFromFirestore(firebaseUser.uid);
+      } catch (e) {
+        console.warn("Could not fetch remote Firestore profile:", e);
+      }
+
       const profile = mapFirebaseUserToProfile(firebaseUser, {
-        role: existing?.role,
-        schoolName: existing?.schoolName
+        role: firestoreProfile?.role || existing?.role,
+        schoolName: firestoreProfile?.schoolName || existing?.schoolName,
+        district: firestoreProfile?.district || existing?.district
       });
+
+      if (firestoreProfile?.savedFavorites) {
+        profile.savedFavorites = firestoreProfile.savedFavorites;
+      }
+
       saveUserProfile(profile);
       onUserChanged(profile);
     } else {

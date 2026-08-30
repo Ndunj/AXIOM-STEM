@@ -4,6 +4,73 @@ import { SimulationItem, CurriculumStandard } from "../types";
 // The 19 creator-authored STEM Simulation Apps
 export const STEM_SIMULATIONS: SimulationItem[] = [
   {
+    id: "sim-unit-circle-trig",
+    title: "Unit Circle Trigonometry Explorer",
+    tagline: "Precision Angle Selection & Wave/Phasor Mapping (0° → 360°) with trigonometric vector projections and real-time harmonic waveforms",
+    discipline: "mathematics",
+    gradeLevel: ["High School (9-12)", "AP / IB STEM", "Undergraduate"],
+    standards: ["CCSS.MATH.CONTENT.HSF.TF.A.1", "CCSS.MATH.CONTENT.HSF.TF.A.2", "CCSS.MATH.CONTENT.HSF.TF.B.5", "NGSS HS-PS4-1"],
+    description: "An interactive mathematical and physics laboratory exploring the unit circle, trigonometric component vectors, harmonic wave mapping, and electromagnetic phasor projections. Adjust angles with high precision, examine sine, cosine, and tangent geometric relationships, and project real-time oscillating waveforms.",
+    learningObjectives: [
+      "Define trigonometric functions (cos, sin, tan) as Cartesian coordinates and ratios on the unit circle (R = 1)",
+      "Map circular motion and angle rotation to continuous harmonic sinusoidal wave functions in real time",
+      "Analyze electromagnetic phasor representations where measurable quantities correspond to real-axis horizontal cosine projections",
+      "Investigate exact trigonometric values at special angles (0°, 90°, 180°, 270°) and across all four quadrants"
+    ],
+    thumbnailGradient: "from-blue-600 via-indigo-600 to-amber-500",
+    badgeColor: "bg-blue-500/10 text-blue-300 border-blue-500/20",
+    iconName: "Compass",
+    rating: 4.98,
+    reviewCount: 94,
+    teacherCount: 380,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 200,
+      districtUnlimited: 400
+    },
+    features: [
+      "Precision Angle Slider with 1.0° and 0.1° step modes and manual nudge controls",
+      "Dynamic Unit Circle with animated terminal vector, angle arc, and quadrant markers",
+      "Toggleable trigonometric vectors: Cosine (red), Sine (blue), and Tangent (green)",
+      "Dual Display Modes: Real-time Sinusoidal Wave Plot and EM Phasor Real-Axis Projection",
+      "Live Numerical Readouts: Radians (with π fractions), Cosine, Sine, and Tangent values",
+      "Quick Reference Preset Buttons for 0°, 90°, 180°, and 270° cardinal points"
+    ],
+    parameterDefaults: {
+      angle: 45
+    },
+    parameterControls: [
+      {
+        key: "angle",
+        label: "Angle (θ)",
+        min: 0,
+        max: 360,
+        step: 1,
+        unit: "deg",
+        description: "Angle of rotation on unit circle"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-trig-1",
+        title: "Quadrant II Tangent Exploration",
+        instruction: "Set angle to 135° and observe how sine remains positive while cosine and tangent become negative.",
+        targetMetric: "Angle (deg)",
+        targetValue: 135,
+        tolerance: 0.1,
+        currentValueKey: "angle_val",
+        rewardBadge: "Trigonometric Navigator"
+      }
+    ],
+    previewFacts: [
+      "The coordinates (x, y) of any point on the unit circle directly equal (cos θ, sin θ).",
+      "Phasors rotate in the complex plane at angular frequency ω, converting differential equations into simple algebra in electrical engineering."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/unit-circle-trig.html"
+  },
+  {
     id: "sim-molecular-genetics-dna-replication-protein-synthesis",
     title: "Molecular Genetics Lab: DNA Replication & Protein Synthesis",
     tagline: "Interactive molecular biology suite with 3-stage central dogma pipeline: helicase unzipping, RNA polymerase transcription, and tRNA anticodon translation with 3D photorealistic DNA helix",

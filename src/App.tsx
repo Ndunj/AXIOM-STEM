@@ -29,6 +29,10 @@ import {
   logOutUser
 } from "./services/authService";
 import {
+  saveUserLicenseToFirestore,
+  subscribeToUserLicenses
+} from "./services/firebase";
+import {
   Atom,
   Code2,
   PlusCircle,
@@ -234,6 +238,29 @@ export default function App() {
     }
   }, [purchasedLicenses]);
 
+  // Real-time Firestore sync for licenses
+  useEffect(() => {
+    if (!currentUser || currentUser.isDemo) return;
+    try {
+      const unsub = subscribeToUserLicenses(currentUser.uid, (remoteLicenses) => {
+        if (remoteLicenses && remoteLicenses.length > 0) {
+          setPurchasedLicenses((prev) => {
+            const merged = [...prev];
+            remoteLicenses.forEach((r) => {
+              if (!merged.some((m) => m.simulationId === r.simulationId && m.licenseTier === r.licenseTier)) {
+                merged.push(r);
+              }
+            });
+            return merged;
+          });
+        }
+      });
+      return () => unsub();
+    } catch (err) {
+      console.warn("Firestore license subscription notice:", err);
+    }
+  }, [currentUser]);
+
   // Discipline Counts
   const counts = useMemo(() => {
     const map: Record<string, number> = {
@@ -388,6 +415,13 @@ export default function App() {
 
   const handleCheckoutSuccess = (newPurchases: TeacherPurchasedSimulation[]) => {
     setPurchasedLicenses((prev) => [...prev, ...newPurchases]);
+    if (currentUser && !currentUser.isDemo) {
+      newPurchases.forEach((lic) => {
+        saveUserLicenseToFirestore(currentUser.uid, lic).catch((err) => {
+          console.warn("Firestore license save notice:", err);
+        });
+      });
+    }
     setCartItems([]);
     setIsCheckoutOpen(false);
     setActiveView("dashboard");

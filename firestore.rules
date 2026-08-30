@@ -1,0 +1,135 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default-deny all undefined paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // User Profile Validation
+    function isValidUserProfile(data) {
+      return data.uid is string && data.uid == request.auth.uid &&
+             data.email is string && data.email.size() <= 256 &&
+             data.displayName is string && data.displayName.size() <= 128 &&
+             data.role in ['teacher', 'creator', 'student', 'admin'];
+    }
+
+    // User License Validation
+    function isValidUserLicense(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.simulationId is string && data.simulationId.size() <= 128 &&
+             data.licenseTier in ['single', 'department', 'district'] &&
+             data.licenseKey is string && data.licenseKey.size() <= 128;
+    }
+
+    // Saved Simulation Bookmark Validation
+    function isValidSavedSimulation(data) {
+      return data.simId is string && data.simId.size() <= 128 &&
+             data.title is string && data.title.size() <= 256;
+    }
+
+    // Simulation Progress Record Validation
+    function isValidProgress(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.simulationId is string && data.simulationId.size() <= 128;
+    }
+
+    // Lesson Plan Validation
+    function isValidLessonPlan(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.simulationId is string && data.simulationId.size() <= 128 &&
+             data.title is string && data.title.size() <= 256;
+    }
+
+    // Public Review Validation
+    function isValidReview(data, simId) {
+      return data.simulationId is string && data.simulationId == simId &&
+             data.authorUid is string && data.authorUid == request.auth.uid &&
+             data.rating is number && data.rating >= 1 && data.rating <= 5 &&
+             data.comment is string && data.comment.size() <= 2048;
+    }
+
+    // Custom Simulation Validation
+    function isValidCustomSim(data) {
+      return data.authorUid is string && data.authorUid == request.auth.uid &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 256 &&
+             data.discipline in ['physics', 'mathematics', 'chemistry', 'biology'];
+    }
+
+    // --- Rules for User Profiles and Subcollections ---
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false; // Disallow querying all user profiles directly
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming());
+      allow update: if isOwner(userId) && isValidUserProfile(incoming()) &&
+                    incoming().uid == existing().uid &&
+                    incoming().email == existing().email;
+      allow delete: if isOwner(userId);
+
+      // User Saved Bookmarks Subcollection
+      match /savedSimulations/{simId} {
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId) && isValidId(simId) && isValidSavedSimulation(incoming());
+      }
+
+      // User Licenses Subcollection
+      match /licenses/{licenseId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidId(licenseId) && isValidUserLicense(incoming(), userId);
+        allow delete: if isOwner(userId);
+      }
+
+      // User Simulation Progress Subcollection
+      match /simulationProgress/{simId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidId(simId) && isValidProgress(incoming(), userId);
+        allow delete: if isOwner(userId);
+      }
+
+      // User Lesson Plans Subcollection
+      match /lessonPlans/{planId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidId(planId) && isValidLessonPlan(incoming(), userId);
+        allow delete: if isOwner(userId);
+      }
+    }
+
+    // --- Rules for Public Simulation Reviews ---
+    match /simulations/{simId}/reviews/{reviewId} {
+      allow read: if true; // Publicly readable reviews
+      allow create: if isSignedIn() && isValidId(simId) && isValidId(reviewId) && isValidReview(incoming(), simId);
+      allow update: if isSignedIn() && existing().authorUid == request.auth.uid && isValidReview(incoming(), simId);
+      allow delete: if isSignedIn() && existing().authorUid == request.auth.uid;
+    }
+
+    // --- Rules for Custom Simulations ---
+    match /customSimulations/{customSimId} {
+      allow read: if true; // Publicly readable simulations
+      allow create: if isSignedIn() && isValidId(customSimId) && isValidCustomSim(incoming());
+      allow update: if isSignedIn() && existing().authorUid == request.auth.uid && isValidCustomSim(incoming());
+      allow delete: if isSignedIn() && existing().authorUid == request.auth.uid;
+    }
+  }
+}

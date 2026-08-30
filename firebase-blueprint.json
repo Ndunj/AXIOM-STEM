@@ -1,0 +1,151 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile containing identity, role, and institutional affiliation.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "email": { "type": "string", "maxLength": 256 },
+        "displayName": { "type": "string", "maxLength": 128 },
+        "photoURL": { "type": "string", "maxLength": 2048 },
+        "role": { "type": "string", "enum": ["teacher", "creator", "student", "admin"] },
+        "schoolName": { "type": "string", "maxLength": 256 },
+        "district": { "type": "string", "maxLength": 256 },
+        "department": { "type": "string", "maxLength": 256 },
+        "savedFavorites": { "type": "array" },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["uid", "email", "displayName", "role"]
+    },
+    "UserLicense": {
+      "title": "UserLicense",
+      "description": "Purchased simulation license credentials and classroom access PINs.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "simulationId": { "type": "string", "maxLength": 128 },
+        "licenseTier": { "type": "string", "enum": ["single", "department", "district"] },
+        "licenseKey": { "type": "string", "maxLength": 128 },
+        "classroomPin": { "type": "string", "maxLength": 32 },
+        "purchaseDate": { "type": "string", "maxLength": 64 },
+        "activeStudents": { "type": "number" },
+        "assignedClasses": { "type": "array" },
+        "createdAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["userId", "simulationId", "licenseTier", "licenseKey"]
+    },
+    "SavedSimulation": {
+      "title": "SavedSimulation",
+      "description": "User bookmarked simulation for quick classroom reference.",
+      "type": "object",
+      "properties": {
+        "simId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 256 },
+        "discipline": { "type": "string", "maxLength": 64 },
+        "savedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["simId", "title"]
+    },
+    "SimulationProgress": {
+      "title": "SimulationProgress",
+      "description": "Student or educator simulation progress and interactive challenge scores.",
+      "type": "object",
+      "properties": {
+        "simulationId": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "completedChallenges": { "type": "array" },
+        "highestScore": { "type": "number" },
+        "timesPlayed": { "type": "number" },
+        "totalMinutes": { "type": "number" },
+        "lastPlayedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["simulationId", "userId"]
+    },
+    "TeacherLessonPlan": {
+      "title": "TeacherLessonPlan",
+      "description": "Saved educator curriculum lesson plans and student lab questions.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "simulationId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 256 },
+        "discipline": { "type": "string", "maxLength": 64 },
+        "gradeLevel": { "type": "string", "maxLength": 64 },
+        "estimatedTime": { "type": "string", "maxLength": 64 },
+        "ngssStandard": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["userId", "simulationId", "title"]
+    },
+    "SimulationReview": {
+      "title": "SimulationReview",
+      "description": "Educator review and rating for a simulation.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "simulationId": { "type": "string", "maxLength": 128 },
+        "authorUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "authorName": { "type": "string", "maxLength": 128 },
+        "authorEmail": { "type": "string", "maxLength": 256 },
+        "rating": { "type": "number" },
+        "comment": { "type": "string", "maxLength": 2048 },
+        "schoolName": { "type": "string", "maxLength": 256 },
+        "createdAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["simulationId", "authorUid", "rating", "comment"]
+    },
+    "CustomSimulation": {
+      "title": "CustomSimulation",
+      "description": "Custom user-authored interactive STEM simulation.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "authorUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "authorEmail": { "type": "string", "maxLength": 256 },
+        "authorName": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 256 },
+        "tagline": { "type": "string", "maxLength": 512 },
+        "discipline": { "type": "string", "enum": ["physics", "mathematics", "chemistry", "biology"] },
+        "description": { "type": "string", "maxLength": 4096 },
+        "htmlContent": { "type": "string", "maxLength": 500000 },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["authorUid", "title", "discipline"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile documents indexed by authentication UID."
+    },
+    "/users/{userId}/savedSimulations/{simId}": {
+      "schema": "SavedSimulation",
+      "description": "Simulations bookmarked by the user."
+    },
+    "/users/{userId}/licenses/{licenseId}": {
+      "schema": "UserLicense",
+      "description": "Active simulation licenses owned by user."
+    },
+    "/users/{userId}/simulationProgress/{simId}": {
+      "schema": "SimulationProgress",
+      "description": "Challenge and learning analytics progress records."
+    },
+    "/users/{userId}/lessonPlans/{planId}": {
+      "schema": "TeacherLessonPlan",
+      "description": "Custom saved lesson plans."
+    },
+    "/simulations/{simId}/reviews/{reviewId}": {
+      "schema": "SimulationReview",
+      "description": "Public educator reviews for simulations."
+    },
+    "/customSimulations/{customSimId}": {
+      "schema": "CustomSimulation",
+      "description": "Custom imported simulations created by creators."
+    }
+  }
+}
