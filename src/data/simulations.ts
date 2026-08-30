@@ -8526,6 +8526,211 @@ resizeCanvas();
     createdAt: "2026-08-16"
   },
   {
+    id: "sim-calculus-riemann-sums-area-under-curve",
+    title: "Calculus Visualizer: Area Under a Curve & Riemann Sums",
+    tagline: "Interactive Riemann sums, definite integration, and step-by-step Fundamental Theorem of Calculus breakdown",
+    discipline: "mathematics",
+    gradeLevel: ["High School (9-12)", "AP / IB STEM", "Undergraduate"],
+    standards: ["AP Calculus (Unit 6)", "CCSS.MATH.HSF.IF.B.4", "CCSS.MATH.HSF.LE.A.1", "IB Math Analysis & Approaches HL"],
+    description: "Explore Riemann sums and definite integration with real-time interactive geometric partitions (Left, Right, Midpoint, and Trapezoidal rules). Interactively adjust lower and upper limits [a, b], increase partitions up to n = 100, pan and zoom the responsive coordinate plane, and inspect live analytical step-by-step F(b) - F(a) evaluation.",
+    learningObjectives: [
+      "Visualize convergence of Left, Right, Midpoint, and Trapezoidal Riemann sums to the exact definite integral as n → ∞",
+      "Calculate step-by-step definite integrals using the Fundamental Theorem of Calculus F(b) - F(a)",
+      "Compute and analyze absolute and relative discretization errors across polynomial and trigonometric functions",
+      "Understand the geometric relationship between partition width Δx = (b - a)/n and numerical approximation accuracy"
+    ],
+    thumbnailGradient: "from-indigo-600 via-teal-700 to-slate-900",
+    badgeColor: "bg-teal-500/10 text-teal-400 border-teal-500/20",
+    iconName: "Calculator",
+    rating: 4.98,
+    reviewCount: 45,
+    teacherCount: 188,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 200,
+      districtUnlimited: 400
+    },
+    features: [
+      "Interactive HTML5 canvas plotting target functions f(x) with real-time pan (drag) and zoom (wheel) navigation",
+      "Configurable approximation methods: Left Riemann Sum, Right Riemann Sum, Midpoint Rule, Trapezoidal Rule, and Exact Integral Only",
+      "Live LaTeX mathematical formulation using MathJax with dynamic Δx partition step calculations",
+      "Analytical step-by-step integration breakdown with substitution F(b) - F(a) and instant absolute/relative error telemetry"
+    ],
+    parameterDefaults: {
+      function: "quad",
+      method: "left",
+      a: 0,
+      b: 4,
+      n: 8
+    },
+    parameterControls: [
+      {
+        key: "a",
+        label: "Lower Limit (a)",
+        min: -5,
+        max: 5,
+        step: 0.1,
+        unit: "",
+        description: "Integration start limit"
+      },
+      {
+        key: "b",
+        label: "Upper Limit (b)",
+        min: -5,
+        max: 10,
+        step: 0.1,
+        unit: "",
+        description: "Integration end limit"
+      },
+      {
+        key: "n",
+        label: "Partitions (n)",
+        min: 1,
+        max: 100,
+        step: 1,
+        unit: "rectangles",
+        description: "Number of subintervals"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-riemann-1",
+        title: "Achieve <1% Discretization Error",
+        instruction: "Set up f(x) = 0.2x² + 1 from a = 0 to b = 4 using the Midpoint Rule or Trapezoidal Rule, and increase partitions until relative error is below 1%.",
+        targetMetric: "Relative Error",
+        targetValue: 1.0,
+        tolerance: 0.2,
+        currentValueKey: "rel_error",
+        rewardBadge: "Riemann Master"
+      },
+      {
+        id: "ch-riemann-2",
+        title: "Analyze Trapezoidal Convergence",
+        instruction: "Compare Left Riemann Sum vs. Trapezoidal Rule at n = 8 for f(x) = sin(x) + 2 between a = 0 and b = 3.1, observing how trapezoids model curvature.",
+        targetMetric: "Trapezoid Accuracy",
+        targetValue: 1,
+        tolerance: 0,
+        currentValueKey: "trap_analyzed",
+        rewardBadge: "Calculus Analyst"
+      }
+    ],
+    previewFacts: [
+      "Bernhard Riemann formalized Riemann integration in 1854, providing the first rigorous mathematical foundation for integral calculus.",
+      "The Trapezoidal Rule generally converges quadratically O(1/n²), whereas standard Left and Right Riemann sums converge linearly O(1/n)."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/calculus-riemann-sums.html"
+  },
+  {
+    id: "sim-3d-calculus-volume-revolution-washer",
+    title: "3D Calculus Visualizer: Volume of Revolution & Disk/Washer Method",
+    tagline: "Interactive 3D WebGL solid of revolution generator, discrete washer integration, and step-by-step analytical volume derivation",
+    discipline: "mathematics",
+    gradeLevel: ["High School (9-12)", "AP / IB STEM", "Undergraduate"],
+    standards: ["AP Calculus (Unit 8)", "CCSS.MATH.HSG.GMD.A.1", "CCSS.MATH.HSF.IF.B.4", "IB Math Analysis & Approaches HL"],
+    description: "Explore 3D solids of revolution using disk and washer integration in real-time WebGL. Revolve single and multi-boundary functions f(x) and g(x) around arbitrary horizontal axes y = k, interactively sweep revolution angles from 15° to 360°, inspect discrete extruded Riemann washer slices alongside smooth continuous boundary surfaces, and evaluate step-by-step analytical π[F(b) - F(a)] volume integrals.",
+    learningObjectives: [
+      "Visualize how rotating planar regions bounded by functions f(x) and g(x) around an axis y = k creates 3D solids of revolution",
+      "Differentiate between outer radius R(x) = |f(x) - k| and inner radius r(x) = |g(x) - k| in the Washer Method",
+      "Model numerical convergence of cylindrical washer Riemann sums V ≈ π ∑ (R² - r²) Δx toward exact continuous volume",
+      "Evaluate step-by-step definite volume integrals using analytical antiderivatives and calculate absolute and percentage relative errors"
+    ],
+    thumbnailGradient: "from-indigo-600 via-teal-700 to-pink-900",
+    badgeColor: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
+    iconName: "Boxes",
+    rating: 4.99,
+    reviewCount: 52,
+    teacherCount: 215,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 200,
+      districtUnlimited: 400
+    },
+    features: [
+      "Interactive 3D WebGL viewport powered by Three.js with orbit, pan, and zoom controls",
+      "Configurable bounding functions: Paraboloid Solid, Hollow Washer Solid, Wave Solid, and Cone/Frustum",
+      "Arbitrary horizontal axis of revolution (y = k) with live radial distance calculations R(x) and r(x)",
+      "Interactive revolution angle sweep slider (15° to 360°) and toggleable discrete Riemann disks, smooth solid boundaries, and limit boundary planes (x = a, x = b)",
+      "Real-time MathJax LaTeX formulas and full analytical step-by-step π[F(b) - F(a)] volume integration breakdown with instant error telemetry"
+    ],
+    parameterDefaults: {
+      preset: "parabola",
+      k: 0.0,
+      a: 0.0,
+      b: 2.0,
+      n: 12,
+      angle: 360
+    },
+    parameterControls: [
+      {
+        key: "k",
+        label: "Axis of Revolution (y = k)",
+        min: -2,
+        max: 2,
+        step: 0.2,
+        unit: "",
+        description: "Horizontal axis about which the region revolves"
+      },
+      {
+        key: "a",
+        label: "Lower Limit (a)",
+        min: 0,
+        max: 4,
+        step: 0.1,
+        unit: "",
+        description: "Integration start limit"
+      },
+      {
+        key: "b",
+        label: "Upper Limit (b)",
+        min: 0.5,
+        max: 5,
+        step: 0.1,
+        unit: "",
+        description: "Integration end limit"
+      },
+      {
+        key: "n",
+        label: "Disks/Washers (n)",
+        min: 1,
+        max: 80,
+        step: 1,
+        unit: "disks",
+        description: "Number of discrete washer slices"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-rev-1",
+        title: "Model a Hollow Washer Solid",
+        instruction: "Select the Hollow Washer Solid preset f(x) = √x, g(x) = x² from a = 0 to b = 1 with k = 0, and increase disk partitions n to achieve < 2% relative error.",
+        targetMetric: "Volume Error",
+        targetValue: 2.0,
+        tolerance: 0.5,
+        currentValueKey: "vol_error",
+        rewardBadge: "Washer Method Expert"
+      },
+      {
+        id: "ch-rev-2",
+        title: "Revolve Around Shifted Axis y = 1",
+        instruction: "Adjust the axis of revolution to y = 1.0 for the Paraboloid Solid and observe the inverted outer and inner radii in the live LaTeX differential element.",
+        targetMetric: "Shifted Axis Modeled",
+        targetValue: 1,
+        tolerance: 0,
+        currentValueKey: "shifted_axis",
+        rewardBadge: "Axis Navigator"
+      }
+    ],
+    previewFacts: [
+      "The disk and washer methods are mathematical generalizations of Cavalieri's principle dating back to Bonaventura Cavalieri in 1635.",
+      "Revolving cross-sections around non-standard axes (y = k) tests deep conceptual mastery of differential radii R(x) = |f(x) - k| on the AP Calculus BC exam."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/volume-of-revolution-3d.html"
+  },
+  {
     id: "sim-3d-conic-integral-calculus",
     title: "Dynamic Integral Calculus on 3D Conic Sections",
     tagline: "3D Solid of Revolution Riemann Sums, Definite Integrals & Conic Volume Solver",

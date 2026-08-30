@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculus Visualizer: Area Under a Curve & Riemann Sums</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- MathJax CDN for LaTeX mathematical notation rendering -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            startup: {
+                typeset: true,
+                pageReady: () => {
+                    return MathJax.startup.defaultPageReady().then(() => {
+                        // Reveal static formulas on initial page load
+                        document.querySelectorAll('.tex-formula').forEach(el => el.classList.add('rendered'));
+                    });
+                }
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        /* Custom scrollbars for control panel */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4b5563;
+        }
+
+        /* Prevent Flash of Unstyled Text (FOUT) for MathJax formulas */
+        .tex-formula {
+            opacity: 0;
+            transition: opacity 0.25s ease-in-out;
+        }
+        .tex-formula.rendered {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans min-h-screen flex flex-col justify-between">
+
+    <!-- Header & Info Banner -->
+    <header class="bg-gray-900 border-b border-gray-800 p-4">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-indigo-400 tracking-wide">Calculus Visualizer</h1>
+                <p class="text-xs text-gray-400">Exploring Riemann Sums & Definite Integration</p>
+            </div>
+            <div class="bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-gray-300 max-w-2xl flex items-center justify-between gap-4">
+                <div>
+                    <span class="font-semibold text-indigo-300">Fundamental Theorem of Calculus:</span> 
+                    As $n \to \infty$, the discrete partition sum converges to the continuous definite integral:
+                </div>
+                <div class="tex-formula text-yellow-400 font-mono text-base font-semibold whitespace-nowrap">
+                    $$\lim_{n \to \infty} \sum_{i=1}^{n} f(x_i^*) \Delta x = \int_{a}^{b} f(x) \, dx$$
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="max-w-7xl w-full mx-auto p-4 flex-grow grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+        <!-- Controls Sidebar -->
+        <aside class="lg:col-span-1 bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col gap-5 shadow-xl">
+            <h2 class="text-lg font-semibold text-gray-200 border-b border-gray-800 pb-2">Parameters</h2>
+
+            <!-- Function Selector -->
+            <div>
+                <label for="functionSelect" class="block text-xs font-medium text-gray-400 mb-1">Target Function $f(x)$</label>
+                <select id="functionSelect" class="w-full bg-gray-800 border border-gray-700 text-gray-100 text-sm rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <option value="quad">f(x) = 0.2x² + 1</option>
+                    <option value="sin">f(x) = sin(x) + 2</option>
+                    <option value="cubic">f(x) = 0.05x³ - 0.2x + 2</option>
+                    <option value="linear">f(x) = 0.5x + 1</option>
+                </select>
+            </div>
+
+            <!-- Integration Method -->
+            <div>
+                <label for="methodSelect" class="block text-xs font-medium text-gray-400 mb-1">Approximation Method</label>
+                <select id="methodSelect" class="w-full bg-gray-800 border border-gray-700 text-gray-100 text-sm rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <option value="left">Left Riemann Sum</option>
+                    <option value="right">Right Riemann Sum</option>
+                    <option value="mid">Midpoint Rule</option>
+                    <option value="trap">Trapezoidal Rule</option>
+                    <option value="exact">Exact Integral Only</option>
+                </select>
+            </div>
+
+            <hr class="border-gray-800">
+
+            <!-- Slider: Lower Limit (a) -->
+            <div>
+                <div class="flex justify-between text-xs font-medium mb-1">
+                    <span class="text-gray-400">Lower Limit ($a$)</span>
+                    <span id="valA" class="text-indigo-400 font-mono">0.0</span>
+                </div>
+                <input id="sliderA" type="range" min="-5" max="5" step="0.1" value="0" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+            </div>
+
+            <!-- Slider: Upper Limit (b) -->
+            <div>
+                <div class="flex justify-between text-xs font-medium mb-1">
+                    <span class="text-gray-400">Upper Limit ($b$)</span>
+                    <span id="valB" class="text-indigo-400 font-mono">4.0</span>
+                </div>
+                <input id="sliderB" type="range" min="-5" max="10" step="0.1" value="4" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+            </div>
+
+            <!-- Slider / Input: Partitions (n) -->
+            <div>
+                <div class="flex justify-between text-xs font-medium mb-1">
+                    <span class="text-gray-400">Partitions ($n$)</span>
+                    <span id="valN" class="text-indigo-400 font-mono">8</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input id="sliderN" type="range" min="1" max="100" step="1" value="8" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                    <input id="numN" type="number" min="1" max="100" value="8" class="w-16 bg-gray-800 border border-gray-700 text-center text-sm rounded-lg p-1 font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+            </div>
+
+            <!-- Zoom / Pan Controls -->
+            <div class="pt-2">
+                <button id="btnResetView" class="w-full py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 text-xs font-medium rounded-lg transition-colors">
+                    Reset Axis View
+                </button>
+            </div>
+        </aside>
+
+        <!-- Visualization Canvas & Output Panel -->
+        <section class="lg:col-span-3 flex flex-col gap-4">
+            
+            <!-- Canvas Container -->
+            <div class="relative w-full bg-gray-900 border border-gray-800 rounded-xl shadow-xl overflow-hidden flex-grow min-h-[360px]">
+                <canvas id="canvas" class="w-full h-full block cursor-crosshair"></canvas>
+                
+                <!-- Canvas Overlay Instructions -->
+                <div class="absolute top-3 right-3 bg-gray-950/80 backdrop-blur border border-gray-800 px-3 py-1.5 rounded-md text-[11px] text-gray-400 pointer-events-none">
+                    Scroll to Zoom | Drag to Pan
+                </div>
+            </div>
+
+            <!-- Formula & Dynamic Evaluation Box -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 shadow-md flex flex-col gap-3">
+                <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+                    <span class="text-xs text-indigo-400 uppercase tracking-wider font-semibold">Active Mathematical Formulation & Partition Step</span>
+                    <div id="mathDxDisplay" class="tex-formula text-xs font-mono text-teal-300">
+                        <!-- Dynamic LaTeX step calculation inserted here -->
+                    </div>
+                </div>
+                <div id="mathFormulaDisplay" class="tex-formula text-sm font-mono text-indigo-200 overflow-x-auto py-1">
+                    <!-- Dynamic LaTeX mathematical integral inserted here -->
+                </div>
+            </div>
+
+            <!-- Dynamic Step-by-Step Analytical Integration breakdown -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 shadow-md flex flex-col gap-2">
+                <span class="text-xs text-yellow-400 uppercase tracking-wider font-semibold border-b border-gray-800 pb-2">
+                    Exact Definite Integral Analytical Step-by-Step Breakdown ($F(b) - F(a)$)
+                </span>
+                <div id="mathStepBreakdown" class="tex-formula text-xs font-mono text-gray-300 overflow-x-auto space-y-2 py-1">
+                    <!-- Dynamic step-by-step LaTeX substitution lines inserted here -->
+                </div>
+            </div>
+
+            <!-- Real-Time Readout Dashboard -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col">
+                    <span class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Approximation Area</span>
+                    <span id="readoutApprox" class="text-2xl font-mono font-bold text-teal-400 mt-1">0.0000</span>
+                    <span id="readoutMethodLabel" class="text-[11px] text-gray-500 mt-0.5">Left Riemann Sum</span>
+                </div>
+
+                <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col">
+                    <span class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Exact Definite Integral</span>
+                    <span id="readoutExact" class="text-2xl font-mono font-bold text-indigo-400 mt-1">0.0000</span>
+                    <span id="readoutExactSymbol" class="tex-formula text-[11px] text-gray-500 mt-0.5">$\int_{a}^{b} f(x) \, dx$</span>
+                </div>
+
+                <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col">
+                    <span class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Absolute Error</span>
+                    <span id="readoutError" class="text-2xl font-mono font-bold text-rose-400 mt-1">0.0000</span>
+                    <span id="readoutErrorPercent" class="text-[11px] text-gray-500 mt-0.5">| Exact - Approx |</span>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 border-t border-gray-800 py-3 text-center text-xs text-gray-500">
+        HTML5 Canvas Calculus Engine &bull; Built with Dynamic MathJax & Tailwind CSS
+    </footer>
+
+    <!-- Application Script -->
+    <script>
+        // --- Functions Definitions & Dynamic TeX Expressions ---
+        const FUNCTIONS = {
+            quad: {
+                fn: x => 0.2 * Math.pow(x, 2) + 1,
+                integral: x => (0.2 / 3) * Math.pow(x, 3) + x,
+                texFunc: "0.2x^2 + 1",
+                texAntiderivStr: "\\frac{0.2}{3}x^3 + x",
+                calcUpper: b => {
+                    const term1 = (0.2 / 3) * Math.pow(b, 3);
+                    const term2 = b;
+                    return { term1, term2, val: term1 + term2, tex: `\\frac{0.2}{3}(${b.toFixed(1)})^3 + (${b.toFixed(1)})` };
+                },
+                calcLower: a => {
+                    const term1 = (0.2 / 3) * Math.pow(a, 3);
+                    const term2 = a;
+                    return { term1, term2, val: term1 + term2, tex: `\\frac{0.2}{3}(${a.toFixed(1)})^3 + (${a.toFixed(1)})` };
+                }
+            },
+            sin: {
+                fn: x => Math.sin(x) + 2,
+                integral: x => -Math.cos(x) + 2 * x,
+                texFunc: "\\sin(x) + 2",
+                texAntiderivStr: "-\\cos(x) + 2x",
+                calcUpper: b => {
+                    const val = -Math.cos(b) + 2 * b;
+                    return { val, tex: `-\\cos(${b.toFixed(1)}) + 2(${b.toFixed(1)})` };
+                },
+                calcLower: a => {
+                    const val = -Math.cos(a) + 2 * a;
+                    return { val, tex: `-\\cos(${a.toFixed(1)}) + 2(${a.toFixed(1)})` };
+                }
+            },
+            cubic: {
+                fn: x => 0.05 * Math.pow(x, 3) - 0.2 * x + 2,
+                integral: x => (0.05 / 4) * Math.pow(x, 4) - 0.1 * Math.pow(x, 2) + 2 * x,
+                texFunc: "0.05x^3 - 0.2x + 2",
+                texAntiderivStr: "\\frac{0.05}{4}x^4 - 0.1x^2 + 2x",
+                calcUpper: b => {
+                    const val = (0.05 / 4) * Math.pow(b, 4) - 0.1 * Math.pow(b, 2) + 2 * b;
+                    return { val, tex: `\\frac{0.05}{4}(${b.toFixed(1)})^4 - 0.1(${b.toFixed(1)})^2 + 2(${b.toFixed(1)})` };
+                },
+                calcLower: a => {
+                    const val = (0.05 / 4) * Math.pow(a, 4) - 0.1 * Math.pow(a, 2) + 2 * a;
+                    return { val, tex: `\\frac{0.05}{4}(${a.toFixed(1)})^4 - 0.1(${a.toFixed(1)})^2 + 2(${a.toFixed(1)})` };
+                }
+            },
+            linear: {
+                fn: x => 0.5 * x + 1,
+                integral: x => 0.25 * Math.pow(x, 2) + x,
+                texFunc: "0.5x + 1",
+                texAntiderivStr: "0.25x^2 + x",
+                calcUpper: b => {
+                    const val = 0.25 * Math.pow(b, 2) + b;
+                    return { val, tex: `0.25(${b.toFixed(1)})^2 + (${b.toFixed(1)})` };
+                },
+                calcLower: a => {
+                    const val = 0.25 * Math.pow(a, 2) + a;
+                    return { val, tex: `0.25(${a.toFixed(1)})^2 + (${a.toFixed(1)})` };
+                }
+            }
+        };
+
+        // --- Viewport State & Pan/Zoom ---
+        let view = {
+            scaleX: 50,  // pixels per math unit
+            scaleY: 50,  // pixels per math unit
+            offsetX: 0,  // pixel offset relative to center
+            offsetY: 0,
+            isDragging: false,
+            dragStartX: 0,
+            dragStartY: 0
+        };
+
+        const DEFAULT_VIEW = { scaleX: 50, scaleY: 50, offsetX: 0, offsetY: 0 };
+
+        // --- Canvas & Context ---
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // --- UI Element Handles ---
+        const functionSelect = document.getElementById('functionSelect');
+        const methodSelect = document.getElementById('methodSelect');
+        const sliderA = document.getElementById('sliderA');
+        const sliderB = document.getElementById('sliderB');
+        const sliderN = document.getElementById('sliderN');
+        const numN = document.getElementById('numN');
+        const valA = document.getElementById('valA');
+        const valB = document.getElementById('valB');
+        const valN = document.getElementById('valN');
+        const btnResetView = document.getElementById('btnResetView');
+
+        const mathFormulaDisplay = document.getElementById('mathFormulaDisplay');
+        const mathDxDisplay = document.getElementById('mathDxDisplay');
+        const mathStepBreakdown = document.getElementById('mathStepBreakdown');
+
+        const readoutApprox = document.getElementById('readoutApprox');
+        const readoutExact = document.getElementById('readoutExact');
+        const readoutError = document.getElementById('readoutError');
+        const readoutMethodLabel = document.getElementById('readoutMethodLabel');
+        const readoutErrorPercent = document.getElementById('readoutErrorPercent');
+
+        // --- Dynamic MathJax Queue ---
+        let mathJaxTimeout = null;
+        function renderMathJax() {
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                clearTimeout(mathJaxTimeout);
+                mathJaxTimeout = setTimeout(() => {
+                    // Hide formulas while typesetting newly updated innerHTML
+                    document.querySelectorAll('.tex-formula').forEach(el => el.classList.remove('rendered'));
+
+                    MathJax.typesetPromise().then(() => {
+                        // Smoothly reveal formulas after MathJax finishes processing
+                        document.querySelectorAll('.tex-formula').forEach(el => el.classList.add('rendered'));
+                    }).catch(err => console.error(err));
+                }, 50);
+            }
+        }
+
+        // --- Coordinate Conversions ---
+        function mathToCanvasX(x) {
+            const centerX = canvas.width / 2 + view.offsetX;
+            return centerX + x * view.scaleX;
+        }
+
+        function mathToCanvasY(y) {
+            const centerY = canvas.height / 2 + view.offsetY;
+            return centerY - y * view.scaleY; // Canvas Y is inverted
+        }
+
+        function canvasToMathX(cx) {
+            const centerX = canvas.width / 2 + view.offsetX;
+            return (cx - centerX) / view.scaleX;
+        }
+
+        // --- Resize Handler ---
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            draw();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // --- Numerical Integration Computations ---
+        function computeCalculations() {
+            let a = parseFloat(sliderA.value);
+            let b = parseFloat(sliderB.value);
+            const n = parseInt(sliderN.value, 10);
+            const selectedFuncKey = functionSelect.value;
+            const method = methodSelect.value;
+
+            // Ensure a <= b for mathematical consistency
+            let swapped = false;
+            if (a > b) {
+                [a, b] = [b, a];
+                swapped = true;
+            }
+
+            const funcObj = FUNCTIONS[selectedFuncKey];
+            const f = funcObj.fn;
+            const dx = (b - a) / n;
+
+            // Exact integral calculation
+            const exactValue = funcObj.integral(b) - funcObj.integral(a);
+
+            // Approximation sum
+            let approxValue = 0;
+            const shapes = [];
+
+            if (method !== 'exact' && dx > 0) {
+                for (let i = 0; i < n; i++) {
+                    const xLeft = a + i * dx;
+                    const xRight = a + (i + 1) * dx;
+                    
+                    if (method === 'left') {
+                        const height = f(xLeft);
+                        approxValue += height * dx;
+                        shapes.push({ type: 'rect', x: xLeft, w: dx, h: height });
+                    } else if (method === 'right') {
+                        const height = f(xRight);
+                        approxValue += height * dx;
+                        shapes.push({ type: 'rect', x: xLeft, w: dx, h: height });
+                    } else if (method === 'mid') {
+                        const xMid = (xLeft + xRight) / 2;
+                        const height = f(xMid);
+                        approxValue += height * dx;
+                        shapes.push({ type: 'rect', x: xLeft, w: dx, h: height, xEval: xMid });
+                    } else if (method === 'trap') {
+                        const hLeft = f(xLeft);
+                        const hRight = f(xRight);
+                        const area = ((hLeft + hRight) / 2) * dx;
+                        approxValue += area;
+                        shapes.push({ type: 'trap', xLeft, xRight, hLeft, hRight });
+                    }
+                }
+            }
+
+            const finalApprox = swapped ? -approxValue : approxValue;
+            const finalExact = swapped ? -exactValue : exactValue;
+            const absError = Math.abs(finalExact - finalApprox);
+            const relError = Math.abs(finalExact) > 1e-7 ? (absError / Math.abs(finalExact)) * 100 : 0;
+
+            return {
+                a, b, n, dx, swapped,
+                exactValue: finalExact,
+                approxValue: finalApprox,
+                absError,
+                relError,
+                shapes,
+                funcObj
+            };
+        }
+
+        // --- Render Engine ---
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const data = computeCalculations();
+            const { a, b, shapes, funcObj } = data;
+
+            // 1. Draw Grid Lines & Axes
+            drawGrid();
+
+            // 2. Draw Integration Approximations
+            if (methodSelect.value !== 'exact') {
+                drawApproximations(shapes);
+            } else {
+                drawExactShading(a, b, funcObj.fn);
+            }
+
+            // 3. Draw Continuous Function Curve
+            drawFunctionCurve(funcObj.fn);
+
+            // 4. Draw Limit Markers (a and b)
+            drawLimitMarkers(a, b);
+
+            // 5. Update UI Readouts & LaTeX Formulas
+            updateReadouts(data);
+        }
+
+        function drawGrid() {
+            const width = canvas.width;
+            const height = canvas.height;
+            const centerX = width / 2 + view.offsetX;
+            const centerY = height / 2 + view.offsetY;
+
+            ctx.lineWidth = 1;
+
+            let gridStepMath = 1;
+            if (view.scaleX < 20) gridStepMath = 5;
+            if (view.scaleX > 150) gridStepMath = 0.5;
+
+            const gridStepX = gridStepMath * view.scaleX;
+            const gridStepY = gridStepMath * view.scaleY;
+
+            // Vertical Grid Lines
+            ctx.strokeStyle = '#1e293b';
+            ctx.fillStyle = '#64748b';
+            ctx.font = '10px monospace';
+            ctx.textAlign = 'center';
+
+            const startX = ((0 - centerX) % gridStepX) - gridStepX;
+            for (let x = startX; x < width + gridStepX; x += gridStepX) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+
+                const mathVal = canvasToMathX(x);
+                if (Math.abs(mathVal) > 1e-4) {
+                    ctx.fillText(mathVal.toFixed(gridStepMath < 1 ? 1 : 0), x, Math.min(Math.max(centerY + 14, 15), height - 5));
+                }
+            }
+
+            // Horizontal Grid Lines
+            const startY = ((0 - centerY) % gridStepY) - gridStepY;
+            for (let y = startY; y < height + gridStepY; y += gridStepY) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+
+            // Primary Axes X and Y
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(width, centerY);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(centerX, 0);
+            ctx.lineTo(centerX, height);
+            ctx.stroke();
+        }
+
+        function drawApproximations(shapes) {
+            shapes.forEach(shape => {
+                if (shape.type === 'rect') {
+                    const x1 = mathToCanvasX(shape.x);
+                    const y0 = mathToCanvasY(0);
+                    const w = shape.w * view.scaleX;
+                    const y1 = mathToCanvasY(shape.h);
+
+                    ctx.fillStyle = 'rgba(20, 184, 166, 0.25)';
+                    ctx.fillRect(x1, y1, w, y0 - y1);
+
+                    ctx.strokeStyle = 'rgba(45, 212, 191, 0.8)';
+                    ctx.lineWidth = 1.5;
+                    ctx.strokeRect(x1, y1, w, y0 - y1);
+
+                    if (shape.xEval !== undefined) {
+                        const xMidCanvas = mathToCanvasX(shape.xEval);
+                        ctx.fillStyle = '#f59e0b';
+                        ctx.beginPath();
+                        ctx.arc(xMidCanvas, y1, 3.5, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+
+                } else if (shape.type === 'trap') {
+                    const xLeft = mathToCanvasX(shape.xLeft);
+                    const xRight = mathToCanvasX(shape.xRight);
+                    const y0 = mathToCanvasY(0);
+                    const yLeft = mathToCanvasY(shape.hLeft);
+                    const yRight = mathToCanvasY(shape.hRight);
+
+                    ctx.beginPath();
+                    ctx.moveTo(xLeft, y0);
+                    ctx.lineTo(xLeft, yLeft);
+                    ctx.lineTo(xRight, yRight);
+                    ctx.lineTo(xRight, y0);
+                    ctx.closePath();
+
+                    ctx.fillStyle = 'rgba(20, 184, 166, 0.25)';
+                    ctx.fill();
+
+                    ctx.strokeStyle = 'rgba(45, 212, 191, 0.8)';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                }
+            });
+        }
+
+        function drawExactShading(a, b, f) {
+            const resolution = 200;
+            const dx = (b - a) / resolution;
+
+            ctx.beginPath();
+            ctx.moveTo(mathToCanvasX(a), mathToCanvasY(0));
+
+            for (let i = 0; i <= resolution; i++) {
+                const x = a + i * dx;
+                const y = f(x);
+                ctx.lineTo(mathToCanvasX(x), mathToCanvasY(y));
+            }
+
+            ctx.lineTo(mathToCanvasX(b), mathToCanvasY(0));
+            ctx.closePath();
+
+            ctx.fillStyle = 'rgba(99, 102, 241, 0.35)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(129, 140, 248, 0.8)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        }
+
+        function drawFunctionCurve(f) {
+            ctx.beginPath();
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#6366f1';
+
+            const stepPx = 2;
+            let firstPoint = true;
+
+            for (let cx = 0; cx <= canvas.width; cx += stepPx) {
+                const xMath = canvasToMathX(cx);
+                const yMath = f(xMath);
+                const cy = mathToCanvasY(yMath);
+
+                if (firstPoint) {
+                    ctx.moveTo(cx, cy);
+                    firstPoint = false;
+                } else {
+                    ctx.lineTo(cx, cy);
+                }
+            }
+            ctx.stroke();
+        }
+
+        function drawLimitMarkers(a, b) {
+            const y0 = mathToCanvasY(0);
+
+            // Marker A
+            const xA = mathToCanvasX(a);
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(xA, 0);
+            ctx.lineTo(xA, canvas.height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#ef4444';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText(`a = ${a.toFixed(1)}`, xA - 6, y0 - 10 < 20 ? 20 : y0 - 10);
+
+            // Marker B
+            const xB = mathToCanvasX(b);
+            ctx.strokeStyle = '#10b981';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(xB, 0);
+            ctx.lineTo(xB, canvas.height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#10b981';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText(`b = ${b.toFixed(1)}`, xB + 6, y0 - 10 < 20 ? 20 : y0 - 10);
+        }
+
+        function updateReadouts(data) {
+            valA.textContent = parseFloat(sliderA.value).toFixed(1);
+            valB.textContent = parseFloat(sliderB.value).toFixed(1);
+            valN.textContent = sliderN.value;
+
+            readoutExact.textContent = data.exactValue.toFixed(4);
+            
+            const method = methodSelect.value;
+            const aVal = data.a;
+            const bVal = data.b;
+            const aStr = aVal.toFixed(1);
+            const bStr = bVal.toFixed(1);
+
+            // 1. Construct dynamic integral symbol with live lower and upper limits
+            let integralSymbolTex = `\\int_{${aStr}}^{${bStr}} \\left( ${data.funcObj.texFunc} \\right) dx`;
+            
+            // 2. Perform dynamic exact analytical variable breakdown
+            const resB = data.funcObj.calcUpper(bVal);
+            const resA = data.funcObj.calcLower(aVal);
+
+            let stepHtml = `
+                <div>1. <strong>Definite Integral:</strong> $$\\int_{${aStr}}^{${bStr}} \\left( ${data.funcObj.texFunc} \\right) dx = \\left[ ${data.funcObj.texAntiderivStr} \\right]_{${aStr}}^{${bStr}}$$</div>
+                <div>2. <strong>Upper Limit Evaluation $F(${bStr})$:</strong> $$F(${bStr}) = ${resB.tex} = ${resB.val.toFixed(4)}$$</div>
+                <div>3. <strong>Lower Limit Evaluation $F(${aStr})$:</strong> $$F(${aStr}) = ${resA.tex} = ${resA.val.toFixed(4)}$$</div>
+                <div>4. <strong>Subtract $F(b) - F(a)$:</strong> $$${resB.val.toFixed(4)} - (${resA.val.toFixed(4)}) = \\mathbf{${data.exactValue.toFixed(4)}}$$</div>
+            `;
+            mathStepBreakdown.innerHTML = stepHtml;
+
+            if (method === 'exact') {
+                readoutApprox.textContent = data.exactValue.toFixed(4);
+                readoutError.textContent = "0.0000";
+                readoutMethodLabel.textContent = "Exact Continuous Area";
+                readoutErrorPercent.textContent = "0.00% Error";
+                mathFormulaDisplay.innerHTML = `$$${integralSymbolTex} = \\left[ ${data.funcObj.texAntiderivStr} \\right]_{${aStr}}^{${bStr}} = ${data.exactValue.toFixed(4)}$$`;
+                mathDxDisplay.innerHTML = `Continuous Integration ($\Delta x \\to 0$)`;
+            } else {
+                readoutApprox.textContent = data.approxValue.toFixed(4);
+                readoutError.textContent = data.absError.toFixed(4);
+                
+                const methodNames = {
+                    left: 'Left Riemann Sum',
+                    right: 'Right Riemann Sum',
+                    mid: 'Midpoint Rule',
+                    trap: 'Trapezoidal Rule'
+                };
+                readoutMethodLabel.textContent = methodNames[method];
+                readoutErrorPercent.textContent = `${data.relError.toFixed(2)}% relative error`;
+
+                let methodTex = "";
+                if (method === 'left') methodTex = `L_{${data.n}} = \\sum_{i=0}^{${data.n-1}} f(x_i) \\Delta x`;
+                else if (method === 'right') methodTex = `R_{${data.n}} = \\sum_{i=1}^{${data.n}} f(x_i) \\Delta x`;
+                else if (method === 'mid') methodTex = `M_{${data.n}} = \\sum_{i=1}^{${data.n}} f\\left(\\frac{x_{i-1}+x_i}{2}\\right) \\Delta x`;
+                else if (method === 'trap') methodTex = `T_{${data.n}} = \\frac{\\Delta x}{2} \\left[ f(x_0) + 2\\sum_{i=1}^{${data.n-1}} f(x_i) + f(x_n) \\right]`;
+
+                mathFormulaDisplay.innerHTML = `$$${methodTex} \\approx ${data.approxValue.toFixed(4)}$$`;
+                mathDxDisplay.innerHTML = `$\\Delta x = \\frac{b - a}{n} = \\frac{${bStr} - (${aStr})}{${data.n}} = ${data.dx.toFixed(4)}$`;
+            }
+
+            renderMathJax();
+        }
+
+        // --- Event Listeners & Interaction ---
+
+        function syncInputs(val) {
+            sliderN.value = val;
+            numN.value = val;
+            draw();
+        }
+
+        sliderN.addEventListener('input', e => syncInputs(e.target.value));
+        numN.addEventListener('input', e => {
+            let val = parseInt(e.target.value, 10);
+            if (isNaN(val)) val = 1;
+            val = Math.max(1, Math.min(100, val));
+            syncInputs(val);
+        });
+
+        sliderA.addEventListener('input', draw);
+        sliderB.addEventListener('input', draw);
+        functionSelect.addEventListener('change', draw);
+        methodSelect.addEventListener('change', draw);
+
+        btnResetView.addEventListener('click', () => {
+            view.scaleX = DEFAULT_VIEW.scaleX;
+            view.scaleY = DEFAULT_VIEW.scaleY;
+            view.offsetX = DEFAULT_VIEW.offsetX;
+            view.offsetY = DEFAULT_VIEW.offsetY;
+            draw();
+        });
+
+        // Pan Interaction Controls
+        canvas.addEventListener('mousedown', e => {
+            view.isDragging = true;
+            view.dragStartX = e.clientX - view.offsetX;
+            view.dragStartY = e.clientY - view.offsetY;
+        });
+
+        window.addEventListener('mousemove', e => {
+            if (view.isDragging) {
+                view.offsetX = e.clientX - view.dragStartX;
+                view.offsetY = e.clientY - view.dragStartY;
+                draw();
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            view.isDragging = false;
+        });
+
+        // Zoom Interaction Controls
+        canvas.addEventListener('wheel', e => {
+            e.preventDefault();
+            const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+            
+            if (view.scaleX * zoomFactor > 10 && view.scaleX * zoomFactor < 400) {
+                view.scaleX *= zoomFactor;
+                view.scaleY *= zoomFactor;
+                draw();
+            }
+        }, { passive: false });
+
+        // --- Initial Setup ---
+        resizeCanvas();
+    </script>
+</body>
+</html>

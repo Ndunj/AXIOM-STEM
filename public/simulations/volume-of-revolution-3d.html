@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Calculus Visualizer: Volume of Revolution & Disk/Washer Method</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- MathJax CDN for LaTeX mathematical notation rendering -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['\\(', '\\)']],
+                displayMath: [['\\[', '\\]']]
+            },
+            startup: {
+                typeset: true,
+                pageReady: () => {
+                    return MathJax.startup.defaultPageReady().then(() => {
+                        // Reveal static formulas on initial page load
+                        document.querySelectorAll('.tex-formula').forEach(el => el.classList.add('rendered'));
+                    });
+                }
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <!-- Three.js CDN for 3D Surface & Solid Rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- OrbitControls for Three.js -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4b5563;
+        }
+
+        /* Prevent Flash of Unstyled Text (FOUT) for MathJax formulas */
+        .tex-formula {
+            opacity: 0;
+            transition: opacity 0.25s ease-in-out;
+        }
+        .tex-formula.rendered {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans min-h-screen flex flex-col justify-between">
+
+    <!-- Header & Info Banner -->
+    <header class="bg-gray-900 border-b border-gray-800 p-4">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-indigo-400 tracking-wide">3D Calculus Visualizer</h1>
+                <p class="text-xs text-gray-400">Solids of Revolution & Disk/Washer Integration</p>
+            </div>
+            <div class="bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-gray-300 max-w-2xl flex items-center justify-between gap-4">
+                <div>
+                    <span class="font-semibold text-indigo-300">Disk/Washer Formulation:</span> 
+                    Revolutions around axis y = k generate circular cross-section disks:
+                </div>
+                <div class="tex-formula text-yellow-400 font-mono text-base font-semibold whitespace-nowrap">
+                    \(V = \pi \int_{a}^{b} \left( [f(x)-k]^2 - [g(x)-k]^2 \right) dx\)
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="max-w-7xl w-full mx-auto p-4 flex-grow grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+        <!-- Controls Sidebar -->
+        <aside class="lg:col-span-1 bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col gap-5 shadow-xl">
+            <h2 class="text-lg font-semibold text-gray-200 border-b border-gray-800 pb-2">3D Parameters</h2>
+
+            <!-- Region Preset Selection -->
+            <div>
+                <label for="presetSelect" class="block text-xs font-medium text-gray-400 mb-1">Bounding Functions f(x) & g(x)</label>
+                <select id="presetSelect" class="w-full bg-gray-800 border border-gray-700 text-gray-100 text-sm rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <option value="parabola">f(x) = √x, g(x) = 0 (Paraboloid Solid)</option>
+                    <option value="washer">f(x) = √x, g(x) = x² (Hollow Washer Solid)</option>
+                    <option value="sine">f(x) = sin(x) + 1.5, g(x) = 0.5 (Wave Solid)</option>
+                    <option value="cone">f(x) = 0.5x + 1, g(x) = 0 (Frustum / Cone)</option>
+                </select>
+            </div>
+
+            <!-- Axis of Revolution Input -->
+            <div>
+                <div class="flex justify-between text-xs font-medium mb-1">
+                    <span class="text-gray-400">Axis of Revolution (y = k)</span>
+                    <span id="valK" class="text-indigo-400 font-mono">0.0</span>
+                </div>
+                <input id="sliderK" type="range" min="-2" max="2" step="0.2" value="0" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+            </div>
+
+            <hr class="border-gray-800">
+
+            <!-- Slider: Lower Limit (a) -->
+            <div>
+                <div class="flex justify-between text-xs font-medium mb-1">
+                    <span class="text-gray-400">Lower Limit (a)</span>
+                    <span id="valA" class="text-indigo-400 font-mono">0.0</span>
+                </div>
+                <input id="sliderA" type="range" min="0" max="4" step="0.1" value="0" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+            </div>
+
+            <!-- Slider: Upper Limit (b) -->
+            <div>
+                <div class="flex justify-between text-xs font-medium mb-1">
+                    <span class="text-gray-400">Upper Limit (b)</span>
+                    <span id="valB" class="text-indigo-400 font-mono">2.0</span>
+                </div>
+                <input id="sliderB" type="range" min="0.5" max="5" step="0.1" value="2" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+            </div>
+
+            <!-- Slider: Disks/Washers (n) -->
+            <div>
+                <div class="flex justify-between text-xs font-medium mb-1">
+                    <span class="text-gray-400">Number of Disks/Washers (n)</span>
+                    <span id="valN" class="text-indigo-400 font-mono">12</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input id="sliderN" type="range" min="1" max="80" step="1" value="12" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                    <input id="numN" type="number" min="1" max="80" value="12" class="w-16 bg-gray-800 border border-gray-700 text-center text-sm rounded-lg p-1 font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+            </div>
+
+            <!-- Angle Sweep Slider -->
+            <div>
+                <div class="flex justify-between text-xs font-medium mb-1">
+                    <span class="text-gray-400">Revolution Sweep Angle (θ)</span>
+                    <span id="valAngle" class="text-indigo-400 font-mono">360°</span>
+                </div>
+                <input id="sliderAngle" type="range" min="15" max="360" step="5" value="360" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+            </div>
+
+            <!-- Render Toggles -->
+            <div class="space-y-2 pt-2 border-t border-gray-800">
+                <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
+                    <input id="chkShowDisks" type="checkbox" checked class="w-4 h-4 rounded bg-gray-800 border-gray-700 text-indigo-500 focus:ring-indigo-500">
+                    <span>Show Discrete Riemann Disks/Washers</span>
+                </label>
+                <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
+                    <input id="chkShowSurface" type="checkbox" checked class="w-4 h-4 rounded bg-gray-800 border-gray-700 text-indigo-500 focus:ring-indigo-500">
+                    <span>Show Smooth Revolved Surface</span>
+                </label>
+                <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
+                    <input id="chkShowLimitPlanes" type="checkbox" checked class="w-4 h-4 rounded bg-gray-800 border-gray-700 text-indigo-500 focus:ring-indigo-500">
+                    <span>Show Limit Boundary Planes (x = a, x = b)</span>
+                </label>
+            </div>
+
+            <!-- Camera Controls -->
+            <div class="pt-2">
+                <button id="btnResetCamera" class="w-full py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 text-xs font-medium rounded-lg transition-colors">
+                    Reset Camera Angle
+                </button>
+            </div>
+        </aside>
+
+        <!-- 3D WebGL Viewport & Dynamic Mathematical Analysis -->
+        <section class="lg:col-span-3 flex flex-col gap-4">
+            
+            <!-- Three.js Canvas Container -->
+            <div class="relative w-full bg-gray-900 border border-gray-800 rounded-xl shadow-xl overflow-hidden flex-grow min-h-[420px]">
+                <div id="threejs-container" class="w-full h-full block"></div>
+                
+                <!-- Viewport Instructions Overlay -->
+                <div class="absolute top-3 right-3 bg-gray-950/80 backdrop-blur border border-gray-800 px-3 py-1.5 rounded-md text-[11px] text-gray-400 pointer-events-none flex flex-col gap-0.5">
+                    <span>Left Click + Drag: Orbit Camera</span>
+                    <span>Right Click + Drag: Pan View</span>
+                    <span>Scroll Wheel: Zoom In/Out</span>
+                </div>
+
+                <!-- Legend Overlay -->
+                <div class="absolute bottom-3 left-3 bg-gray-950/80 backdrop-blur border border-gray-800 p-2.5 rounded-md text-[11px] flex flex-wrap gap-4 pointer-events-none">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-full bg-teal-400 inline-block"></span>
+                        <span class="text-gray-300">Riemann Disks (\(V_{\text{approx}}\))</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-full bg-indigo-500/60 inline-block border border-indigo-400"></span>
+                        <span class="text-gray-300">Smooth Solid Boundary</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span>
+                        <span class="text-gray-300">Lower Limit (a)</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+                        <span class="text-gray-300">Upper Limit (b)</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-full bg-amber-400 inline-block"></span>
+                        <span class="text-gray-300">Axis y = k</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic Mathematical Formulations -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 shadow-md flex flex-col gap-3">
+                <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+                    <span class="text-xs text-indigo-400 uppercase tracking-wider font-semibold">Active Disk / Washer Differential Element</span>
+                    <div id="mathDxDisplay" class="tex-formula text-xs font-mono text-teal-300">
+                        <!-- Dynamic dx & radius statement -->
+                    </div>
+                </div>
+                <div id="mathFormulaDisplay" class="tex-formula text-sm font-mono text-indigo-200 overflow-x-auto py-1">
+                    <!-- Dynamic LaTeX integral setup -->
+                </div>
+            </div>
+
+            <!-- Dynamic Step-by-Step Analytical Volume Integration -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 shadow-md flex flex-col gap-2">
+                <span class="text-xs text-yellow-400 uppercase tracking-wider font-semibold border-b border-gray-800 pb-2">
+                    Exact Definite Volume Integration Analytical Step-by-Step Breakdown (\(\pi \cdot [F(b) - F(a)]\))
+                </span>
+                <div id="mathStepBreakdown" class="tex-formula text-xs font-mono text-gray-300 overflow-x-auto space-y-2 py-1">
+                    <!-- Dynamic analytical integration steps -->
+                </div>
+            </div>
+
+            <!-- Real-Time Readout Dashboard -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col">
+                    <span class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Approximated Volume</span>
+                    <span id="readoutApprox" class="text-2xl font-mono font-bold text-teal-400 mt-1">0.0000</span>
+                    <span id="readoutMethodLabel" class="text-[11px] text-gray-500 mt-0.5">Sum of n Cylinder Disks/Washers</span>
+                </div>
+
+                <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col">
+                    <span class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Exact Analytical Volume</span>
+                    <span id="readoutExact" class="text-2xl font-mono font-bold text-indigo-400 mt-1">0.0000</span>
+                    <span id="readoutExactSymbol" class="tex-formula text-[11px] text-gray-500 mt-0.5">\(\pi \int_{a}^{b} (R(x)^2 - r(x)^2) dx\)</span>
+                </div>
+
+                <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col">
+                    <span class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Volume Approximation Error</span>
+                    <span id="readoutError" class="text-2xl font-mono font-bold text-rose-400 mt-1">0.0000</span>
+                    <span id="readoutErrorPercent" class="text-[11px] text-gray-500 mt-0.5">| Exact - Approx |</span>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 border-t border-gray-800 py-3 text-center text-xs text-gray-500">
+        WebGL 3D Calculus Engine &bull; Built with Three.js, MathJax & Tailwind CSS
+    </footer>
+
+    <!-- Application Script -->
+    <script>
+        // --- Region Presets & Symbolic Integrals ---
+        const PRESETS = {
+            parabola: {
+                f: x => Math.sqrt(Math.max(0, x)),
+                g: x => 0,
+                fTex: "\\sqrt{x}",
+                gTex: "0",
+                antideriv: (x, k) => Math.PI * (0.5 * x * x - (4/3) * k * Math.pow(x, 1.5) + k * k * x),
+                stepTex: (a, b, k) => `\\pi \\int_{${a}}^{${b}} (\\sqrt{x} - ${k})^2 dx`
+            },
+            washer: {
+                f: x => Math.sqrt(Math.max(0, x)),
+                g: x => Math.pow(x, 2),
+                fTex: "\\sqrt{x}",
+                gTex: "x^2",
+                antideriv: (x, k) => {
+                    const termF = 0.5 * x * x - (4/3) * k * Math.pow(x, 1.5) + k * k * x;
+                    const termG = (1/5) * Math.pow(x, 5) - (2/3) * k * Math.pow(x, 3) + k * k * x;
+                    return Math.PI * (termF - termG);
+                },
+                stepTex: (a, b, k) => `\\pi \\int_{${a}}^{${b}} \\left[ (\\sqrt{x} - ${k})^2 - (x^2 - ${k})^2 \\right] dx`
+            },
+            sine: {
+                f: x => Math.sin(x) + 1.5,
+                g: x => 0.5,
+                fTex: "\\sin(x) + 1.5",
+                gTex: "0.5",
+                antideriv: (x, k) => {
+                    const N = 1000;
+                    const dx = x / N;
+                    let sum = 0;
+                    for (let i = 0; i < N; i++) {
+                        const xi = (i + 0.5) * dx;
+                        const R = Math.sin(xi) + 1.5 - k;
+                        const r = 0.5 - k;
+                        sum += (R * R - r * r) * dx;
+                    }
+                    return Math.PI * sum;
+                },
+                stepTex: (a, b, k) => `\\pi \\int_{${a}}^{${b}} \\left[ (\\sin(x) + 1.5 - ${k})^2 - (0.5 - ${k})^2 \\right] dx`
+            },
+            cone: {
+                f: x => 0.5 * x + 1,
+                g: x => 0,
+                fTex: "0.5x + 1",
+                gTex: "0",
+                antideriv: (x, k) => {
+                    const c = 1 - k;
+                    return Math.PI * ((0.25 / 3) * Math.pow(x, 3) + 0.5 * c * Math.pow(x, 2) + c * c * x);
+                },
+                stepTex: (a, b, k) => `\\pi \\int_{${a}}^{${b}} (0.5x + 1 - ${k})^2 dx`
+            }
+        };
+
+        // --- DOM Elements ---
+        const presetSelect = document.getElementById('presetSelect');
+        const sliderK = document.getElementById('sliderK');
+        const sliderA = document.getElementById('sliderA');
+        const sliderB = document.getElementById('sliderB');
+        const sliderN = document.getElementById('sliderN');
+        const numN = document.getElementById('numN');
+        const sliderAngle = document.getElementById('sliderAngle');
+        const chkShowDisks = document.getElementById('chkShowDisks');
+        const chkShowSurface = document.getElementById('chkShowSurface');
+        const chkShowLimitPlanes = document.getElementById('chkShowLimitPlanes');
+        const btnResetCamera = document.getElementById('btnResetCamera');
+
+        const valK = document.getElementById('valK');
+        const valA = document.getElementById('valA');
+        const valB = document.getElementById('valB');
+        const valN = document.getElementById('valN');
+        const valAngle = document.getElementById('valAngle');
+
+        const readoutApprox = document.getElementById('readoutApprox');
+        const readoutExact = document.getElementById('readoutExact');
+        const readoutError = document.getElementById('readoutError');
+        const readoutErrorPercent = document.getElementById('readoutErrorPercent');
+        const mathDxDisplay = document.getElementById('mathDxDisplay');
+        const mathFormulaDisplay = document.getElementById('mathFormulaDisplay');
+        const mathStepBreakdown = document.getElementById('mathStepBreakdown');
+
+        // --- Three.js Engine Variables ---
+        let scene, camera, renderer, controls;
+        let solidGroup = null;
+
+        // Helper function to create text sprite labels in 3D Space
+        function createTextSprite(text, colorHex, bgColorHex) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 128;
+            const context = canvas.getContext('2d');
+
+            // Rounded rectangle background
+            context.fillStyle = bgColorHex || 'rgba(15, 23, 42, 0.85)';
+            context.strokeStyle = colorHex;
+            context.lineWidth = 4;
+            context.beginPath();
+            context.roundRect(10, 10, 236, 108, 16);
+            context.fill();
+            context.stroke();
+
+            // Text styling
+            context.fillStyle = colorHex;
+            context.font = 'Bold 44px sans-serif';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText(text, 128, 64);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMaterial = new THREE.SpriteMaterial({ map: texture, depthTest: false, depthWrite: false });
+            const sprite = new THREE.Sprite(spriteMaterial);
+            sprite.scale.set(1.2, 0.6, 1);
+            return sprite;
+        }
+
+        function initThree() {
+            const container = document.getElementById('threejs-container');
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x030712); // Tailwind gray-950
+
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(6, 4, 8);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            // Lighting Setup
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight1.position.set(10, 20, 15);
+            scene.add(dirLight1);
+
+            const dirLight2 = new THREE.DirectionalLight(0x818cf8, 0.5);
+            dirLight2.position.set(-10, -10, -10);
+            scene.add(dirLight2);
+
+            // Grid & Coordinate Axes
+            const gridHelper = new THREE.GridHelper(16, 16, 0x374151, 0x1f2937);
+            gridHelper.position.y = 0;
+            scene.add(gridHelper);
+
+            // Create solid group
+            solidGroup = new THREE.Group();
+            scene.add(solidGroup);
+
+            window.addEventListener('resize', onWindowResize);
+            animate();
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('threejs-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- MathJax Queued Typesetter ---
+        let mathJaxTimeout = null;
+        function renderMathJax() {
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                clearTimeout(mathJaxTimeout);
+                mathJaxTimeout = setTimeout(() => {
+                    // Hide formulas while typesetting newly updated innerHTML
+                    document.querySelectorAll('.tex-formula').forEach(el => el.classList.remove('rendered'));
+
+                    MathJax.typesetPromise().then(() => {
+                        // Smoothly reveal formulas after MathJax finishes processing
+                        document.querySelectorAll('.tex-formula').forEach(el => el.classList.add('rendered'));
+                    }).catch(err => console.error(err));
+                }, 50);
+            }
+        }
+
+        // --- Core 3D Mesh Generation & Volume Calculation ---
+        function updateVisualization() {
+            // 1. Parse Inputs
+            let a = parseFloat(sliderA.value);
+            let b = parseFloat(sliderB.value);
+            if (a > b) [a, b] = [b, a]; // Guard bounds
+
+            const k = parseFloat(sliderK.value);
+            const n = parseInt(sliderN.value, 10);
+            const sweepDeg = parseFloat(sliderAngle.value);
+            const sweepRad = (sweepDeg * Math.PI) / 180;
+            const presetKey = presetSelect.value;
+            const preset = PRESETS[presetKey];
+
+            // Update UI Slider labels
+            valA.textContent = a.toFixed(1);
+            valB.textContent = b.toFixed(1);
+            valK.textContent = k.toFixed(1);
+            valN.textContent = n.toString();
+            valAngle.textContent = `${sweepDeg}°`;
+
+            // Clear previous 3D meshes
+            while (solidGroup.children.length > 0) {
+                const obj = solidGroup.children.pop();
+                if (obj.geometry) obj.geometry.dispose();
+                if (obj.material) {
+                    if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+                    else obj.material.dispose();
+                }
+            }
+
+            // Draw Axis of Revolution y = k
+            const axisGeo = new THREE.CylinderGeometry(0.03, 0.03, 12, 16);
+            axisGeo.rotateZ(Math.PI / 2);
+            const axisMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b }); // Amber
+            const axisMesh = new THREE.Mesh(axisGeo, axisMat);
+            axisMesh.position.set(2, k, 0);
+            solidGroup.add(axisMesh);
+
+            // 2. Add Visual Limit Boundary Markers (x = a and x = b)
+            if (chkShowLimitPlanes.checked) {
+                const maxR_a = Math.max(Math.abs(preset.f(a) - k), Math.abs(preset.g(a) - k), 1.2);
+                const maxR_b = Math.max(Math.abs(preset.f(b) - k), Math.abs(preset.g(b) - k), 1.2);
+
+                // Boundary Plane at x = a
+                const planeGeoA = new THREE.CircleGeometry(maxR_a + 0.3, 32);
+                planeGeoA.rotateY(Math.PI / 2);
+                const planeMatA = new THREE.MeshBasicMaterial({
+                    color: 0xf43f5e,
+                    transparent: true,
+                    opacity: 0.18,
+                    side: THREE.DoubleSide
+                });
+                const planeMeshA = new THREE.Mesh(planeGeoA, planeMatA);
+                planeMeshA.position.set(a, k, 0);
+                solidGroup.add(planeMeshA);
+
+                // Ring edge for plane A
+                const ringGeoA = new THREE.RingGeometry(maxR_a + 0.28, maxR_a + 0.32, 32);
+                ringGeoA.rotateY(Math.PI / 2);
+                const ringMatA = new THREE.MeshBasicMaterial({ color: 0xf43f5e, side: THREE.DoubleSide });
+                const ringMeshA = new THREE.Mesh(ringGeoA, ringMatA);
+                ringMeshA.position.set(a, k, 0);
+                solidGroup.add(ringMeshA);
+
+                // Label Sprite for a
+                const spriteA = createTextSprite(`a = ${a.toFixed(1)}`, '#f43f5e', 'rgba(15, 23, 42, 0.9)');
+                spriteA.position.set(a, k + maxR_a + 0.7, 0);
+                solidGroup.add(spriteA);
+
+                // Boundary Plane at x = b
+                const planeGeoB = new THREE.CircleGeometry(maxR_b + 0.3, 32);
+                planeGeoB.rotateY(Math.PI / 2);
+                const planeMatB = new THREE.MeshBasicMaterial({
+                    color: 0x10b981,
+                    transparent: true,
+                    opacity: 0.18,
+                    side: THREE.DoubleSide
+                });
+                const planeMeshB = new THREE.Mesh(planeGeoB, planeMatB);
+                planeMeshB.position.set(b, k, 0);
+                solidGroup.add(planeMeshB);
+
+                // Ring edge for plane B
+                const ringGeoB = new THREE.RingGeometry(maxR_b + 0.28, maxR_b + 0.32, 32);
+                ringGeoB.rotateY(Math.PI / 2);
+                const ringMatB = new THREE.MeshBasicMaterial({ color: 0x10b981, side: THREE.DoubleSide });
+                const ringMeshB = new THREE.Mesh(ringGeoB, ringMatB);
+                ringMeshB.position.set(b, k, 0);
+                solidGroup.add(ringMeshB);
+
+                // Label Sprite for b
+                const spriteB = createTextSprite(`b = ${b.toFixed(1)}`, '#10b981', 'rgba(15, 23, 42, 0.9)');
+                spriteB.position.set(b, k + maxR_b + 0.7, 0);
+                solidGroup.add(spriteB);
+            }
+
+            // 3. Numerical Integration & Riemann Disks/Washers
+            const dx = (b - a) / n;
+            let approxVolume = 0;
+
+            for (let i = 0; i < n; i++) {
+                const xMid = a + (i + 0.5) * dx;
+                const fx = preset.f(xMid);
+                const gx = preset.g(xMid);
+
+                const R = Math.abs(fx - k); // Outer Radius
+                const r = Math.abs(gx - k); // Inner Radius / Hole
+
+                const washerArea = Math.PI * (R * R - r * r);
+                approxVolume += washerArea * dx * (sweepDeg / 360);
+
+                if (chkShowDisks.checked && R > 0.001) {
+                    const shape = new THREE.Shape();
+                    shape.absarc(0, 0, R, 0, sweepRad, false);
+                    if (r > 0.001) {
+                        const holePath = new THREE.Path();
+                        holePath.absarc(0, 0, r, 0, sweepRad, true);
+                        shape.holes.push(holePath);
+                    } else {
+                        shape.lineTo(0, 0);
+                    }
+
+                    const extrudeSettings = {
+                        depth: dx,
+                        bevelEnabled: false,
+                        curveSegments: 32
+                    };
+
+                    const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+                    geo.rotateY(Math.PI / 2);
+
+                    const mat = new THREE.MeshPhongMaterial({
+                        color: 0x14b8a6,
+                        transparent: true,
+                        opacity: 0.7,
+                        side: THREE.DoubleSide,
+                        shininess: 80
+                    });
+
+                    const mesh = new THREE.Mesh(geo, mat);
+                    mesh.position.set(a + i * dx, k, 0);
+
+                    const edges = new THREE.EdgesGeometry(geo);
+                    const lineMat = new THREE.LineBasicMaterial({ color: 0x5eead4, linewidth: 1 });
+                    const line = new THREE.LineSegments(edges, lineMat);
+                    mesh.add(line);
+
+                    solidGroup.add(mesh);
+                }
+            }
+
+            // 4. Smooth Revolved Surface Generation
+            if (chkShowSurface.checked) {
+                const slices = 60;
+                const stacks = 60;
+
+                const createRevolvedGeo = (func) => {
+                    const geo = new THREE.BufferGeometry();
+                    const positions = [];
+                    const indices = [];
+
+                    for (let i = 0; i <= slices; i++) {
+                        const x = a + (i / slices) * (b - a);
+                        const radius = Math.abs(func(x) - k);
+
+                        for (let j = 0; j <= stacks; j++) {
+                            const theta = (j / stacks) * sweepRad;
+                            const y = k + radius * Math.cos(theta);
+                            const z = radius * Math.sin(theta);
+                            positions.push(x, y, z);
+                        }
+                    }
+
+                    for (let i = 0; i < slices; i++) {
+                        for (let j = 0; j < stacks; j++) {
+                            const first = i * (stacks + 1) + j;
+                            const second = first + stacks + 1;
+                            indices.push(first, second, first + 1);
+                            indices.push(second, second + 1, first + 1);
+                        }
+                    }
+
+                    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                    geo.setIndex(indices);
+                    geo.computeVertexNormals();
+                    return geo;
+                };
+
+                const outerGeo = createRevolvedGeo(preset.f);
+                const surfMat = new THREE.MeshPhongMaterial({
+                    color: 0x6366f1,
+                    transparent: true,
+                    opacity: 0.45,
+                    side: THREE.DoubleSide,
+                    shininess: 90
+                });
+
+                const outerMesh = new THREE.Mesh(outerGeo, surfMat);
+                solidGroup.add(outerMesh);
+
+                const innerGeo = createRevolvedGeo(preset.g);
+                const innerMat = new THREE.MeshPhongMaterial({
+                    color: 0xec4899,
+                    transparent: true,
+                    opacity: 0.35,
+                    side: THREE.DoubleSide
+                });
+                const innerMesh = new THREE.Mesh(innerGeo, innerMat);
+                solidGroup.add(innerMesh);
+            }
+
+            // 5. Exact Integration Calculations
+            const exactFull = preset.antideriv(b, k) - preset.antideriv(a, k);
+            const exactValue = exactFull * (sweepDeg / 360);
+            const absError = Math.abs(exactValue - approxVolume);
+            const relError = Math.abs(exactValue) > 1e-7 ? (absError / Math.abs(exactValue)) * 100 : 0;
+
+            // 6. Update UI Readouts & LaTeX Steps
+            readoutApprox.textContent = approxVolume.toFixed(4);
+            readoutExact.textContent = exactValue.toFixed(4);
+            readoutError.textContent = absError.toFixed(4);
+            readoutErrorPercent.textContent = `${relError.toFixed(2)}% relative error`;
+
+            mathDxDisplay.innerHTML = `\\(\\Delta x = \\frac{${b.toFixed(1)} - ${a.toFixed(1)}}{${n}} = ${dx.toFixed(4)}\\), \\quad R(x) = |f(x) - (${k.toFixed(1)})|`;
+
+            mathFormulaDisplay.innerHTML = `\\[V \\approx \\pi \\sum_{i=1}^{${n}} \\left( [f(x_i^*)-(${k.toFixed(1)})]^2 - [g(x_i^*)-(${k.toFixed(1)})]^2 \\right) \\Delta x = \\mathbf{${approxVolume.toFixed(4)}}\\]`;
+
+            const valF_b = preset.antideriv(b, k) / Math.PI;
+            const valF_a = preset.antideriv(a, k) / Math.PI;
+
+            mathStepBreakdown.innerHTML = `
+                <div>1. <strong>Definite Volume Integral:</strong> \\[V = \\left(${sweepDeg}^{\\circ}/360^{\\circ}\\right) \\cdot ${preset.stepTex(a.toFixed(1), b.toFixed(1), k.toFixed(1))}\\]</div>
+                <div>2. <strong>Evaluated Primitive antiderivative F(b):</strong> \\[\\pi \\cdot F(${b.toFixed(1)}) = \\pi \\cdot (${valF_b.toFixed(4)}) = ${(valF_b * Math.PI).toFixed(4)}\\]</div>
+                <div>3. <strong>Evaluated Primitive antiderivative F(a):</strong> \\[\\pi \\cdot F(${a.toFixed(1)}) = \\pi \\cdot (${valF_a.toFixed(4)}) = ${(valF_a * Math.PI).toFixed(4)}\\]</div>
+                <div>4. <strong>Subtract Limits \\(\\pi [F(b) - F(a)]\\):</strong> \\[\\mathbf{V_{\\text{exact}} = ${(valF_b * Math.PI).toFixed(4)} - ${(valF_a * Math.PI).toFixed(4)} = ${exactValue.toFixed(4)}}\\]</div>
+            `;
+
+            renderMathJax();
+        }
+
+        // --- Event Listeners & Input Controls ---
+        function syncInputs(val) {
+            sliderN.value = val;
+            numN.value = val;
+            updateVisualization();
+        }
+
+        sliderN.addEventListener('input', e => syncInputs(e.target.value));
+        numN.addEventListener('input', e => {
+            let val = parseInt(e.target.value, 10);
+            if (isNaN(val)) val = 1;
+            val = Math.max(1, Math.min(80, val));
+            syncInputs(val);
+        });
+
+        sliderA.addEventListener('input', updateVisualization);
+        sliderB.addEventListener('input', updateVisualization);
+        sliderK.addEventListener('input', updateVisualization);
+        sliderAngle.addEventListener('input', updateVisualization);
+        presetSelect.addEventListener('change', updateVisualization);
+        chkShowDisks.addEventListener('change', updateVisualization);
+        chkShowSurface.addEventListener('change', updateVisualization);
+        chkShowLimitPlanes.addEventListener('change', updateVisualization);
+
+        btnResetCamera.addEventListener('click', () => {
+            camera.position.set(6, 4, 8);
+            controls.target.set(1.5, 0, 0);
+            controls.update();
+        });
+
+        // Initialize Three.js scene & trigger first render
+        initThree();
+        controls.target.set(1.5, 0, 0);
+        controls.update();
+        updateVisualization();
+    </script>
+</body>
+</html>
