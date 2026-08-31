@@ -24,7 +24,8 @@ import {
   Settings,
   RefreshCw,
   CreditCard,
-  DollarSign
+  DollarSign,
+  KeyRound
 } from "lucide-react";
 
 interface HeaderProps {
@@ -407,6 +408,17 @@ export const Header: React.FC<HeaderProps> = ({
                     >
                       <RefreshCw className="w-4 h-4 text-indigo-400" />
                       <span>Switch Account / Demo Role</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setIsProfileMenuOpen(false);
+                        onOpenAuthModal();
+                      }}
+                      className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-800 text-xs font-medium text-slate-300 hover:text-white flex items-center gap-2 transition-colors cursor-pointer"
+                    >
+                      <KeyRound className="w-4 h-4 text-sky-400" />
+                      <span>Recover / Reset Password</span>
                     </button>
 
                     <div className="h-px bg-slate-800 my-1" />

@@ -5,7 +5,9 @@ import {
   signUpWithEmail,
   signInWithGoogle,
   signInWithDirectGoogleAccount,
-  signInWithDemoRole
+  signInWithDemoRole,
+  resetUserPassword,
+  verifyAndResetPassword
 } from "../services/authService";
 import {
   Atom,
@@ -24,7 +26,12 @@ import {
   FileCode,
   BookOpen,
   Share2,
-  AlertCircle
+  AlertCircle,
+  KeyRound,
+  Send,
+  Check,
+  Eye,
+  EyeOff
 } from "lucide-react";
 
 interface AppAuthGateProps {
@@ -32,12 +39,22 @@ interface AppAuthGateProps {
 }
 
 export const AppAuthGate: React.FC<AppAuthGateProps> = ({ onAuthSuccess }) => {
-  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
+  const [authMode, setAuthMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [role, setRole] = useState<UserRole>("teacher");
   const [schoolName, setSchoolName] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Recovery state
+  const [recoveryStep, setRecoveryStep] = useState<"request" | "verify" | "success">("request");
+  const [recoveryCode, setRecoveryCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [generatedCodeHint, setGeneratedCodeHint] = useState<string | null>(null);
+
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -79,6 +96,60 @@ export const AppAuthGate: React.FC<AppAuthGateProps> = ({ onAuthSuccess }) => {
       setTimeout(() => onAuthSuccess(user), 350);
     } catch (err: any) {
       setErrorMessage(err.message || "Failed to register account.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRequestPasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      setErrorMessage("Please enter the email address for your account.");
+      return;
+    }
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      const res = await resetUserPassword(email);
+      setSuccessMessage(res.message);
+      if (res.recoveryCode) {
+        setGeneratedCodeHint(res.recoveryCode);
+        setRecoveryCode(res.recoveryCode);
+      }
+      setRecoveryStep("verify");
+    } catch (err: any) {
+      setErrorMessage(err.message || "Failed to send recovery instructions.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyAndReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!recoveryCode) {
+      setErrorMessage("Please enter the 6-digit recovery code.");
+      return;
+    }
+    if (!newPassword || newPassword.length < 6) {
+      setErrorMessage("New password must be at least 6 characters long.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setErrorMessage("Passwords do not match. Please verify.");
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      const res = await verifyAndResetPassword(email, recoveryCode, newPassword);
+      setSuccessMessage("Password successfully recovered!");
+      setRecoveryStep("success");
+      if (res.profile) {
+        setTimeout(() => onAuthSuccess(res.profile!), 1000);
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || "Verification failed. Please check your code.");
     } finally {
       setIsLoading(false);
     }
@@ -213,7 +284,7 @@ export const AppAuthGate: React.FC<AppAuthGateProps> = ({ onAuthSuccess }) => {
         {/* Right Authentication Card */}
         <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-5 shrink-0">
           {/* Tab Switcher */}
-          <div className="grid grid-cols-2 gap-1 p-1 bg-slate-950 rounded-2xl border border-slate-800 text-xs font-semibold">
+          <div className="grid grid-cols-3 gap-1 p-1 bg-slate-950 rounded-2xl border border-slate-800 text-xs font-semibold">
             <button
               onClick={() => {
                 setAuthMode("signin");
@@ -239,6 +310,20 @@ export const AppAuthGate: React.FC<AppAuthGateProps> = ({ onAuthSuccess }) => {
               }`}
             >
               Register
+            </button>
+            <button
+              onClick={() => {
+                setAuthMode("forgot");
+                setRecoveryStep("request");
+                setErrorMessage(null);
+              }}
+              className={`py-2 rounded-xl transition-all cursor-pointer ${
+                authMode === "forgot"
+                  ? "bg-sky-600 text-white shadow"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              Forgot?
             </button>
           </div>
 
@@ -273,15 +358,37 @@ export const AppAuthGate: React.FC<AppAuthGateProps> = ({ onAuthSuccess }) => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
-                  required
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-300">Password</label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMode("forgot");
+                      setRecoveryStep("request");
+                      setErrorMessage(null);
+                    }}
+                    className="text-[11px] text-sky-400 hover:text-sky-300 font-medium hover:underline cursor-pointer"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 pr-10"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((p) => !p)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               <button
@@ -372,6 +479,189 @@ export const AppAuthGate: React.FC<AppAuthGateProps> = ({ onAuthSuccess }) => {
                 </div>
               </div>
             </form>
+          )}
+
+          {/* TAB 3: FORGOT / PASSWORD RECOVERY FORM */}
+          {authMode === "forgot" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-800 text-xs">
+                <span className="font-semibold text-sky-400 flex items-center gap-1.5">
+                  <KeyRound className="w-3.5 h-3.5" />
+                  <span>Account Password Recovery</span>
+                </span>
+                <span className="text-[10px] font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
+                  {recoveryStep === "request" ? "1. Email Request" : recoveryStep === "verify" ? "2. Verification" : "Complete"}
+                </span>
+              </div>
+
+              {recoveryStep === "request" && (
+                <form onSubmit={handleRequestPasswordReset} className="space-y-3.5">
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Enter your registered account email address. We will verify your account and issue a secure password reset code.
+                  </p>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Account Email</label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="teacher@school.edu or ndunj123@gmail.com"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-sky-500"
+                      required
+                    />
+                  </div>
+
+                  {/* Fast selection */}
+                  <div className="space-y-1">
+                    <div className="text-[11px] text-slate-400">Quick selection:</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        { label: "Dr. Reed (Teacher)", email: "evelyn.reed@science-academy.edu" },
+                        { label: "ndunj123 (Author)", email: "ndunj123@gmail.com" }
+                      ].map((item) => (
+                        <button
+                          key={item.email}
+                          type="button"
+                          onClick={() => setEmail(item.email)}
+                          className="px-2 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-[10px] text-slate-300 cursor-pointer"
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setAuthMode("signin")}
+                      className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                      Back to Sign In
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="flex-1 py-2.5 px-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition-all shadow-md shadow-sky-600/25 cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+                    >
+                      {isLoading ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <>
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Send Recovery Code</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {recoveryStep === "verify" && (
+                <form onSubmit={handleVerifyAndReset} className="space-y-3">
+                  <div className="p-2.5 bg-sky-500/10 border border-sky-500/30 rounded-xl text-xs text-sky-200">
+                    <span className="font-semibold block text-white">Reset instructions prepared!</span>
+                    <span className="text-[11px] text-sky-300">Account: <strong>{email}</strong></span>
+                  </div>
+
+                  {generatedCodeHint && (
+                    <div className="p-2.5 bg-indigo-950/80 border border-indigo-500/30 rounded-xl flex items-center justify-between text-xs text-indigo-200">
+                      <span>Code: <strong className="font-mono text-white tracking-widest">{generatedCodeHint}</strong></span>
+                      <button
+                        type="button"
+                        onClick={() => setRecoveryCode(generatedCodeHint)}
+                        className="px-2 py-0.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold cursor-pointer"
+                      >
+                        Auto-Fill
+                      </button>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">6-Digit Code</label>
+                    <input
+                      type="text"
+                      maxLength={6}
+                      value={recoveryCode}
+                      onChange={(e) => setRecoveryCode(e.target.value.replace(/\D/g, ""))}
+                      placeholder="e.g. 889900"
+                      className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-mono tracking-widest focus:outline-none focus:border-sky-500"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">New Password</label>
+                    <div className="relative">
+                      <input
+                        type={showNewPassword ? "text" : "password"}
+                        minLength={6}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-sky-500 pr-10"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword((p) => !p)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                      >
+                        {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Confirm New Password</label>
+                    <input
+                      type={showNewPassword ? "text" : "password"}
+                      minLength={6}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-sky-500"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setRecoveryStep("request")}
+                      className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                      Change Email
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-600/25 cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+                    >
+                      {isLoading ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Reset &amp; Enter</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {recoveryStep === "success" && (
+                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-center space-y-2">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
+                  <h4 className="text-sm font-bold text-white">Password Updated</h4>
+                  <p className="text-xs text-emerald-200">
+                    Signing you into Axiom STEM now...
+                  </p>
+                </div>
+              )}
+            </div>
           )}
 
           {/* TAB 2: REGISTER FORM */}

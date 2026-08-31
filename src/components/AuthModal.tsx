@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   X,
   Mail,
@@ -18,7 +18,10 @@ import {
   ExternalLink,
   ChevronRight,
   KeyRound,
-  Compass
+  Compass,
+  RefreshCw,
+  Send,
+  Check
 } from "lucide-react";
 import { UserProfile, UserRole } from "../types";
 import {
@@ -27,7 +30,8 @@ import {
   signInWithGoogle,
   signInWithDirectGoogleAccount,
   signInWithDemoRole,
-  resetUserPassword
+  resetUserPassword,
+  verifyAndResetPassword
 } from "../services/authService";
 
 interface AuthModalProps {
@@ -51,11 +55,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [role, setRole] = useState<UserRole>("teacher");
   const [showPassword, setShowPassword] = useState(false);
 
+  // Password Recovery state
+  const [recoveryStep, setRecoveryStep] = useState<"request" | "verify" | "success">("request");
+  const [recoveryCode, setRecoveryCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [generatedCodeHint, setGeneratedCodeHint] = useState<string | null>(null);
+
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showGoogleHelp, setShowGoogleHelp] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTab(initialTab);
+      setErrorMessage(null);
+      setSuccessMessage(null);
+    }
+  }, [isOpen, initialTab]);
 
   if (!isOpen) return null;
 
@@ -64,6 +84,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setPassword("");
     setDisplayName("");
     setSchoolName("");
+    setRecoveryStep("request");
+    setRecoveryCode("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setGeneratedCodeHint(null);
     setErrorMessage(null);
     setSuccessMessage(null);
     setShowGoogleHelp(false);
@@ -73,6 +98,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setTab(newTab);
     setErrorMessage(null);
     setSuccessMessage(null);
+    if (newTab === "forgot") {
+      setRecoveryStep("request");
+    }
   };
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
@@ -167,7 +195,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
-  const handlePasswordReset = async (e: React.FormEvent) => {
+  const handleRequestPasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
       setErrorMessage("Please enter the email address for your account.");
@@ -176,10 +204,50 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      await resetUserPassword(email);
-      setSuccessMessage("Password reset email sent! Please check your inbox for instructions.");
+      const res = await resetUserPassword(email);
+      setSuccessMessage(res.message);
+      if (res.recoveryCode) {
+        setGeneratedCodeHint(res.recoveryCode);
+        setRecoveryCode(res.recoveryCode);
+      }
+      setRecoveryStep("verify");
     } catch (err: any) {
       setErrorMessage(err.message || "Failed to send reset email.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyAndReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!recoveryCode) {
+      setErrorMessage("Please enter the 6-digit recovery code.");
+      return;
+    }
+    if (!newPassword || newPassword.length < 6) {
+      setErrorMessage("New password must be at least 6 characters long.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setErrorMessage("New passwords do not match. Please retype carefully.");
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      const res = await verifyAndResetPassword(email, recoveryCode, newPassword);
+      setSuccessMessage("Password successfully recovered and updated!");
+      setRecoveryStep("success");
+      if (res.profile) {
+        setTimeout(() => {
+          onAuthSuccess(res.profile!);
+          onClose();
+          resetForm();
+        }, 1200);
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || "Password recovery failed. Please verify your code.");
     } finally {
       setIsLoading(false);
     }
@@ -638,52 +706,215 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </form>
           )}
 
-          {/* TAB: FORGOT PASSWORD */}
+          {/* TAB 3: FORGOT / RECOVER PASSWORD */}
           {tab === "forgot" && (
-            <form onSubmit={handlePasswordReset} className="space-y-4">
-              <p className="text-xs text-slate-300">
-                Enter your account email address and we will send you a link to reset your password.
-              </p>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300">Account Email Address</label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="educator@school.edu"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
-                  />
-                </div>
+            <div className="space-y-4 animate-in fade-in">
+              {/* Step indicator */}
+              <div className="flex items-center justify-between pb-2 border-b border-slate-800 text-[11px] font-semibold text-slate-400">
+                <span className="flex items-center gap-1.5 text-sky-400">
+                  <KeyRound className="w-3.5 h-3.5" />
+                  <span>Password Recovery &amp; Reset</span>
+                </span>
+                <span className="bg-slate-950 px-2 py-0.5 rounded-full border border-slate-800 font-mono text-[10px] text-slate-400">
+                  {recoveryStep === "request" ? "Step 1 of 2: Email" : recoveryStep === "verify" ? "Step 2 of 2: Verify & Reset" : "Complete"}
+                </span>
               </div>
 
-              <div className="flex items-center gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => handleSwitchTab("signin")}
-                  className="flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
-                >
-                  Back to Sign In
-                </button>
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="flex-1 py-2 px-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-                >
-                  {isLoading ? (
-                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <KeyRound className="w-3.5 h-3.5" />
-                      <span>Send Reset Link</span>
-                    </>
+              {recoveryStep === "request" && (
+                <form onSubmit={handleRequestPasswordReset} className="space-y-4">
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Enter the email address associated with your STEM educator, creator, or student account. We will send you an official reset link and a secure 6-digit recovery code.
+                  </p>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-300">Account Email Address</label>
+                    <div className="relative">
+                      <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="educator@school.edu or ndunj123@gmail.com"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Quick Select Preset Email Pill (for instant testing) */}
+                  <div className="space-y-1.5 pt-1">
+                    <div className="text-[11px] text-slate-400 font-medium flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-amber-400" />
+                      <span>Quick-select account for demo recovery:</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        { label: "Dr. Evelyn Reed", email: "evelyn.reed@science-academy.edu" },
+                        { label: "Author ndunj123", email: "ndunj123@gmail.com" },
+                        { label: "Alex Rivera", email: "alex.rivera@student.oakridge.edu" }
+                      ].map((item) => (
+                        <button
+                          key={item.email}
+                          type="button"
+                          onClick={() => setEmail(item.email)}
+                          className="px-2 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-[11px] text-slate-300 transition-colors cursor-pointer"
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => handleSwitchTab("signin")}
+                      className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                      Back to Sign In
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="flex-1 py-2.5 px-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition-all shadow-md shadow-sky-600/25 cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+                    >
+                      {isLoading ? (
+                        <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Send Recovery Code</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {recoveryStep === "verify" && (
+                <form onSubmit={handleVerifyAndReset} className="space-y-3.5">
+                  <div className="p-3 bg-sky-500/10 border border-sky-500/30 rounded-2xl text-xs text-sky-200 flex items-start gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-semibold text-white block">Recovery instructions dispatched!</span>
+                      <span className="text-sky-300 text-[11px]">
+                        Target account: <strong className="text-white">{email}</strong>
+                      </span>
+                    </div>
+                  </div>
+
+                  {generatedCodeHint && (
+                    <div className="p-2.5 bg-indigo-950/70 border border-indigo-500/30 rounded-xl flex items-center justify-between text-xs text-indigo-200">
+                      <span className="flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                        <span>Security Code Generated: <strong className="font-mono text-white tracking-widest">{generatedCodeHint}</strong></span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setRecoveryCode(generatedCodeHint)}
+                        className="px-2 py-0.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold cursor-pointer transition-all"
+                      >
+                        Auto-Fill
+                      </button>
+                    </div>
                   )}
-                </button>
-              </div>
-            </form>
+
+                  {/* 6-Digit Recovery Code */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-300">6-Digit Verification Code</label>
+                    <div className="relative">
+                      <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        required
+                        maxLength={6}
+                        value={recoveryCode}
+                        onChange={(e) => setRecoveryCode(e.target.value.replace(/\D/g, ""))}
+                        placeholder="e.g. 889900"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-xs text-white font-mono tracking-widest placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* New Password */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-300">New Password (min. 6 characters)</label>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type={showNewPassword ? "text" : "password"}
+                        required
+                        minLength={6}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-10 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword((p) => !p)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                      >
+                        {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Confirm Password */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-300">Confirm New Password</label>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type={showNewPassword ? "text" : "password"}
+                        required
+                        minLength={6}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setRecoveryStep("request")}
+                      className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                      Change Email
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-600/25 cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+                    >
+                      {isLoading ? (
+                        <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <Check className="w-4 h-4" />
+                          <span>Reset Password &amp; Sign In</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {recoveryStep === "success" && (
+                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-center space-y-3">
+                  <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="w-6 h-6" />
+                  </div>
+                  <h4 className="text-sm font-bold text-white">Password Recovery Complete</h4>
+                  <p className="text-xs text-emerald-200">
+                    Your password has been successfully updated. Logging you into Axiom STEM now...
+                  </p>
+                </div>
+              )}
+            </div>
           )}
         </div>
 
