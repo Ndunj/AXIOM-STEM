@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elastic Properties of Materials - Interactive Simulation & Theory Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col relative">
+
+    <header class="bg-slate-800 border-b border-slate-700 py-4 px-6 shadow-md">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-xl font-bold tracking-tight text-indigo-400">Horizontal Material Stress-Strain & Dynamic Curve Simulator</h1>
+                <p class="text-xs text-slate-400">Observe real-time horizontal stretching behavior, crystal structure deformation, and progressive curve tracing.</p>
+            </div>
+            <div class="flex items-center gap-3 flex-wrap">
+                <span class="text-xs bg-slate-700 text-slate-300 px-3 py-1.5 rounded-full border border-slate-600 font-medium" id="status-badge">Status: Resting</span>
+                <button id="btn-guide" class="bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow flex items-center gap-1.5 cursor-pointer">
+                    <span>📖 Educational Guide & History</span>
+                </button>
+                <button id="btn-reset" class="bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow cursor-pointer">Reset Simulation</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
+        
+        <section class="lg:col-span-4 flex flex-col gap-6">
+            
+            <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg">
+                <h2 class="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-4 border-b border-slate-700 pb-2">Simulation Controls</h2>
+                
+                <div class="flex flex-col gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Select Material Preset</label>
+                        <select id="material-select" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 cursor-pointer">
+                            <option value="ductile">Ductile Metal (Steel/Copper)</option>
+                            <option value="brittle">Brittle Material (Glass/Ceramic)</option>
+                            <option value="rubber">Elastomer / Rubber</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs font-medium text-slate-400 mb-1">
+                            <span>Applied Force (Load)</span>
+                            <span id="load-val" class="text-indigo-400 font-bold">0.0 N</span>
+                        </div>
+                        <input id="force-slider" type="range" min="0" max="150" step="0.5" value="0" class="w-full accent-indigo-500 cursor-pointer">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 pt-2">
+                        <button id="btn-pull" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-2.5 rounded-lg transition shadow flex items-center justify-center gap-1.5 cursor-pointer">
+                            <span>Apply Load (+)</span>
+                        </button>
+                        <button id="btn-release" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold py-2.5 rounded-lg transition shadow flex items-center justify-center gap-1.5 cursor-pointer">
+                            <span>Release (-)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg flex-grow">
+                <h2 class="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-4 border-b border-slate-700 pb-2">Real-Time Metrics</h2>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-700/50">
+                        <span class="block text-[10px] uppercase font-semibold text-slate-400">Extension (&Delta;L)</span>
+                        <span id="metric-extension" class="text-lg font-bold text-slate-100">0.00 mm</span>
+                    </div>
+                    <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-700/50">
+                        <span class="block text-[10px] uppercase font-semibold text-slate-400">Current Phase</span>
+                        <span id="metric-phase" class="text-xs font-bold text-emerald-400 mt-1 block">Elastic Region</span>
+                    </div>
+                </div>
+
+                <div class="mt-4 space-y-2 text-xs text-slate-300">
+                    <div class="flex justify-between py-1 border-b border-slate-700/40">
+                        <span class="text-slate-400">Proportionality Limit:</span>
+                        <span id="val-prop" class="font-semibold text-sky-400">30 N</span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-slate-700/40">
+                        <span class="text-slate-400">Elastic Limit:</span>
+                        <span id="val-elastic" class="font-semibold text-emerald-400">45 N</span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-slate-700/40">
+                        <span class="text-slate-400">Yield Point:</span>
+                        <span id="val-yield" class="font-semibold text-amber-400">70 N</span>
+                    </div>
+                    <div class="flex justify-between py-1">
+                        <span class="text-slate-400">Breaking Point:</span>
+                        <span id="val-break" class="font-semibold text-rose-400">120 N</span>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <section class="lg:col-span-8 flex flex-col gap-6">
+            
+            <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-lg flex flex-col items-center relative">
+                <div class="w-full flex justify-between items-center mb-2 px-1">
+                    <span class="text-xs font-semibold text-slate-400 uppercase">Horizontal Material</span>
+                    <span class="text-[10px] text-slate-400">Constant width maintained for brittle material with sharp jagged fracture plane</span>
+                </div>
+                <div class="w-full bg-slate-900/80 rounded-lg border border-slate-700/60 overflow-hidden flex justify-center">
+                    <canvas id="rig-canvas" width="650" height="200" style="width: 100%; max-width: 650px; height: 200px; display: block;"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-lg flex flex-col items-center relative flex-grow">
+                <div class="w-full flex justify-between items-center mb-2 px-1">
+                    <span class="text-xs font-semibold text-slate-400 uppercase">Dynamic Load vs Extension Curve</span>
+                    <div class="flex items-center gap-3 text-[10px] text-slate-400">
+                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-indigo-500 inline-block"></span> Live Curve Path</span>
+                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span> Fracture Zone</span>
+                    </div>
+                </div>
+                <div class="w-full bg-slate-900/80 rounded-lg border border-slate-700/60 overflow-hidden flex justify-center">
+                    <canvas id="graph-canvas" width="650" height="280" style="width: 100%; max-width: 650px; height: 280px; display: block;"></canvas>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <div id="guide-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-800 border border-slate-700 w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+            
+            <div class="bg-slate-900/80 px-6 py-4 border-b border-slate-700 flex justify-between items-center">
+                <h3 class="text-base font-bold text-indigo-400 flex items-center gap-2">
+                    <span>📚 Comprehensive Material Science Guide & Historical Failures</span>
+                </h3>
+                <button id="btn-close-guide" class="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition cursor-pointer">✕</button>
+            </div>
+
+            <div class="p-6 overflow-y-auto space-y-6 text-sm text-slate-300">
+                
+                <div>
+                    <h4 class="text-xs font-bold text-sky-400 uppercase tracking-wider mb-3">1. Explanatory Breakdown of Material Processes</h4>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/60">
+                            <h5 class="font-bold text-indigo-300 mb-1">Ductile Materials (e.g., Structural Steel)</h5>
+                            <p class="text-xs text-slate-400 leading-relaxed">
+                                Undergoes distinct phases: Hooke's Law proportionality, an elastic range where atoms return to normal, a clear yield point where crystal planes slide permanently, extensive plastic deformation with localized narrowing (necking), and final cup-and-cone ductile fracture.
+                            </p>
+                        </div>
+
+                        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/60">
+                            <h5 class="font-bold text-emerald-300 mb-1">Brittle Materials (e.g., Glass, Ceramics)</h5>
+                            <p class="text-xs text-slate-400 leading-relaxed">
+                                Demonstrates a high Young's modulus (steep slope). Shows small, noticeable elastic extension (&Delta;L &approx; 12 mm) across large load increases without plastic yield. Cross-sectional width remains constant up to and at failure, breaking with sharp, jagged cleavage surfaces.
+                            </p>
+                        </div>
+
+                        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/60">
+                            <h5 class="font-bold text-sky-300 mb-1">Elastomers (e.g., Rubber)</h5>
+                            <p class="text-xs text-slate-400 leading-relaxed">
+                                Composed of long coiled polymer chains that uncoil smoothly under load. Exhibits massive reversible extension with nonlinear entropy-driven elasticity before eventually reaching chain scission limit and tearing.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="border-slate-700">
+
+                <div>
+                    <h4 class="text-xs font-bold text-rose-400 uppercase tracking-wider mb-3">2. Historical Material Failures & Engineering Lessons</h4>
+                    
+                    <div class="space-y-4 text-xs">
+                        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/60">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="font-bold text-slate-200">The Liberty Ships & World War II Welded Hulls (Brittle Fracture)</span>
+                                <span class="text-[10px] bg-rose-950 text-rose-300 px-2 py-0.5 rounded border border-rose-800">Brittle Failure</span>
+                            </div>
+                            <p class="text-slate-400 leading-relaxed">
+                                During WWII, over 2,700 Liberty cargo ships were rapidly built using electric welding instead of traditional riveting. In cold North Atlantic waters, several ships experienced catastrophic brittle fracture, snapping in half without prior plastic necking because low temperatures lowered the steel's ductile-to-brittle transition threshold.
+                            </p>
+                        </div>
+
+                        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/60">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="font-bold text-slate-200">The Tacoma Narrows Bridge (Aeroelastic Flutter & Resonance)</span>
+                                <span class="text-[10px] bg-amber-950 text-amber-300 px-2 py-0.5 rounded border border-amber-800">Yield & Dynamic Resonance</span>
+                            </div>
+                            <p class="text-slate-400 leading-relaxed">
+                                Known as "Galloping Gertie," this suspension bridge collapsed in 1940 when steady 40 mph winds triggered torsional flutter matching the bridge's natural frequency. The structural members exceeded their yield threshold repeatedly until progressive metal fatigue caused total structural collapse.
+                            </p>
+                        </div>
+
+                        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/60">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="font-bold text-slate-200">The Challenger Space Shuttle Disaster (Elastomer O-Ring Failure)</span>
+                                <span class="text-[10px] bg-sky-950 text-sky-300 px-2 py-0.5 rounded border border-sky-800">Elastomer Resilience Failure</span>
+                            </div>
+                            <p class="text-slate-400 leading-relaxed">
+                                On the morning of January 28, 1986, unusually freezing temperatures caused the synthetic rubber O-rings sealing the solid rocket booster joints to lose their elasticity and resilience. Unable to decompress and seal fast enough as joints shifted during ignition, hot gases breached the casing.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="bg-slate-900/80 px-6 py-3 border-t border-slate-700 flex justify-end">
+                <button id="btn-close-footer" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-5 py-2 rounded-lg transition cursor-pointer">Got It, Resume Simulation</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const materials = {
+            ductile: { 
+                name: "Ductile Metal", 
+                hasYield: true,
+                propLimit: 35, 
+                elasticLimit: 50, 
+                yieldPoint: 80, 
+                breakingPoint: 130, 
+                maxExt: 80 
+            },
+            brittle: { 
+                name: "Brittle Material", 
+                hasYield: false,
+                propLimit: 90, 
+                elasticLimit: 110, 
+                yieldPoint: null, 
+                breakingPoint: 120, 
+                maxExt: 12 // Small, distinctly visible extension curve for large force inputs
+            },
+            rubber: { 
+                name: "Rubber / Elastomer", 
+                hasYield: false,
+                propLimit: 30, 
+                elasticLimit: 90, 
+                yieldPoint: null, 
+                breakingPoint: 140, 
+                maxExt: 120 
+            }
+        };
+
+        let currentMaterialKey = 'ductile';
+        let material = materials[currentMaterialKey];
+        
+        let currentForce = 0;
+        let isBroken = false;
+        let animationInterval = null;
+
+        const forceSlider = document.getElementById('force-slider');
+        const loadVal = document.getElementById('load-val');
+        const materialSelect = document.getElementById('material-select');
+        const metricExtension = document.getElementById('metric-extension');
+        const metricPhase = document.getElementById('metric-phase');
+        const statusBadge = document.getElementById('status-badge');
+        
+        const valProp = document.getElementById('val-prop');
+        const valElastic = document.getElementById('val-elastic');
+        const valYield = document.getElementById('val-yield');
+        const valBreak = document.getElementById('val-break');
+
+        const btnPull = document.getElementById('btn-pull');
+        const btnRelease = document.getElementById('btn-release');
+        const btnReset = document.getElementById('btn-reset');
+        
+        const btnGuide = document.getElementById('btn-guide');
+        const btnCloseGuide = document.getElementById('btn-close-guide');
+        const btnCloseFooter = document.getElementById('btn-close-footer');
+        const guideModal = document.getElementById('guide-modal');
+
+        const rigCanvas = document.getElementById('rig-canvas');
+        const rigCtx = rigCanvas.getContext('2d');
+        const graphCanvas = document.getElementById('graph-canvas');
+        const graphCtx = graphCanvas.getContext('2d');
+
+        // Modal Controls
+        btnGuide.addEventListener('click', () => guideModal.classList.remove('hidden'));
+        btnCloseGuide.addEventListener('click', () => guideModal.classList.add('hidden'));
+        btnCloseFooter.addEventListener('click', () => guideModal.classList.add('hidden'));
+        guideModal.addEventListener('click', (e) => {
+            if (e.target === guideModal) guideModal.classList.add('hidden');
+        });
+
+        function updateLimitsUI() {
+            valProp.innerText = material.propLimit + ' N';
+            valElastic.innerText = material.elasticLimit + ' N';
+            valYield.innerText = material.hasYield ? material.yieldPoint + ' N' : 'N/A (None)';
+            valBreak.innerText = material.breakingPoint + ' N';
+            forceSlider.max = material.breakingPoint + 15;
+        }
+        updateLimitsUI();
+
+        materialSelect.addEventListener('change', (e) => {
+            currentMaterialKey = e.target.value;
+            material = materials[currentMaterialKey];
+            updateLimitsUI();
+            resetSimulation();
+        });
+
+        function getExtension(F) {
+            if (F <= 0) return 0;
+            if (isBroken) return material.maxExt;
+
+            const { propLimit, elasticLimit, yieldPoint, breakingPoint, maxExt, hasYield } = material;
+
+            if (currentMaterialKey === 'brittle') {
+                // High Young's Modulus: Steep slope with clear, small extension trajectory (0 to 12mm)
+                return (F / breakingPoint) * maxExt;
+            } else if (hasYield) {
+                if (F <= propLimit) {
+                    return (F / propLimit) * (propLimit * 0.25);
+                } else if (F <= elasticLimit) {
+                    const base = propLimit * 0.25;
+                    const span = elasticLimit - propLimit;
+                    return base + ((F - propLimit) / span) * (elasticLimit * 0.15);
+                } else if (F <= yieldPoint) {
+                    const baseEx = elasticLimit * 0.4;
+                    return baseEx + ((F - elasticLimit) / (yieldPoint - elasticLimit)) * (maxExt * 0.25);
+                } else if (F < breakingPoint) {
+                    const baseEx = maxExt * 0.65;
+                    const progress = (F - yieldPoint) / (breakingPoint - yieldPoint);
+                    return baseEx + Math.pow(progress, 1.5) * (maxExt * 0.35);
+                } else {
+                    return maxExt;
+                }
+            } else {
+                // Elastomer non-linear S-curve extension
+                return Math.pow(F / breakingPoint, 1.4) * maxExt;
+            }
+        }
+
+        function getPhaseDetails(F) {
+            if (isBroken) return { text: "Catastrophic Brittle Fracture (Broken)", color: "text-rose-500" };
+            if (F === 0) return { text: "Resting", color: "text-slate-400" };
+            
+            if (!material.hasYield && currentMaterialKey === 'brittle') {
+                if (F <= material.propLimit) return { text: "High-Stiffness Linear Region", color: "text-sky-400" };
+                if (F < material.breakingPoint) return { text: "Elastic Extension Approaching Failure Point", color: "text-emerald-400" };
+                return { text: "Sudden Fracture (No Plasticity)", color: "text-rose-500" };
+            }
+
+            if (F <= material.propLimit) return { text: "Proportional Region (Hooke's Law)", color: "text-sky-400" };
+            if (F <= material.elasticLimit) return { text: "Elastic Region", color: "text-emerald-400" };
+            if (material.hasYield && F <= material.yieldPoint) return { text: "Yield Point / Plastic Flow", color: "text-amber-400" };
+            if (material.hasYield && F < material.breakingPoint) return { text: "Plastic Deformation / Necking", color: "text-orange-400" };
+            return { text: "Ultimate Breaking Point", color: "text-rose-500" };
+        }
+
+        forceSlider.addEventListener('input', (e) => {
+            if (isBroken) return;
+            currentForce = parseFloat(e.target.value);
+            if (currentForce >= material.breakingPoint) {
+                currentForce = material.breakingPoint;
+                isBroken = true;
+            }
+            updateView();
+        });
+
+        btnPull.addEventListener('mousedown', () => startStepping(1.5));
+        btnRelease.addEventListener('mousedown', () => startStepping(-1.5));
+        window.addEventListener('mouseup', stopStepping);
+
+        function startStepping(delta) {
+            stopStepping();
+            if (isBroken && delta > 0) return;
+            animationInterval = setInterval(() => {
+                currentForce = Math.max(0, Math.min(material.breakingPoint, currentForce + delta));
+                forceSlider.value = currentForce;
+                if (currentForce >= material.breakingPoint) {
+                    isBroken = true;
+                    stopStepping();
+                }
+                updateView();
+            }, 30);
+        }
+
+        function stopStepping() {
+            if (animationInterval) clearInterval(animationInterval);
+            animationInterval = null;
+        }
+
+        btnReset.addEventListener('click', resetSimulation);
+
+        function resetSimulation() {
+            stopStepping();
+            currentForce = 0;
+            isBroken = false;
+            forceSlider.value = 0;
+            updateView();
+        }
+
+        function updateView() {
+            loadVal.innerText = currentForce.toFixed(1) + ' N';
+            const ext = getExtension(currentForce);
+            metricExtension.innerText = ext.toFixed(2) + ' mm';
+            
+            const phase = getPhaseDetails(currentForce);
+            metricPhase.innerText = phase.text;
+            metricPhase.className = `text-xs font-bold mt-1 block ${phase.color}`;
+            statusBadge.innerText = isBroken ? "Status: Broken" : (currentForce > 0 ? "Status: Under Load" : "Status: Resting");
+
+            drawHorizontalRig(ext);
+            drawGraph();
+        }
+
+        // Horizontal Rig Animation View
+        function drawHorizontalRig(ext) {
+            const cw = rigCanvas.width;
+            const ch = rigCanvas.height;
+            
+            rigCtx.clearRect(0, 0, cw, ch);
+
+            // Left Wall Support
+            rigCtx.fillStyle = '#475569';
+            rigCtx.fillRect(40, ch / 2 - 50, 16, 100);
+            rigCtx.fillStyle = '#64748b';
+            rigCtx.fillRect(35, ch / 2 - 55, 26, 10);
+            rigCtx.fillRect(35, ch / 2 + 45, 26, 10);
+
+            rigCtx.fillStyle = '#94a3b8';
+            rigCtx.fillRect(56, ch / 2 - 25, 15, 50);
+
+            const startX = 71;
+            const restingWidth = Math.max(100, cw - 200);
+            
+            const visualExt = ext * 1.5;
+            const currentWidth = restingWidth + (isBroken ? restingWidth * 0.05 : visualExt);
+            const endX = startX + currentWidth;
+
+            // Material width (thickness) remaining constant for brittle materials before, at, and after failure
+            let thickness = 36;
+            if (currentMaterialKey === 'brittle') {
+                thickness = 36; // Zero reduction or necking of any kind
+            } else if (currentMaterialKey === 'ductile' && currentForce > material.yieldPoint) {
+                const neckProgress = (currentForce - material.yieldPoint) / (material.breakingPoint - material.yieldPoint);
+                thickness = Math.max(12, 36 - (neckProgress * 20));
+            } else if (currentMaterialKey === 'rubber') {
+                thickness = Math.max(14, 36 - (ext * 0.15));
+            }
+
+            const barY = ch / 2 - thickness / 2;
+
+            if (!isBroken) {
+                rigCtx.fillStyle = currentMaterialKey === 'rubber' ? '#0ea5e9' : (currentMaterialKey === 'brittle' ? '#e2e8f0' : '#6366f1');
+                rigCtx.fillRect(startX, barY, currentWidth, thickness);
+
+                // Internal Microstructure Grid
+                rigCtx.strokeStyle = currentMaterialKey === 'brittle' ? 'rgba(30, 41, 59, 0.4)' : 'rgba(255, 255, 255, 0.25)';
+                rigCtx.lineWidth = 1;
+                const cols = 12;
+                const colWidth = currentWidth / cols;
+                for (let c = 1; c < cols; c++) {
+                    const lineX = startX + c * colWidth;
+                    rigCtx.beginPath();
+                    rigCtx.moveTo(lineX, barY);
+                    rigCtx.lineTo(lineX, barY + thickness);
+                    rigCtx.stroke();
+                }
+            } else {
+                // Jagged fracture surface rendering for ALL materials (including brittle)
+                rigCtx.fillStyle = currentMaterialKey === 'rubber' ? '#0ea5e9' : (currentMaterialKey === 'brittle' ? '#e2e8f0' : '#6366f1');
+
+                const totalGap = currentMaterialKey === 'brittle' ? 18 : 35;
+                const midX = startX + currentWidth / 2;
+                const leftEnd = midX - totalGap / 2;
+                const rightStart = midX + totalGap / 2;
+
+                const topY = ch / 2 - thickness / 2;
+                const bottomY = ch / 2 + thickness / 2;
+
+                // Sharp, high-frequency jagged offsets representing brittle cleavage fracture plane
+                const jagOffsetsLeft = currentMaterialKey === 'brittle' ? [0, 7, -6, 9, -8, 6, -5, 8, 0] : [0, 5, -3, 8, -4, 6, 0];
+                const jagOffsetsRight = currentMaterialKey === 'brittle' ? [0, 6, -8, 7, -5, 9, -6, 7, 0] : [0, 4, -5, 7, -2, 5, 0];
+                const segments = jagOffsetsLeft.length - 1;
+
+                // Draw Left Broken Segment
+                rigCtx.beginPath();
+                rigCtx.moveTo(startX, topY);
+                rigCtx.lineTo(leftEnd, topY);
+                for (let i = 1; i <= segments; i++) {
+                    const py = topY + (i / segments) * (bottomY - topY);
+                    const px = leftEnd + jagOffsetsLeft[i];
+                    rigCtx.lineTo(px, py);
+                }
+                rigCtx.lineTo(startX, bottomY);
+                rigCtx.closePath();
+                rigCtx.fill();
+
+                // Draw Right Broken Segment
+                rigCtx.beginPath();
+                rigCtx.moveTo(endX, topY);
+                rigCtx.lineTo(rightStart, topY);
+                for (let i = 1; i <= segments; i++) {
+                    const py = topY + (i / segments) * (bottomY - topY);
+                    const px = rightStart + jagOffsetsRight[i];
+                    rigCtx.lineTo(px, py);
+                }
+                rigCtx.lineTo(endX, bottomY);
+                rigCtx.closePath();
+                rigCtx.fill();
+            }
+
+            if (!isBroken) {
+                rigCtx.fillStyle = '#94a3b8';
+                rigCtx.fillRect(endX, ch / 2 - 25, 15, 50);
+
+                if (currentForce > 0) {
+                    const arrowStartX = endX + 15;
+                    const arrowLen = Math.min(60, 20 + currentForce * 0.3);
+                    rigCtx.strokeStyle = '#f43f5e';
+                    rigCtx.fillStyle = '#f43f5e';
+                    rigCtx.lineWidth = 3;
+                    
+                    rigCtx.beginPath();
+                    rigCtx.moveTo(arrowStartX, ch / 2);
+                    rigCtx.lineTo(arrowStartX + arrowLen, ch / 2);
+                    rigCtx.stroke();
+
+                    rigCtx.beginPath();
+                    rigCtx.moveTo(arrowStartX + arrowLen, ch / 2);
+                    rigCtx.lineTo(arrowStartX + arrowLen - 8, ch / 2 - 5);
+                    rigCtx.lineTo(arrowStartX + arrowLen - 8, ch / 2 + 5);
+                    rigCtx.fill();
+
+                    rigCtx.fillStyle = '#f43f5e';
+                    rigCtx.font = '11px Inter';
+                    rigCtx.textAlign = 'center';
+                    rigCtx.fillText(`F = ${currentForce.toFixed(0)}N`, arrowStartX + arrowLen / 2, ch / 2 - 10);
+                }
+            }
+        }
+
+        // Render Dynamic Load vs Extension Graph
+        function drawGraph() {
+            const cw = graphCanvas.width;
+            const ch = graphCanvas.height;
+
+            graphCtx.clearRect(0, 0, cw, ch);
+
+            const padding = 50;
+            const graphWidth = cw - padding * 2;
+            const graphHeight = ch - padding * 2;
+
+            // Draw Axes
+            graphCtx.strokeStyle = '#334155';
+            graphCtx.lineWidth = 1.5;
+            graphCtx.beginPath();
+            graphCtx.moveTo(padding, padding);
+            graphCtx.lineTo(padding, ch - padding);
+            graphCtx.lineTo(cw - padding, ch - padding);
+            graphCtx.stroke();
+
+            // Axis Labels
+            graphCtx.fillStyle = '#94a3b8';
+            graphCtx.font = '11px Inter';
+            graphCtx.textAlign = 'center';
+            graphCtx.fillText('Extension (ΔL) →', cw / 2, ch - 12);
+            
+            graphCtx.save();
+            graphCtx.translate(15, ch / 2);
+            graphCtx.rotate(-Math.PI / 2);
+            graphCtx.fillText('Load / Force (N) →', 0, 0);
+            graphCtx.restore();
+
+            // Global plot scaling for comparative visual clarity
+            const maxExtScale = 120 * 1.1; // Baseline scale across preset comparisons
+            const maxLoadScale = 150 * 1.1;
+
+            function toCanvasX(extVal) {
+                return padding + (extVal / maxExtScale) * graphWidth;
+            }
+            function toCanvasY(loadVal) {
+                return (ch - padding) - (loadVal / maxLoadScale) * graphHeight;
+            }
+
+            // Draw dynamically growing curve path up to currentForce
+            if (currentForce > 0) {
+                graphCtx.strokeStyle = currentMaterialKey === 'brittle' ? '#38bdf8' : '#6366f1';
+                graphCtx.lineWidth = 3;
+                graphCtx.beginPath();
+
+                const steps = 80;
+                let reachedSteps = Math.floor((currentForce / material.breakingPoint) * steps);
+                reachedSteps = Math.max(1, reachedSteps);
+
+                for (let i = 0; i <= reachedSteps; i++) {
+                    const fSample = (i / steps) * material.breakingPoint;
+                    const eSample = getExtension(fSample);
+                    const cx = toCanvasX(eSample);
+                    const cy = toCanvasY(fSample);
+                    if (i === 0) graphCtx.moveTo(cx, cy);
+                    else graphCtx.lineTo(cx, cy);
+                }
+                graphCtx.stroke();
+            }
+
+            if (material.hasYield) {
+                const xProp = toCanvasX(getExtension(material.propLimit));
+                const xElastic = toCanvasX(getExtension(material.elasticLimit));
+                const xYield = toCanvasX(getExtension(material.yieldPoint));
+                const xBreak = toCanvasX(getExtension(material.breakingPoint));
+
+                graphCtx.font = '10px Inter';
+                graphCtx.textAlign = 'center';
+
+                if (currentForce >= material.propLimit) {
+                    graphCtx.fillStyle = 'rgba(56, 189, 248, 0.12)';
+                    graphCtx.fillRect(padding, padding, Math.max(0, xProp - padding), graphHeight);
+                    graphCtx.fillStyle = '#38bdf8';
+                    graphCtx.fillText('Proportional', padding + Math.max(0, xProp - padding) / 2, padding + 20);
+                }
+
+                if (currentForce >= material.elasticLimit) {
+                    graphCtx.fillStyle = 'rgba(52, 211, 153, 0.1)';
+                    graphCtx.fillRect(xProp, padding, Math.max(0, xElastic - xProp), graphHeight);
+                    graphCtx.fillStyle = '#34d399';
+                    graphCtx.fillText('Elastic', xProp + Math.max(0, xElastic - xProp) / 2, padding + 35);
+                }
+
+                if (currentForce >= material.yieldPoint) {
+                    graphCtx.fillStyle = 'rgba(251, 191, 36, 0.1)';
+                    graphCtx.fillRect(xElastic, padding, Math.max(0, xYield - xElastic), graphHeight);
+                    graphCtx.fillStyle = '#fbbf24';
+                    graphCtx.fillText('Yield', xElastic + Math.max(0, xYield - xElastic) / 2, padding + 20);
+                }
+
+                if (currentForce >= material.breakingPoint || isBroken) {
+                    graphCtx.fillStyle = 'rgba(244, 63, 94, 0.08)';
+                    graphCtx.fillRect(xYield, padding, Math.max(0, xBreak - xYield), graphHeight);
+                    graphCtx.fillStyle = '#f43f5e';
+                    graphCtx.fillText('Plastic / Necking', xYield + Math.max(0, xBreak - xYield) / 2, padding + 35);
+                }
+            } else if (currentMaterialKey === 'brittle') {
+                if (currentForce >= material.breakingPoint || isBroken) {
+                    graphCtx.fillStyle = 'rgba(244, 63, 94, 0.08)';
+                    graphCtx.fillRect(padding, padding, graphWidth, graphHeight);
+                    graphCtx.fillStyle = '#38bdf8';
+                    graphCtx.font = '11px Inter';
+                    graphCtx.textAlign = 'left';
+                    graphCtx.fillText('Steep Linear Curve (Small Extension for Large Load)', padding + 20, padding + 25);
+                }
+            } else {
+                if (currentForce >= material.breakingPoint || isBroken) {
+                    graphCtx.fillStyle = 'rgba(244, 63, 94, 0.08)';
+                    graphCtx.fillRect(padding, padding, graphWidth, graphHeight);
+                    graphCtx.fillStyle = '#f43f5e';
+                    graphCtx.font = '11px Inter';
+                    graphCtx.textAlign = 'center';
+                    graphCtx.fillText('Non-linear Elastic Tear Zone', padding + graphWidth / 2, padding + 25);
+                }
+            }
+
+            // Milestone Markers
+            const milestones = [];
+            milestones.push({ label: 'Proportional Limit', f: material.propLimit, color: '#38bdf8', yOff: -15 });
+            milestones.push({ label: 'Elastic Limit', f: material.elasticLimit, color: '#34d399', yOff: 20 });
+            if (material.hasYield) {
+                milestones.push({ label: 'Yield Point', f: material.yieldPoint, color: '#fbbf24', yOff: -15 });
+            }
+            milestones.push({ label: 'Breaking Point', f: material.breakingPoint, color: '#f43f5e', yOff: material.hasYield ? 20 : -15 });
+
+            milestones.forEach(m => {
+                if (currentForce >= m.f) {
+                    const mx = toCanvasX(getExtension(m.f));
+                    const my = toCanvasY(m.f);
+                    
+                    graphCtx.fillStyle = m.color;
+                    graphCtx.beginPath();
+                    graphCtx.arc(mx, my, 4.5, 0, Math.PI * 2);
+                    graphCtx.fill();
+                    graphCtx.strokeStyle = '#1e293b';
+                    graphCtx.lineWidth = 1.5;
+                    graphCtx.stroke();
+
+                    graphCtx.fillStyle = '#cbd5e1';
+                    graphCtx.font = 'bold 10px Inter';
+                    graphCtx.textAlign = currentMaterialKey === 'brittle' ? 'left' : 'center';
+                    const xTextOffset = currentMaterialKey === 'brittle' ? 10 : 0;
+                    graphCtx.fillText(m.label, mx + xTextOffset, my + m.yOff);
+                }
+            });
+
+            // Live Moving Point
+            const activeExt = getExtension(currentForce);
+            const curX = toCanvasX(activeExt);
+            const curY = toCanvasY(currentForce);
+
+            graphCtx.fillStyle = isBroken ? '#f43f5e' : '#ffffff';
+            graphCtx.beginPath();
+            graphCtx.arc(curX, curY, 6, 0, Math.PI * 2);
+            graphCtx.fill();
+            graphCtx.strokeStyle = '#6366f1';
+            graphCtx.lineWidth = 2.5;
+            graphCtx.stroke();
+        }
+
+        // Initial render frame execution
+        updateView();
+    </script>
+</body>
+</html>

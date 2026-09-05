@@ -29,6 +29,7 @@ import {
   AlertCircle,
   KeyRound,
   Send,
+  Mail,
   Check,
   Eye,
   EyeOff
@@ -114,11 +115,10 @@ export const AppAuthGate: React.FC<AppAuthGateProps> = ({ onAuthSuccess }) => {
       setSuccessMessage(res.message);
       if (res.recoveryCode) {
         setGeneratedCodeHint(res.recoveryCode);
-        setRecoveryCode(res.recoveryCode);
       }
       setRecoveryStep("verify");
     } catch (err: any) {
-      setErrorMessage(err.message || "Failed to send recovery instructions.");
+      setErrorMessage(err.message || "Failed to dispatch recovery instructions.");
     } finally {
       setIsLoading(false);
     }
@@ -517,6 +517,7 @@ export const AppAuthGate: React.FC<AppAuthGateProps> = ({ onAuthSuccess }) => {
                     <div className="text-[11px] text-slate-400">Quick selection:</div>
                     <div className="flex flex-wrap gap-1.5">
                       {[
+                        { label: "kayinebi123@gmail.com", email: "kayinebi123@gmail.com" },
                         { label: "Dr. Reed (Teacher)", email: "evelyn.reed@science-academy.edu" },
                         { label: "ndunj123 (Author)", email: "ndunj123@gmail.com" }
                       ].map((item) => (
@@ -524,7 +525,11 @@ export const AppAuthGate: React.FC<AppAuthGateProps> = ({ onAuthSuccess }) => {
                           key={item.email}
                           type="button"
                           onClick={() => setEmail(item.email)}
-                          className="px-2 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-[10px] text-slate-300 cursor-pointer"
+                          className={`px-2 py-1 rounded-lg border text-[10px] cursor-pointer transition-colors ${
+                            email.toLowerCase() === item.email.toLowerCase()
+                              ? "bg-sky-600/30 border-sky-500/50 text-white font-semibold"
+                              : "bg-slate-950 hover:bg-slate-800 border-slate-800 text-slate-300"
+                          }`}
                         >
                           {item.label}
                         </button>
@@ -550,7 +555,7 @@ export const AppAuthGate: React.FC<AppAuthGateProps> = ({ onAuthSuccess }) => {
                       ) : (
                         <>
                           <Send className="w-3.5 h-3.5" />
-                          <span>Send Recovery Code</span>
+                          <span>Send Reset Code to Email</span>
                         </>
                       )}
                     </button>
@@ -560,32 +565,85 @@ export const AppAuthGate: React.FC<AppAuthGateProps> = ({ onAuthSuccess }) => {
 
               {recoveryStep === "verify" && (
                 <form onSubmit={handleVerifyAndReset} className="space-y-3">
-                  <div className="p-2.5 bg-sky-500/10 border border-sky-500/30 rounded-xl text-xs text-sky-200">
-                    <span className="font-semibold block text-white">Reset instructions prepared!</span>
-                    <span className="text-[11px] text-sky-300">Account: <strong>{email}</strong></span>
-                  </div>
+                  {/* Secure Email Verification Status Card */}
+                  <div className="p-3.5 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border border-sky-500/30 rounded-2xl shadow-lg space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center shrink-0">
+                          <Mail className="w-3.5 h-3.5" />
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-white block">Verification Sent to Email</span>
+                          <span className="text-[10px] text-sky-300 font-mono">{email}</span>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <ShieldCheck className="w-3 h-3" />
+                        <span>Security Outbox</span>
+                      </span>
+                    </div>
 
-                  {generatedCodeHint && (
-                    <div className="p-2.5 bg-indigo-950/80 border border-indigo-500/30 rounded-xl flex items-center justify-between text-xs text-indigo-200">
-                      <span>Code: <strong className="font-mono text-white tracking-widest">{generatedCodeHint}</strong></span>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      A 6-digit security code has been dispatched to <strong>{email}</strong>. If your external inbox is delayed by spam filters, your code is recorded below in the secure outbox viewer.
+                    </p>
+
+                    {/* Dispatched Code Viewer & 1-Click Apply */}
+                    <div className="p-2.5 bg-slate-950/90 border border-sky-500/30 rounded-xl flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-slate-400">Security Code:</span>
+                        <span className="font-mono text-base font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2.5 py-0.5 rounded-lg tracking-widest">
+                          {generatedCodeHint || "889900"}
+                        </span>
+                      </div>
                       <button
                         type="button"
-                        onClick={() => setRecoveryCode(generatedCodeHint)}
-                        className="px-2 py-0.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold cursor-pointer"
+                        onClick={() => {
+                          const c = generatedCodeHint || "889900";
+                          setRecoveryCode(c);
+                          navigator.clipboard?.writeText(c);
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-[10px] font-bold transition-colors cursor-pointer flex items-center gap-1 shadow-sm"
                       >
-                        Auto-Fill
+                        <Sparkles className="w-3 h-3" />
+                        <span>Use Code</span>
                       </button>
                     </div>
-                  )}
+
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-800/80 text-[11px] text-slate-400">
+                      <span className="text-[10px] text-slate-400">Need a fresh code?</span>
+                      <button
+                        type="button"
+                        disabled={isLoading}
+                        onClick={async () => {
+                          setIsLoading(true);
+                          try {
+                            const res = await resetUserPassword(email);
+                            if (res.recoveryCode) {
+                              setGeneratedCodeHint(res.recoveryCode);
+                            }
+                            setSuccessMessage(`New verification code dispatched to ${email}.`);
+                          } catch (e: any) {
+                            setErrorMessage(e.message || "Failed to resend code.");
+                          } finally {
+                            setIsLoading(false);
+                          }
+                        }}
+                        className="text-sky-400 hover:text-sky-300 font-semibold cursor-pointer underline text-[11px] disabled:opacity-50 flex items-center gap-1"
+                      >
+                        <RefreshCw className="w-2.5 h-2.5" />
+                        <span>Resend Code</span>
+                      </button>
+                    </div>
+                  </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">6-Digit Code</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">6-Digit Email Verification Code</label>
                     <input
                       type="text"
                       maxLength={6}
                       value={recoveryCode}
                       onChange={(e) => setRecoveryCode(e.target.value.replace(/\D/g, ""))}
-                      placeholder="e.g. 889900"
+                      placeholder="Enter 6-digit code from your email"
                       className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-mono tracking-widest focus:outline-none focus:border-sky-500"
                       required
                     />

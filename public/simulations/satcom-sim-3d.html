@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SatCom-Sim 3D | Real-Time Earth & Orbital Link Engine</title>
+    <style>
+        :root {
+            --panel-bg: rgba(10, 15, 30, 0.85);
+            --panel-border: rgba(0, 240, 255, 0.25);
+            --accent-cyan: #00f0ff;
+            --accent-green: #00ff66;
+            --accent-warn: #ffb700;
+            --accent-danger: #ff0055;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: #030508;
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Overlay UI Header */
+        header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(180deg, rgba(3, 5, 8, 0.9) 0%, rgba(3, 5, 8, 0) 100%);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            pointer-events: auto;
+        }
+
+        .logo-title {
+            font-family: var(--font-mono);
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            color: var(--accent-cyan);
+            text-shadow: 0 0 12px rgba(0, 240, 255, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 4px;
+            background: rgba(0, 255, 102, 0.12);
+            color: var(--accent-green);
+            border: 1px solid var(--accent-green);
+            font-family: var(--font-mono);
+            letter-spacing: 1px;
+        }
+
+        /* Top Header Buttons */
+        .hdr-btn {
+            background: rgba(0, 240, 255, 0.15);
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .hdr-btn:hover {
+            background: var(--accent-cyan);
+            color: #030508;
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.6);
+        }
+
+        .hdr-btn.active {
+            background: var(--accent-cyan);
+            color: #030508;
+            box-shadow: 0 0 16px rgba(0, 240, 255, 0.8);
+        }
+
+        /* HUD Panels */
+        .hud-panel {
+            position: absolute;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            padding: 16px;
+            backdrop-filter: blur(12px);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        /* Left Controls Panel */
+        #controls-panel {
+            top: 70px;
+            left: 20px;
+            width: 320px;
+            max-height: calc(100vh - 90px);
+            overflow-y: auto;
+        }
+
+        /* Right Telemetry Panel (Hidden by default) */
+        #telemetry-panel {
+            top: 70px;
+            right: 20px;
+            width: 340px;
+            display: none;
+            opacity: 0;
+            transform: translateX(20px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        #telemetry-panel.visible {
+            display: flex;
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .panel-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--accent-cyan);
+            font-weight: 700;
+            font-family: var(--font-mono);
+            border-bottom: 1px solid var(--panel-border);
+            padding-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+        }
+
+        select, input, button {
+            background: rgba(5, 8, 15, 0.85);
+            border: 1px solid var(--panel-border);
+            color: var(--text-main);
+            padding: 8px 10px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        select:focus, input:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+        }
+
+        button.action-btn {
+            cursor: pointer;
+            background: linear-gradient(135deg, rgba(0, 114, 255, 0.25), rgba(0, 240, 255, 0.25));
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        button.action-btn:hover {
+            background: rgba(0, 240, 255, 0.35);
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.5);
+        }
+
+        /* Telemetry Cards */
+        .telemetry-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .metric-card {
+            background: rgba(5, 8, 15, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            padding: 8px 10px;
+        }
+
+        .metric-card.full-width {
+            grid-column: span 2;
+        }
+
+        .metric-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+        }
+
+        .metric-value {
+            font-size: 1.05rem;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            color: #fff;
+            margin-top: 2px;
+        }
+
+        .metric-unit {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-weight: normal;
+        }
+
+        .status-ok { color: var(--accent-green); }
+        .status-warn { color: var(--accent-warn); }
+        .status-alert { color: var(--accent-danger); }
+
+        /* Modal Explanatory Note Backdrop */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(3, 5, 8, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--accent-cyan);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 580px;
+            padding: 24px;
+            box-shadow: 0 0 40px rgba(0, 240, 255, 0.25);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--panel-border);
+            padding-bottom: 10px;
+        }
+
+        .modal-title {
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            color: var(--accent-cyan);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .close-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0 4px;
+            line-height: 1;
+        }
+
+        .close-btn:hover {
+            color: var(--accent-danger);
+        }
+
+        .modal-body {
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .modal-body p strong {
+            color: var(--accent-cyan);
+        }
+
+        .modal-body ul {
+            padding-left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .modal-body li {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .modal-body li span {
+            color: var(--text-main);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--panel-border);
+            border-radius: 2px;
+        }
+
+        /* Instructions Overlay */
+        .controls-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 15, 30, 0.75);
+            border: 1px solid var(--panel-border);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            pointer-events: none;
+            z-index: 10;
+        }
+    </style>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+    <header>
+        <div class="logo-title">
+            <span>📡</span> SATCOM-SIM 3D
+        </div>
+        <div class="header-controls">
+            <button class="hdr-btn" id="telemetryToggleBtn" onclick="toggleTelemetry()">
+                <span>📊</span> Link Telemetry
+            </button>
+            <button class="hdr-btn" onclick="toggleModal(true)">
+                <span>ℹ️</span> Explanatory Note
+            </button>
+            <div class="status-badge" id="sim-status">PHYSICS & RF ENGINE ONLINE</div>
+        </div>
+    </header>
+
+    <div id="canvas-container"></div>
+
+    <div class="hud-panel" id="controls-panel">
+        <div class="panel-title">Constellation Setup</div>
+        
+        <div class="control-group">
+            <label for="orbitPreset">Orbital Regime</label>
+            <select id="orbitPreset" onchange="updateOrbitPreset()">
+                <option value="LEO">LEO - Starlink (550 km, 53° Inc)</option>
+                <option value="MEO">MEO - O3b mPOWER (8,063 km, 0° Inc)</option>
+                <option value="GEO">GEO - ViaSat High-Throughput (35,786 km)</option>
+                <option value="HEO">HEO - Molniya (1,000 x 39,700 km, 63.4°)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label for="satSpeed">Satellite Speed</label>
+            <input type="range" id="satSpeed" min="0" max="500" value="250" oninput="updateSatSpeedLabel(this.value)">
+            <span id="satSpeedLabel" style="font-size:0.7rem; font-family:var(--font-mono); color:var(--accent-cyan)">250x Speed (Ultra-Fast)</span>
+        </div>
+
+        <div class="control-group">
+            <label for="earthSpeed">Earth Rotation Speed</label>
+            <input type="range" id="earthSpeed" min="0" max="50" value="1" step="0.1" oninput="updateEarthSpeedLabel(this.value)">
+            <span id="earthSpeedLabel" style="font-size:0.7rem; font-family:var(--font-mono); color:var(--accent-cyan)">1x Speed (Standard)</span>
+        </div>
+
+        <div class="panel-title" style="margin-top: 6px;">Ground Station Target</div>
+
+        <div class="control-group">
+            <label for="gsLocation">Ground Terminal Location</label>
+            <select id="gsLocation" onchange="updateGroundStation()">
+                <option value="London">London, UK (51.5° N, 0.1° W)</option>
+                <option value="NewYork">New York, USA (40.7° N, 74.0° W)</option>
+                <option value="Tokyo">Tokyo, Japan (35.6° N, 139.6° E)</option>
+                <option value="Sydney">Sydney, Australia (33.8° S, 151.2° E)</option>
+            </select>
+        </div>
+
+        <div class="panel-title" style="margin-top: 6px;">RF Link Parameters</div>
+
+        <div class="control-group">
+            <label for="freqBand">Frequency Band</label>
+            <select id="freqBand" onchange="recalculateLink()">
+                <option value="28.5">Ka-Band (28.5 GHz Uplink)</option>
+                <option value="19.0">Ka-Band (19.0 GHz Downlink)</option>
+                <option value="14.2">Ku-Band (14.2 GHz Uplink)</option>
+                <option value="8.1">X-Band (8.1 GHz Earth-Exploration)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label for="rainRate">Rain Attenuation (mm/hr)</label>
+            <input type="range" id="rainRate" min="0" max="80" value="0" oninput="updateRainLabel(this.value); recalculateLink();">
+            <span id="rainLabel" style="font-size:0.7rem; font-family:var(--font-mono); color:var(--accent-cyan)">0 mm/hr (Clear Sky)</span>
+        </div>
+
+        <button class="action-btn" onclick="resetSatellitePosition()">Reset Orbital Epoch</button>
+    </div>
+
+    <!-- Telemetry Panel (Hidden initially until requested) -->
+    <div class="hud-panel" id="telemetry-panel">
+        <div class="panel-title">
+            <span>Link Budget Telemetry</span>
+            <button class="close-btn" onclick="toggleTelemetry(false)" style="font-size: 1.1rem;">&times;</button>
+        </div>
+
+        <div class="telemetry-grid">
+            <div class="metric-card">
+                <div class="metric-label">Slant Distance</div>
+                <div class="metric-value" id="valRange">0 <span class="metric-unit">km</span></div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Elevation Angle</div>
+                <div class="metric-value" id="valElevation">0 <span class="metric-unit">°</span></div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Propagation Latency</div>
+                <div class="metric-value" id="valLatency">0 <span class="metric-unit">ms</span></div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Doppler Shift</div>
+                <div class="metric-value" id="valDoppler">0 <span class="metric-unit">kHz</span></div>
+            </div>
+
+            <div class="metric-card full-width">
+                <div class="metric-label">Free Space Loss (FSPL)</div>
+                <div class="metric-value" id="valFSPL">0 <span class="metric-unit">dB</span></div>
+            </div>
+
+            <div class="metric-card full-width">
+                <div class="metric-label">Atmospheric Loss</div>
+                <div class="metric-value" id="valAtmospheric" style="color: var(--accent-warn);">0.00 <span class="metric-unit">dB</span></div>
+            </div>
+
+            <div class="metric-card full-width">
+                <div class="metric-label">Carrier-to-Noise Ratio (C/N)</div>
+                <div class="metric-value status-ok" id="valCN">0 <span class="metric-unit">dB</span></div>
+            </div>
+
+            <div class="metric-card full-width">
+                <div class="metric-label">Link Margin (Thresh: 6 dB)</div>
+                <div class="metric-value status-ok" id="valMargin">0 <span class="metric-unit">dB</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls-hint">Rotate: Left-Click + Drag | Pan: Right-Click + Drag | Zoom: Scroll</div>
+
+    <!-- Modal Explanatory Note -->
+    <div class="modal-overlay" id="infoModal" onclick="handleModalClick(event)">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title"><span>📘</span> System & Simulation Notes</div>
+                <button class="close-btn" onclick="toggleModal(false)">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Welcome to <strong>SatCom-Sim 3D</strong>, an interactive physical visualizer and RF link budget simulator for satellite communications.</p>
+                
+                <p><strong>Key Visual Features:</strong></p>
+                <ul>
+                    <li><span><strong>Realistic Spacecraft Bus:</strong> Detailed gold-foil MLI insulation, high-gain parabolic dishes, phased-array panels, and blue silicon solar arrays.</span></li>
+                    <li><span><strong>Dynamic Orbital Motion:</strong> Orbit speeds are significantly accelerated (250x base default) to observe real-time handovers and elevation changes across LEO, MEO, GEO, and HEO orbits.</span></li>
+                </ul>
+
+                <p><strong>RF Physics Engine Details:</strong></p>
+                <ul>
+                    <li><span><strong>FSPL (Free Space Path Loss):</strong> Calculates signal degradation across distance and frequency using ITU-R formulas.</span></li>
+                    <li><span><strong>Rain Attenuation:</strong> Simulates atmospheric absorption based on millimeter rain rates and elevation angle look-vector.</span></li>
+                    <li><span><strong>Link Margin:</strong> Evaluates carrier-to-noise ratio against a 6.0 dB QPSK demodulation threshold. Active beam locks when above horizon.</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Physical & Orbital Constants
+        const EARTH_RADIUS_KM = 6371;
+        const EARTH_SCALE = 5; // Scaling Earth radius to 5 units in Three.js world space
+        const KM_TO_UNITS = EARTH_SCALE / EARTH_RADIUS_KM;
+        const C_KMS = 299792.458; // Speed of Light in km/s
+
+        // Ground Stations Data (Lat, Lon)
+        const GROUND_STATIONS = {
+            London: { lat: 51.5074, lon: -0.1278, name: "London Teleport" },
+            NewYork: { lat: 40.7128, lon: -74.0060, name: "New York Gateway" },
+            Tokyo: { lat: 35.6762, lon: 139.6503, name: "Tokyo Earth Station" },
+            Sydney: { lat: -33.8688, lon: 151.2093, name: "Sydney Facility" }
+        };
+
+        // Orbital Presets Configuration
+        const ORBIT_PRESETS = {
+            LEO: { hpKm: 550, haKm: 550, incDeg: 53.0, periodMin: 95.6 },
+            MEO: { hpKm: 8063, haKm: 8063, incDeg: 0.0, periodMin: 288 },
+            GEO: { hpKm: 35786, haKm: 35786, incDeg: 0.0, periodMin: 1436 },
+            HEO: { hpKm: 1000, haKm: 39700, incDeg: 63.4, periodMin: 718 }
+        };
+
+        // State Machine Variables
+        let scene, camera, renderer, controls;
+        let earthMesh, atmosphereMesh, satMesh, orbitLine, linkLine, gsMesh;
+        let activeOrbit = ORBIT_PRESETS.LEO;
+        let activeGS = GROUND_STATIONS.London;
+        let trueAnomaly = 0;
+        let satSpeedMultiplier = 0.0025; // Boosted default orbit speed (250x)
+        let earthRotationBaseSpeed = 0.0003;
+        let earthRotationMultiplier = 1.0;
+
+        // Telemetry Visibility Toggle
+        function toggleTelemetry(forceState) {
+            const telemetryPanel = document.getElementById('telemetry-panel');
+            const btn = document.getElementById('telemetryToggleBtn');
+            
+            const isCurrentlyVisible = telemetryPanel.classList.contains('visible');
+            const shouldBeVisible = forceState !== undefined ? forceState : !isCurrentlyVisible;
+
+            if (shouldBeVisible) {
+                telemetryPanel.classList.add('visible');
+                btn.classList.add('active');
+            } else {
+                telemetryPanel.classList.remove('visible');
+                btn.classList.remove('active');
+            }
+        }
+
+        // Initialize 3D Engine
+        function initEngine() {
+            const container = document.getElementById('canvas-container');
+
+            // 1. Scene Setup
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x030508, 0.005);
+
+            // 2. Camera Setup
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 8, 22);
+
+            // 3. Renderer Setup
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
+            container.appendChild(renderer.domElement);
+
+            // 4. OrbitControls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxDistance = 150;
+            controls.minDistance = 6.5;
+
+            // 5. Lighting System
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.25);
+            scene.add(ambientLight);
+
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1.8);
+            sunLight.position.set(50, 20, 30);
+            scene.add(sunLight);
+
+            // 6. Build World Elements
+            createStarfield();
+            createEarth();
+            createGroundStation();
+            createSatellite();
+            createOrbitLine();
+            createLinkLine();
+
+            // Event Listeners
+            window.addEventListener('resize', onWindowResize);
+
+            // Start Rendering
+            animate();
+        }
+
+        // Modal Explanatory Note Controls
+        function toggleModal(show) {
+            const modal = document.getElementById('infoModal');
+            if (show) {
+                modal.classList.add('active');
+            } else {
+                modal.classList.remove('active');
+            }
+        }
+
+        function handleModalClick(event) {
+            if (event.target.classList.contains('modal-overlay')) {
+                toggleModal(false);
+            }
+        }
+
+        // Procedural Starfield
+        function createStarfield() {
+            const starsGeo = new THREE.BufferGeometry();
+            const count = 3000;
+            const positions = new Float32Array(count * 3);
+
+            for(let i=0; i < count*3; i++) {
+                positions[i] = (Math.random() - 0.5) * 500;
+            }
+            starsGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const starsMat = new THREE.PointsMaterial({ color: 0x88bbff, size: 0.7, transparent: true, opacity: 0.8 });
+            const starfield = new THREE.Points(starsGeo, starsMat);
+            scene.add(starfield);
+        }
+
+        // Earth & Atmosphere Construction
+        function createEarth() {
+            const earthGeo = new THREE.SphereGeometry(EARTH_SCALE, 64, 64);
+
+            // Procedural Canvas Texture Engine (Generates High-Res Earth Blue Marble + Continents)
+            const canvas = document.createElement('canvas');
+            canvas.width = 2048;
+            canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
+
+            // Deep ocean base
+            ctx.fillStyle = "#0a192f";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Render Stylized Topo-Continent Lines
+            ctx.fillStyle = "#1e3a5f";
+            for (let i = 0; i < 1800; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                const r = Math.random() * 45 + 5;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Grid Lines (Latitude/Longitude Lines)
+            ctx.strokeStyle = "rgba(0, 240, 255, 0.12)";
+            ctx.lineWidth = 1;
+            for(let x=0; x<=canvas.width; x+=128) {
+                ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x, canvas.height); ctx.stroke();
+            }
+            for(let y=0; y<=canvas.height; y+=64) {
+                ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width, y); ctx.stroke();
+            }
+
+            const texture = new THREE.CanvasTexture(canvas);
+
+            const earthMat = new THREE.MeshPhongMaterial({
+                map: texture,
+                shininess: 15,
+                specular: new THREE.Color(0x112244)
+            });
+
+            earthMesh = new THREE.Mesh(earthGeo, earthMat);
+            scene.add(earthMesh);
+
+            // Atmosphere Glow Mesh
+            const atmosGeo = new THREE.SphereGeometry(EARTH_SCALE * 1.025, 64, 64);
+            const atmosMat = new THREE.MeshBasicMaterial({
+                color: 0x00f0ff,
+                transparent: true,
+                opacity: 0.12,
+                side: THREE.BackSide
+            });
+            atmosphereMesh = new THREE.Mesh(atmosGeo, atmosMat);
+            scene.add(atmosphereMesh);
+        }
+
+        // Ground Station Mesh & Location Marker
+        function createGroundStation() {
+            const gsGeo = new THREE.SphereGeometry(0.1, 16, 16);
+            const gsMat = new THREE.MeshBasicMaterial({ color: 0xff0055 });
+            gsMesh = new THREE.Mesh(gsGeo, gsMat);
+            scene.add(gsMesh);
+
+            updateGroundStationPosition();
+        }
+
+        function updateGroundStationPosition() {
+            const pos = latLonToVector3(activeGS.lat, activeGS.lon, EARTH_SCALE + 0.02);
+            if (earthMesh) {
+                pos.applyAxisAngle(new THREE.Vector3(0, 1, 0), earthMesh.rotation.y);
+            }
+            gsMesh.position.copy(pos);
+        }
+
+        // Realistic High-Detail Satellite Model
+        function createSatellite() {
+            satMesh = new THREE.Group();
+
+            // Materials
+            const goldFoilMat = new THREE.MeshStandardMaterial({
+                color: 0xffcc33,
+                metalness: 0.9,
+                roughness: 0.25
+            });
+
+            const darkMetalMat = new THREE.MeshStandardMaterial({
+                color: 0x22252a,
+                metalness: 0.8,
+                roughness: 0.3
+            });
+
+            const silverMat = new THREE.MeshStandardMaterial({
+                color: 0xdddddd,
+                metalness: 0.9,
+                roughness: 0.2
+            });
+
+            const solarMat = new THREE.MeshStandardMaterial({
+                color: 0x0033aa,
+                metalness: 0.6,
+                roughness: 0.1
+            });
+
+            // 1. Central Main Body (Gold Foil Bus)
+            const busGeo = new THREE.BoxGeometry(0.5, 0.5, 0.7);
+            const bus = new THREE.Mesh(busGeo, goldFoilMat);
+            satMesh.add(bus);
+
+            // Radiator Panels
+            const radGeo = new THREE.BoxGeometry(0.52, 0.42, 0.6);
+            const rad = new THREE.Mesh(radGeo, silverMat);
+            satMesh.add(rad);
+
+            // 2. Parabolic High-Gain Dish Antenna
+            const dishGeo = new THREE.CylinderGeometry(0.32, 0.02, 0.1, 32, 1, true);
+            const dish = new THREE.Mesh(dishGeo, silverMat);
+            dish.rotation.x = Math.PI / 2;
+            dish.position.set(0, 0, -0.42);
+            satMesh.add(dish);
+
+            // Feed Horn
+            const hornGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.25, 12);
+            const horn = new THREE.Mesh(hornGeo, darkMetalMat);
+            horn.rotation.x = Math.PI / 2;
+            horn.position.set(0, 0, -0.52);
+            satMesh.add(horn);
+
+            // 3. Phased Array Communication Antenna
+            const arrayGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.04, 6);
+            const arrayMesh = new THREE.Mesh(arrayGeo, darkMetalMat);
+            arrayMesh.position.set(0, -0.27, 0);
+            satMesh.add(arrayMesh);
+
+            // 4. Solar Array Wings
+            const boomGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.4, 8);
+            
+            // Left Array
+            const leftBoom = new THREE.Mesh(boomGeo, darkMetalMat);
+            leftBoom.rotation.z = Math.PI / 2;
+            leftBoom.position.set(0.42, 0, 0);
+            satMesh.add(leftBoom);
+
+            const panelWingGeo = new THREE.BoxGeometry(1.0, 0.04, 0.42);
+            const leftWing = new THREE.Mesh(panelWingGeo, solarMat);
+            leftWing.position.set(1.1, 0, 0);
+            satMesh.add(leftWing);
+
+            // Right Array
+            const rightBoom = new THREE.Mesh(boomGeo, darkMetalMat);
+            rightBoom.rotation.z = Math.PI / 2;
+            rightBoom.position.set(-0.42, 0, 0);
+            satMesh.add(rightBoom);
+
+            const rightWing = new THREE.Mesh(panelWingGeo, solarMat);
+            rightWing.position.set(-1.1, 0, 0);
+            satMesh.add(rightWing);
+
+            // Structural Frames
+            const frameGeo = new THREE.BoxGeometry(1.02, 0.02, 0.44);
+            const leftFrame = new THREE.Mesh(frameGeo, darkMetalMat);
+            leftFrame.position.set(1.1, 0, 0);
+            satMesh.add(leftFrame);
+
+            const rightFrame = new THREE.Mesh(frameGeo, darkMetalMat);
+            rightFrame.position.set(-1.1, 0, 0);
+            satMesh.add(rightFrame);
+
+            // 5. Engine Thruster
+            const thrusterGeo = new THREE.CylinderGeometry(0.05, 0.1, 0.12, 16);
+            const thruster = new THREE.Mesh(thrusterGeo, darkMetalMat);
+            thruster.position.set(0, 0, 0.4);
+            thruster.rotation.x = Math.PI / 2;
+            satMesh.add(thruster);
+
+            scene.add(satMesh);
+        }
+
+        // Orbital Vector Path Trajectory Visualizer
+        function createOrbitLine() {
+            const points = [];
+            const segments = 128;
+            
+            const aKm = EARTH_RADIUS_KM + (activeOrbit.hpKm + activeOrbit.haKm) / 2;
+            const aUnits = aKm * KM_TO_UNITS;
+            const e = (activeOrbit.haKm - activeOrbit.hpKm) / (activeOrbit.haKm + activeOrbit.hpKm + 2 * EARTH_RADIUS_KM);
+            const incRad = activeOrbit.incDeg * (Math.PI / 180);
+
+            for (let i = 0; i <= segments; i++) {
+                const nu = (i / segments) * Math.PI * 2;
+                const rUnits = (aUnits * (1 - e * e)) / (1 + e * Math.cos(nu));
+
+                const x = rUnits * Math.cos(nu);
+                const z = rUnits * Math.sin(nu);
+
+                const yRot = z * Math.sin(incRad);
+                const zRot = z * Math.cos(incRad);
+
+                points.push(new THREE.Vector3(x, yRot, zRot));
+            }
+
+            const orbitGeo = new THREE.BufferGeometry().setFromPoints(points);
+            const orbitMat = new THREE.LineBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.4 });
+            
+            if (orbitLine) scene.remove(orbitLine);
+            orbitLine = new THREE.LineLoop(orbitGeo, orbitMat);
+            scene.add(orbitLine);
+        }
+
+        // Active RF Laser Beam Visualizer
+        function createLinkLine() {
+            const linkGeo = new THREE.BufferGeometry();
+            const linkMat = new THREE.LineDashedMaterial({
+                color: 0x00f0ff,
+                dashSize: 0.3,
+                gapSize: 0.15,
+                scale: 1
+            });
+            linkLine = new THREE.Line(linkGeo, linkMat);
+            scene.add(linkLine);
+        }
+
+        // Coordinate Transformation Utility: Lat/Lon -> Cartesian 3D Vector
+        function latLonToVector3(lat, lon, radius) {
+            const phi = (90 - lat) * (Math.PI / 180);
+            const theta = (lon + 180) * (Math.PI / 180);
+
+            const x = -(radius * Math.sin(phi) * Math.cos(theta));
+            const z = (radius * Math.sin(phi) * Math.sin(theta));
+            const y = (radius * Math.cos(phi));
+
+            return new THREE.Vector3(x, y, z);
+        }
+
+        // Math Controls & Orbit Updates
+        function updateOrbitPreset() {
+            const presetKey = document.getElementById('orbitPreset').value;
+            activeOrbit = ORBIT_PRESETS[presetKey];
+            trueAnomaly = 0;
+            createOrbitLine();
+            recalculateLink();
+        }
+
+        function updateGroundStation() {
+            const gsKey = document.getElementById('gsLocation').value;
+            activeGS = GROUND_STATIONS[gsKey];
+            updateGroundStationPosition();
+            recalculateLink();
+        }
+
+        function updateSatSpeedLabel(val) {
+            satSpeedMultiplier = val * 0.00001;
+            document.getElementById('satSpeedLabel').innerText = `${val}x Speed`;
+        }
+
+        function updateEarthSpeedLabel(val) {
+            earthRotationMultiplier = parseFloat(val);
+            document.getElementById('earthSpeedLabel').innerText = `${val}x Speed${val == 0 ? ' (Paused)' : ''}`;
+        }
+
+        function updateRainLabel(val) {
+            let desc = "Clear Sky";
+            if (val > 0 && val <= 10) desc = "Light Rain";
+            else if (val > 10 && val <= 35) desc = "Moderate Rain";
+            else if (val > 35) desc = "Heavy Downpour";
+            document.getElementById('rainLabel').innerText = `${val} mm/hr (${desc})`;
+        }
+
+        function resetSatellitePosition() {
+            trueAnomaly = 0;
+        }
+
+        // Core Communication Mechanics Engine
+        function recalculateLink() {
+            updateGroundStationPosition();
+
+            // 1. Calculate Satellite Position
+            const aKm = EARTH_RADIUS_KM + (activeOrbit.hpKm + activeOrbit.haKm) / 2;
+            const aUnits = aKm * KM_TO_UNITS;
+            const e = (activeOrbit.haKm - activeOrbit.hpKm) / (activeOrbit.haKm + activeOrbit.hpKm + 2 * EARTH_RADIUS_KM);
+            const incRad = activeOrbit.incDeg * (Math.PI / 180);
+
+            const rUnits = (aUnits * (1 - e * e)) / (1 + e * Math.cos(trueAnomaly));
+            const satX = rUnits * Math.cos(trueAnomaly);
+            const satZ = rUnits * Math.sin(trueAnomaly);
+
+            const satYRot = satZ * Math.sin(incRad);
+            const satZRot = satZ * Math.cos(incRad);
+
+            satMesh.position.set(satX, satYRot, satZRot);
+            satMesh.lookAt(0, 0, 0);
+
+            // 2. Vector Math between Ground Station & Satellite
+            const gsPos = gsMesh.position;
+            const satPos = satMesh.position;
+
+            const distanceUnits = gsPos.distanceTo(satPos);
+            const slantRangeKm = distanceUnits / KM_TO_UNITS;
+
+            const upVec = gsPos.clone().normalize();
+            const satVec = satPos.clone().sub(gsPos).normalize();
+            let elevationRad = Math.PI / 2 - Math.acos(upVec.dot(satVec));
+            let elevationDeg = elevationRad * (180 / Math.PI);
+
+            // 3. Link Budget Physics
+            const freqGHz = parseFloat(document.getElementById('freqBand').value);
+            const rainRate = parseFloat(document.getElementById('rainRate').value);
+
+            const fspl = 20 * Math.log10(slantRangeKm) + 20 * Math.log10(freqGHz) + 92.45;
+
+            let rainLoss = 0;
+            if (rainRate > 0 && elevationDeg > 0) {
+                const gamma = 0.012 * Math.pow(freqGHz, 1.15) * Math.pow(rainRate, 0.73);
+                const pathLength = 4.5 / Math.sin(Math.max(elevationDeg, 3) * Math.PI / 180);
+                rainLoss = Math.min(gamma * pathLength, 40);
+            }
+
+            const latencyMs = (slantRangeKm / C_KMS) * 1000;
+            const orbitalVelKms = Math.sqrt(398600 / aKm);
+            const dopplerKHz = (orbitalVelKms / C_KMS) * (freqGHz * 1e9) * Math.sin(trueAnomaly) / 1000;
+
+            const eirpDbw = 58.0;
+            const gtDbK = 14.5;
+            const kBoltz = -228.6;
+            const bandwidthHz = 36e6;
+
+            const cnRatio = eirpDbw - fspl - rainLoss + gtDbK - kBoltz - (10 * Math.log10(bandwidthHz));
+            const margin = cnRatio - 6.0;
+
+            // 4. Update Link Visualizer Beam Line
+            if (elevationDeg > 0 && margin > 0) {
+                linkLine.geometry.setFromPoints([gsPos, satPos]);
+                linkLine.computeLineDistances();
+                linkLine.visible = true;
+            } else {
+                linkLine.visible = false;
+            }
+
+            // 5. Update Telemetry HUD metrics (runs in background regardless of panel visibility)
+            document.getElementById('valRange').innerText = slantRangeKm.toFixed(1);
+            document.getElementById('valElevation').innerText = elevationDeg.toFixed(1);
+            document.getElementById('valLatency').innerText = latencyMs.toFixed(1);
+            document.getElementById('valDoppler').innerText = dopplerKHz.toFixed(1);
+            document.getElementById('valFSPL').innerText = fspl.toFixed(1);
+            document.getElementById('valAtmospheric').innerText = rainLoss.toFixed(2);
+
+            const cnEl = document.getElementById('valCN');
+            const marginEl = document.getElementById('valMargin');
+
+            cnEl.innerText = cnRatio.toFixed(1);
+            marginEl.innerText = margin.toFixed(1);
+
+            if (elevationDeg <= 0 || margin < 0) {
+                marginEl.className = "metric-value status-alert";
+                cnEl.className = "metric-value status-alert";
+            } else if (margin < 3.0) {
+                marginEl.className = "metric-value status-warn";
+                cnEl.className = "metric-value status-warn";
+            } else {
+                marginEl.className = "metric-value status-ok";
+                cnEl.className = "metric-value status-ok";
+            }
+        }
+
+        // Animation Loop Engine
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (earthMesh) {
+                earthMesh.rotation.y += earthRotationBaseSpeed * earthRotationMultiplier;
+            }
+
+            trueAnomaly += satSpeedMultiplier;
+            if (trueAnomaly > Math.PI * 2) trueAnomaly -= Math.PI * 2;
+
+            recalculateLink();
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // Execute Simulation Start
+        window.onload = initEngine;
+    </script>
+</body>
+</html>

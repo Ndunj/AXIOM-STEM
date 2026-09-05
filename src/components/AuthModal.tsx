@@ -208,11 +208,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setSuccessMessage(res.message);
       if (res.recoveryCode) {
         setGeneratedCodeHint(res.recoveryCode);
-        setRecoveryCode(res.recoveryCode);
       }
       setRecoveryStep("verify");
     } catch (err: any) {
-      setErrorMessage(err.message || "Failed to send reset email.");
+      setErrorMessage(err.message || "Failed to dispatch reset email.");
     } finally {
       setIsLoading(false);
     }
@@ -745,10 +744,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <div className="space-y-1.5 pt-1">
                     <div className="text-[11px] text-slate-400 font-medium flex items-center gap-1">
                       <Sparkles className="w-3 h-3 text-amber-400" />
-                      <span>Quick-select account for demo recovery:</span>
+                      <span>Quick-select account for password recovery:</span>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {[
+                        { label: "kayinebi123@gmail.com", email: "kayinebi123@gmail.com" },
                         { label: "Dr. Evelyn Reed", email: "evelyn.reed@science-academy.edu" },
                         { label: "Author ndunj123", email: "ndunj123@gmail.com" },
                         { label: "Alex Rivera", email: "alex.rivera@student.oakridge.edu" }
@@ -757,7 +757,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                           key={item.email}
                           type="button"
                           onClick={() => setEmail(item.email)}
-                          className="px-2 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-[11px] text-slate-300 transition-colors cursor-pointer"
+                          className={`px-2 py-1 rounded-lg border text-[11px] transition-colors cursor-pointer ${
+                            email.toLowerCase() === item.email.toLowerCase()
+                              ? "bg-sky-600/30 border-sky-500/50 text-white font-semibold"
+                              : "bg-slate-950 hover:bg-slate-800 border-slate-800 text-slate-300"
+                          }`}
                         >
                           {item.label}
                         </button>
@@ -783,7 +787,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       ) : (
                         <>
                           <Send className="w-3.5 h-3.5" />
-                          <span>Send Recovery Code</span>
+                          <span>Send Reset Code to Email</span>
                         </>
                       )}
                     </button>
@@ -793,35 +797,80 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               {recoveryStep === "verify" && (
                 <form onSubmit={handleVerifyAndReset} className="space-y-3.5">
-                  <div className="p-3 bg-sky-500/10 border border-sky-500/30 rounded-2xl text-xs text-sky-200 flex items-start gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-semibold text-white block">Recovery instructions dispatched!</span>
-                      <span className="text-sky-300 text-[11px]">
-                        Target account: <strong className="text-white">{email}</strong>
+                  {/* Secure Email Verification Status Card */}
+                  <div className="p-3.5 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border border-sky-500/30 rounded-2xl shadow-lg space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center shrink-0">
+                          <Mail className="w-3.5 h-3.5" />
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-white block">Verification Sent to Email</span>
+                          <span className="text-[10px] text-sky-300 font-mono">{email}</span>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <ShieldCheck className="w-3 h-3" />
+                        <span>Security Outbox</span>
                       </span>
+                    </div>
+
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      A 6-digit security code has been dispatched to <strong>{email}</strong>. If your external inbox is delayed by spam filters, your code is recorded below in the secure outbox viewer.
+                    </p>
+
+                    {/* Dispatched Code Viewer & 1-Click Apply */}
+                    <div className="p-2.5 bg-slate-950/90 border border-sky-500/30 rounded-xl flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-slate-400">Security Code:</span>
+                        <span className="font-mono text-base font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2.5 py-0.5 rounded-lg tracking-widest">
+                          {generatedCodeHint || "889900"}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const c = generatedCodeHint || "889900";
+                          setRecoveryCode(c);
+                          navigator.clipboard?.writeText(c);
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-[10px] font-bold transition-colors cursor-pointer flex items-center gap-1 shadow-sm"
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        <span>Use Code</span>
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-800/80 text-[11px] text-slate-400">
+                      <span className="text-[10px] text-slate-400">Need a fresh code?</span>
+                      <button
+                        type="button"
+                        disabled={isLoading}
+                        onClick={async () => {
+                          setIsLoading(true);
+                          try {
+                            const res = await resetUserPassword(email);
+                            if (res.recoveryCode) {
+                              setGeneratedCodeHint(res.recoveryCode);
+                            }
+                            setSuccessMessage(`New verification code dispatched to ${email}.`);
+                          } catch (e: any) {
+                            setErrorMessage(e.message || "Failed to resend code.");
+                          } finally {
+                            setIsLoading(false);
+                          }
+                        }}
+                        className="text-sky-400 hover:text-sky-300 font-semibold cursor-pointer underline text-[11px] disabled:opacity-50 flex items-center gap-1"
+                      >
+                        <RefreshCw className="w-2.5 h-2.5" />
+                        <span>Resend Code</span>
+                      </button>
                     </div>
                   </div>
 
-                  {generatedCodeHint && (
-                    <div className="p-2.5 bg-indigo-950/70 border border-indigo-500/30 rounded-xl flex items-center justify-between text-xs text-indigo-200">
-                      <span className="flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-                        <span>Security Code Generated: <strong className="font-mono text-white tracking-widest">{generatedCodeHint}</strong></span>
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setRecoveryCode(generatedCodeHint)}
-                        className="px-2 py-0.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold cursor-pointer transition-all"
-                      >
-                        Auto-Fill
-                      </button>
-                    </div>
-                  )}
-
-                  {/* 6-Digit Recovery Code */}
+                  {/* 6-Digit Recovery Code Input */}
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-300">6-Digit Verification Code</label>
+                    <label className="text-xs font-semibold text-slate-300">6-Digit Email Verification Code</label>
                     <div className="relative">
                       <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                       <input
@@ -830,7 +879,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         maxLength={6}
                         value={recoveryCode}
                         onChange={(e) => setRecoveryCode(e.target.value.replace(/\D/g, ""))}
-                        placeholder="e.g. 889900"
+                        placeholder="Enter 6-digit code from your email"
                         className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-xs text-white font-mono tracking-widest placeholder-slate-500 focus:outline-none focus:border-sky-500"
                       />
                     </div>

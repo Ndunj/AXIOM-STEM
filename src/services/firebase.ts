@@ -2,6 +2,7 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import {
   getFirestore,
+  initializeFirestore,
   doc,
   getDoc,
   setDoc,
@@ -10,7 +11,6 @@ import {
   collection,
   getDocs,
   onSnapshot,
-  getDocFromServer,
   query,
   orderBy
 } from "firebase/firestore";
@@ -20,26 +20,30 @@ import { UserProfile, TeacherPurchasedSimulation, LessonPlanData } from "../type
 // 1. Initialize Firebase App and Services
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
+// Use long-polling transport for WebChannel to prevent 10s streaming timeout errors in proxied iframe environments
+try {
+  initializeFirestore(app, {
+    experimentalForceLongPolling: true,
+  }, firebaseConfig.firestoreDatabaseId);
+} catch {
+  // Instance already initialized
+}
+
 /* CRITICAL: The app requires firebaseConfig.firestoreDatabaseId */
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
 
-// 2. Validate Connection to Firestore on Boot
+// 2. Validate Connection to Firestore (Non-blocking, only if authenticated)
 export async function testFirestoreConnection(): Promise<boolean> {
+  if (!auth.currentUser) return true;
   try {
-    await getDocFromServer(doc(db, "test", "connection"));
-    return true;
-  } catch (error) {
-    if (error instanceof Error && error.message.includes("the client is offline")) {
-      console.warn("Firestore connection check: Client appears offline. Check Firebase configuration.");
-    }
-    // Expected benign response if document does not exist
+    const userDocRef = doc(db, "users", auth.currentUser.uid);
+    const docSnap = await getDoc(userDocRef);
+    return Boolean(docSnap);
+  } catch {
     return true;
   }
 }
-
-// Automatically test connection
-testFirestoreConnection();
 
 // 3. Error Handling Specification
 export enum OperationType {
@@ -90,9 +94,14 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   throw new Error(JSON.stringify(errInfo));
 }
 
+// Helper to ensure user is authenticated in Firebase Auth matching the user ID
+export function isAuthReadyForUser(userId: string): boolean {
+  return Boolean(auth.currentUser && auth.currentUser.uid === userId);
+}
+
 // 4. User Profile Persistence
 export async function syncUserProfileToFirestore(profile: UserProfile): Promise<void> {
-  if (!profile || !profile.uid) return;
+  if (!profile || !profile.uid || !isAuthReadyForUser(profile.uid)) return;
   const path = `users/${profile.uid}`;
   try {
     const userDocRef = doc(db, "users", profile.uid);
@@ -116,7 +125,7 @@ export async function syncUserProfileToFirestore(profile: UserProfile): Promise<
 }
 
 export async function getUserProfileFromFirestore(userId: string): Promise<Partial<UserProfile> | null> {
-  if (!userId) return null;
+  if (!userId || !isAuthReadyForUser(userId)) return null;
   const path = `users/${userId}`;
   try {
     const docSnap = await getDoc(doc(db, "users", userId));
@@ -131,7 +140,7 @@ export async function getUserProfileFromFirestore(userId: string): Promise<Parti
 
 // 5. User Saved / Favorited Simulations
 export async function saveFavoriteToFirestore(userId: string, simId: string, title: string, discipline: string): Promise<void> {
-  if (!userId || !simId) return;
+  if (!userId || !simId || !isAuthReadyForUser(userId)) return;
   const path = `users/${userId}/savedSimulations/${simId}`;
   try {
     await setDoc(doc(db, "users", userId, "savedSimulations", simId), {
@@ -146,7 +155,7 @@ export async function saveFavoriteToFirestore(userId: string, simId: string, tit
 }
 
 export async function removeFavoriteFromFirestore(userId: string, simId: string): Promise<void> {
-  if (!userId || !simId) return;
+  if (!userId || !simId || !isAuthReadyForUser(userId)) return;
   const path = `users/${userId}/savedSimulations/${simId}`;
   try {
     await deleteDoc(doc(db, "users", userId, "savedSimulations", simId));
@@ -156,7 +165,7 @@ export async function removeFavoriteFromFirestore(userId: string, simId: string)
 }
 
 export function subscribeToUserFavorites(userId: string, callback: (favorites: string[]) => void): () => void {
-  if (!userId) return () => {};
+  if (!userId || !isAuthReadyForUser(userId)) return () => {};
   const path = `users/${userId}/savedSimulations`;
   try {
     const colRef = collection(db, "users", userId, "savedSimulations");
@@ -173,7 +182,7 @@ export function subscribeToUserFavorites(userId: string, callback: (favorites: s
 
 // 6. User Purchased Licenses Persistence
 export async function saveUserLicenseToFirestore(userId: string, license: TeacherPurchasedSimulation): Promise<void> {
-  if (!userId || !license || !license.simulationId) return;
+  if (!userId || !license || !license.simulationId || !isAuthReadyForUser(userId)) return;
   const licenseDocId = `${license.simulationId}_${license.licenseTier}`;
   const path = `users/${userId}/licenses/${licenseDocId}`;
   try {
@@ -198,7 +207,7 @@ export function subscribeToUserLicenses(
   userId: string,
   callback: (licenses: TeacherPurchasedSimulation[]) => void
 ): () => void {
-  if (!userId) return () => {};
+  if (!userId || !isAuthReadyForUser(userId)) return () => {};
   const path = `users/${userId}/licenses`;
   try {
     const colRef = collection(db, "users", userId, "licenses");
@@ -235,7 +244,7 @@ export async function saveSimulationProgressToFirestore(
     totalMinutes?: number;
   }
 ): Promise<void> {
-  if (!userId || !simulationId) return;
+  if (!userId || !simulationId || !isAuthReadyForUser(userId)) return;
   const path = `users/${userId}/simulationProgress/${simulationId}`;
   try {
     await setDoc(doc(db, "users", userId, "simulationProgress", simulationId), {
@@ -254,7 +263,7 @@ export async function saveLessonPlanToFirestore(
   userId: string,
   plan: LessonPlanData & { simulationId: string; planId?: string }
 ): Promise<string> {
-  if (!userId) throw new Error("User ID required to save lesson plan");
+  if (!userId || !isAuthReadyForUser(userId)) return "";
   const planId = plan.planId || `plan_${Date.now()}`;
   const path = `users/${userId}/lessonPlans/${planId}`;
   try {
@@ -281,7 +290,7 @@ export async function saveLessonPlanToFirestore(
 }
 
 export async function getUserLessonPlansFromFirestore(userId: string): Promise<any[]> {
-  if (!userId) return [];
+  if (!userId || !isAuthReadyForUser(userId)) return [];
   const path = `users/${userId}/lessonPlans`;
   try {
     const colSnap = await getDocs(collection(db, "users", userId, "lessonPlans"));

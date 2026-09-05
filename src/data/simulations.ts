@@ -1,8 +1,179 @@
 import { RESTORED_SIMULATIONS } from "./restoredSimulations";
 import { SimulationItem, CurriculumStandard } from "../types";
 
-// The 19 creator-authored STEM Simulation Apps
+// The creator-authored STEM Simulation Apps
 export const STEM_SIMULATIONS: SimulationItem[] = [
+  {
+    id: "sim-satcom-sim-3d",
+    title: "SatCom-Sim 3D: Satellite Communications & Orbital Link Budget",
+    tagline: "Real-time 3D Earth, Spacecraft Bus & Orbital RF Link Engine with dynamic Free Space Path Loss (FSPL), rain attenuation, Doppler shift, and link margins across LEO, MEO, GEO, and HEO regimes",
+    discipline: "physics",
+    secondaryDisciplines: ["mathematics"],
+    gradeLevel: ["High School (9-12)", "AP / IB STEM", "Undergraduate"],
+    standards: ["NGSS HS-PS4-1", "NGSS HS-PS4-2", "NGSS HS-PS2-4", "AP-PHYS-1-U2", "CCSS.MATH.CONTENT.HSF.TF.B.5"],
+    description: "An advanced 3D orbital dynamics and radio frequency (RF) link budget simulator. Explore orbital mechanics across LEO (Starlink 550 km), MEO (O3b 8,063 km), GEO (35,786 km), and HEO (Molniya) orbits with realistic spacecraft bus components (gold-foil MLI, high-gain parabolic dishes, phased arrays, solar panels). Calculate real-time Slant Distance, Free Space Path Loss (FSPL), rain attenuation (mm/hr), Doppler shift, Carrier-to-Noise Ratio (C/N), and link margin to worldwide ground stations in London, New York, Tokyo, and Sydney.",
+    learningObjectives: [
+      "Analyze orbital periods, velocities, and geometry across LEO, MEO, GEO, and Molniya HEO orbits",
+      "Calculate Free Space Path Loss (FSPL) and signal degradation across Ka, Ku, and X frequency bands",
+      "Evaluate atmospheric and rain attenuation impacts on Carrier-to-Noise ratio (C/N) and QPSK demodulation margins",
+      "Track real-time Doppler shift, slant range latency, and elevation look-angles between orbiting satellites and ground teleports"
+    ],
+    thumbnailGradient: "from-cyan-600 via-blue-700 to-slate-900",
+    badgeColor: "bg-cyan-500/10 text-cyan-300 border-cyan-500/20",
+    iconName: "Radio",
+    rating: 4.99,
+    reviewCount: 92,
+    teacherCount: 365,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 24,
+      schoolDepartment: 220,
+      districtUnlimited: 450
+    },
+    features: [
+      "High-Fidelity 3D Orbital Engine with Three.js rendering of Earth, atmosphere, and starfield",
+      "Detailed Spacecraft Bus with gold-foil MLI insulation, high-gain parabolic dish, phased arrays, and solar panels",
+      "4 Orbital Regimes: LEO (Starlink), MEO (O3b mPOWER), GEO (ViaSat), and HEO (Molniya)",
+      "RF Link Budget Calculator: Slant Distance, Elevation, Latency, Doppler Shift, FSPL, and Rain Attenuation",
+      "Live Telemetry Panel with C/N Ratio, 6 dB QPSK threshold Margin, and Dynamic Beam Tracking",
+      "Global Teleports: London, New York, Tokyo, and Sydney with variable Earth rotation and orbit speeds"
+    ],
+    parameterDefaults: {
+      orbitPreset: "LEO",
+      satSpeed: 250,
+      earthSpeed: 1,
+      gsLocation: "London",
+      freqBand: "28.5",
+      rainRate: 0
+    },
+    parameterControls: [
+      {
+        key: "satSpeed",
+        label: "Satellite Speed",
+        min: 0,
+        max: 500,
+        step: 10,
+        unit: "x",
+        description: "Orbital propagation rate"
+      },
+      {
+        key: "rainRate",
+        label: "Rain Rate",
+        min: 0,
+        max: 80,
+        step: 1,
+        unit: "mm/hr",
+        description: "Atmospheric precipitation attenuation"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-satcom-1",
+        title: "GEO Stationary Lock",
+        instruction: "Switch to GEO orbit and verify how the high altitude (35,786 km) yields synchronous tracking with consistent slant range.",
+        targetMetric: "Slant Range (km)",
+        targetValue: 35786,
+        tolerance: 1000,
+        currentValueKey: "slantRangeKm",
+        rewardBadge: "Orbital Synchronizer"
+      },
+      {
+        id: "ch-satcom-2",
+        title: "Heavy Downpour Link Margin",
+        instruction: "Increase rain attenuation to 50 mm/hr in Ka-band (28.5 GHz) and observe link degradation and margin warning.",
+        targetMetric: "Rain Rate (mm/hr)",
+        targetValue: 50,
+        tolerance: 5,
+        currentValueKey: "rainRate",
+        rewardBadge: "RF Propagation Specialist"
+      }
+    ],
+    previewFacts: [
+      "At GEO (35,786 km), one satellite can view roughly 42% of Earth's surface, but introduces ~240 ms of round-trip propagation latency.",
+      "Higher frequency bands like Ka-band (28.5 GHz) provide enormous data bandwidth but suffer heavy attenuation from atmospheric water droplets during rain events."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/satcom-sim-3d.html"
+  },
+  {
+    id: "sim-elastic-properties-materials-stress-strain",
+    title: "Elastic Properties of Materials & Stress-Strain Dynamics",
+    tagline: "Horizontal Material Stress-Strain & Dynamic Curve Simulator: real-time stretching behavior, crystal lattice deformation, Hooke's law limits, and progressive curve tracing",
+    discipline: "physics",
+    secondaryDisciplines: ["chemistry"],
+    gradeLevel: ["High School (9-12)", "AP / IB STEM", "Undergraduate"],
+    standards: ["NGSS HS-PS2-6", "NGSS HS-PS1-3", "AP Physics 1 Unit 2", "AP-PHYS-1-U2", "CCSS.ELA-LITERACY.RST.11-12.3"],
+    description: "An interactive material science and solid mechanics virtual laboratory exploring the elastic properties of materials. Observe real-time horizontal stretching behavior, crystal structure deformation, proportionality limits (Hooke's Law), elastic vs plastic limits, yield point flow, localized necking, and catastrophic ductile/brittle fracture across Ductile Metals, Brittle Ceramics, and Elastomers alongside interactive historical case studies.",
+    learningObjectives: [
+      "Investigate Hooke's Law and calculate modulus of elasticity / proportionality limits under variable horizontal tensile loads",
+      "Differentiate between ductile plastic flow, necking deformation, brittle catastrophic cleavage, and elastomer chain uncoiling",
+      "Trace dynamic stress-strain load curves in real time while tracking live work energy, proportionality limits, and yield points",
+      "Analyze historical engineering structural failures including WWII Liberty Ship brittle hull fractures, Tacoma Narrows resonance, and Challenger O-ring elastomer resilience"
+    ],
+    thumbnailGradient: "from-indigo-600 via-sky-600 to-rose-600",
+    badgeColor: "bg-indigo-500/10 text-indigo-300 border-indigo-500/20",
+    iconName: "Activity",
+    rating: 4.99,
+    reviewCount: 86,
+    teacherCount: 340,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 200,
+      districtUnlimited: 400
+    },
+    features: [
+      "Interactive Horizontal Tensile Testing Rig with real-time microscopic crystal lattice deformation and necking visualization",
+      "3 Core Material Presets: Ductile Metal (Steel/Copper), Brittle Ceramic/Glass, and Elastomer/Rubber",
+      "Live Dynamic Load vs. Extension (ΔL) Curve Tracer with shaded phase regions (Proportional, Elastic, Yield, Plastic, Fracture)",
+      "Real-time Numerical Instrumentation: Applied Force (N), Extension (mm), Phase State, and Precise Boundary Limits",
+      "Comprehensive Material Science Theory Guide & Historical Case Studies (WWII Liberty Ships, Tacoma Narrows, Challenger O-Rings)",
+      "Incremental Pull (+) & Release (-) Step Controls with Instant Simulation Reset"
+    ],
+    parameterDefaults: {
+      material: "ductile",
+      force: 0
+    },
+    parameterControls: [
+      {
+        key: "force",
+        label: "Applied Force",
+        min: 0,
+        max: 150,
+        step: 0.5,
+        unit: "N",
+        description: "Tensile load applied to material"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-stress-1",
+        title: "Proportionality Limit Verification",
+        instruction: "Apply load to Ductile Metal and verify that extension remains strictly linear up to the 35 N proportionality limit.",
+        targetMetric: "Force (N)",
+        targetValue: 35,
+        tolerance: 1,
+        currentValueKey: "load_val",
+        rewardBadge: "Hooke's Law Specialist"
+      },
+      {
+        id: "ch-stress-2",
+        title: "Yield Point & Plastic Flow",
+        instruction: "Exceed the 50 N elastic limit to trigger permanent atomic slip at the 80 N yield point without fracture.",
+        targetMetric: "Yield Force",
+        targetValue: 80,
+        tolerance: 2,
+        currentValueKey: "load_val",
+        rewardBadge: "Metallurgical Inspector"
+      }
+    ],
+    previewFacts: [
+      "Ductile metals undergo crystal slip along close-packed lattice planes, allowing permanent deformation (plastic flow) before fracturing.",
+      "In 1943, several welded Liberty cargo ships snapped in half in cold Arctic waters due to low-temperature brittle fracture transition."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/elastic-properties-materials-stress-strain.html"
+  },
   {
     id: "sim-unit-circle-trig",
     title: "Unit Circle Trigonometry Explorer",
@@ -12696,6 +12867,16 @@ export const DEFAULT_STANDARDS: CurriculumStandard[] = [
     discipline: "biology",
     gradeLevel: "High School (9-12)",
     description: "Construct an explanation based on evidence for how the structure of DNA determines the structure of proteins which carry out the essential functions of life.",
+    createdAt: "2026-08-15"
+  },
+  {
+    id: "std-ngss-hs-ps2-6",
+    code: "HS-PS2-6",
+    title: "Molecular Structure & Material Properties",
+    category: "NGSS",
+    discipline: "physics",
+    gradeLevel: "High School (9-12)",
+    description: "Communicate scientific and technical information about why the molecular-level structure is important in the functioning of designed materials, including tensile stress, elasticity, and plastic deformation.",
     createdAt: "2026-08-15"
   },
   {

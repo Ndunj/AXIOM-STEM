@@ -40,7 +40,7 @@ service cloud.firestore {
     function isValidUserLicense(data, userId) {
       return data.userId is string && data.userId == userId &&
              data.simulationId is string && data.simulationId.size() <= 128 &&
-             data.licenseTier in ['single', 'department', 'district'] &&
+             data.licenseTier in ['single', 'department', 'district', 'singleTeacher', 'schoolDepartment', 'districtUnlimited'] &&
              data.licenseKey is string && data.licenseKey.size() <= 128;
     }
 
