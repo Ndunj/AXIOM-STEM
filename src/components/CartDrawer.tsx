@@ -1,5 +1,6 @@
 import React from "react";
 import { CartItem, LicenseTier } from "../types";
+import { useLanguage } from "../i18n/LanguageContext";
 import {
   X,
   Trash2,
@@ -29,6 +30,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onUpdateTier,
   onProceedCheckout,
 }) => {
+  const { t } = useLanguage();
   if (!isOpen) return null;
 
   const calculateSubtotal = () => {
@@ -53,7 +55,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950">
             <div className="flex items-center gap-2">
               <ShoppingCart className="w-5 h-5 text-emerald-400" />
-              <h2 className="text-base font-bold text-white">Classroom License Cart</h2>
+              <h2 className="text-base font-bold text-white">{t("cartTitle")}</h2>
               <span className="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full font-mono">
                 {cartItems.length}
               </span>
@@ -71,9 +73,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             {cartItems.length === 0 ? (
               <div className="py-20 text-center space-y-3 text-slate-400">
                 <ShoppingCart className="w-12 h-12 stroke-1 mx-auto text-slate-600" />
-                <p className="text-sm">Your simulation cart is currently empty.</p>
+                <p className="text-sm">{t("cartEmpty")}</p>
                 <p className="text-xs text-slate-500 max-w-xs mx-auto">
-                  Explore Physics, Mathematics, Chemistry, and Biology simulations to add to your classroom bundle.
+                  {t("cartEmptyHint")}
                 </p>
               </div>
             ) : (
@@ -120,9 +122,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                         onChange={(e) => onUpdateTier(item.simulation.id, e.target.value as LicenseTier)}
                         className="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-sky-500"
                       >
-                        <option value="single">Single Teacher (${item.simulation.pricing?.singleTeacher || 19})</option>
-                        <option value="department">School Dept Pass (${item.simulation.pricing?.schoolDepartment || 200})</option>
-                        <option value="district">District Multi-Seat (${item.simulation.pricing?.districtUnlimited || 400})</option>
+                        <option value="single">{t("tierSingle")} (${item.simulation.pricing?.singleTeacher || 19})</option>
+                        <option value="department">{t("tierDepartment")} (${item.simulation.pricing?.schoolDepartment || 200})</option>
+                        <option value="district">{t("tierDistrict")} (${item.simulation.pricing?.districtUnlimited || 400})</option>
                       </select>
 
                       <div className="text-right font-mono font-bold text-white text-base">
@@ -131,8 +133,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     </div>
 
                     <div className="text-[11px] text-slate-400 flex items-center justify-between pt-1">
-                      <span>Includes AI Lesson Plan & LMS Key</span>
-                      <span className="text-emerald-400 font-semibold">100% Tax-Exempt</span>
+                      <span>{t("includesLessonPlan")}</span>
+                      <span className="text-emerald-400 font-semibold">{t("taxExempt")}</span>
                     </div>
                   </div>
                 );
@@ -145,15 +147,15 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             <div className="p-5 border-t border-slate-800 bg-slate-950/90 space-y-4">
               <div className="space-y-1.5 text-xs text-slate-400">
                 <div className="flex justify-between">
-                  <span>Simulations Included</span>
-                  <span className="text-slate-200 font-mono">{cartItems.length} items</span>
+                  <span>{t("simulationsIncluded")}</span>
+                  <span className="text-slate-200 font-mono">{cartItems.length}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Educational Sales Tax</span>
-                  <span className="text-emerald-400 font-mono">$0.00 (Tax-Exempt)</span>
+                  <span>{t("educationalTax")}</span>
+                  <span className="text-emerald-400 font-mono">$0.00 ({t("taxExempt")})</span>
                 </div>
                 <div className="flex justify-between text-base font-bold text-white pt-2 border-t border-slate-800">
-                  <span>Total Due</span>
+                  <span>{t("totalDue")}</span>
                   <span className="text-emerald-400 font-mono">${subtotal}</span>
                 </div>
               </div>
@@ -164,13 +166,13 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   onClick={onProceedCheckout}
                   className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-sm cursor-pointer shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
                 >
-                  <span>Proceed to School Checkout</span>
+                  <span>{t("proceedCheckout")}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
 
                 <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 text-center">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Official School POs, Credit Cards & Grant Funding Accepted</span>
+                  <span>{t("poFundingAccepted")}</span>
                 </div>
               </div>
             </div>

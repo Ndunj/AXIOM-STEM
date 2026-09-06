@@ -348,18 +348,19 @@ export class CanvasLmsService {
   static async createAssignment(payload: LMSAssignmentPayload): Promise<LMSPublishResult> {
     const cfg = this.getConfig();
     const studentPdfUrl = `${window.location.origin}?pdf=${payload.simulationId}`;
+    const cleanCourseId = payload.courseId ? payload.courseId.replace("canvas-", "") : "201";
 
     if (!cfg.apiToken) {
       return {
         success: true,
         id: "canvas-" + Date.now(),
-        alternateLink: `${cfg.instanceUrl}/courses/${payload.courseId}/assignments`,
+        alternateLink: `${cfg.instanceUrl}/courses/${cleanCourseId}/assignments`,
         message: `Student PDF Worksheet assignment published to Canvas LMS course!`
       };
     }
 
     try {
-      const endpoint = `${cfg.instanceUrl.replace(/\/$/, "")}/api/v1/courses/${payload.courseId}/assignments`;
+      const endpoint = `${cfg.instanceUrl.replace(/\/$/, "")}/api/v1/courses/${cleanCourseId}/assignments`;
       const assignmentBody = {
         assignment: {
           name: `[Student PDF Worksheet] ${payload.title}`,
@@ -388,7 +389,7 @@ export class CanvasLmsService {
       return {
         success: true,
         id: String(data.id),
-        alternateLink: data.html_url || `${cfg.instanceUrl}/courses/${payload.courseId}/assignments/${data.id}`,
+        alternateLink: data.html_url || `${cfg.instanceUrl}/courses/${cleanCourseId}/assignments/${data.id}`,
         message: `Successfully published student PDF worksheet assignment to Canvas LMS!`
       };
     } catch (e: any) {
@@ -396,7 +397,7 @@ export class CanvasLmsService {
       return {
         success: true,
         id: "canvas-" + Date.now(),
-        alternateLink: `${cfg.instanceUrl}/courses/${payload.courseId}/assignments`,
+        alternateLink: `${cfg.instanceUrl}/courses/${cleanCourseId}/assignments`,
         message: `Published assignment with student PDF worksheet link to Canvas course.`
       };
     }
@@ -429,11 +430,11 @@ export class SchoologyService {
   }
 
   static async createAssignment(payload: LMSAssignmentPayload): Promise<LMSPublishResult> {
-    const studentPdfUrl = `${window.location.origin}?pdf=${payload.simulationId}`;
+    const cleanCourseId = payload.courseId ? payload.courseId.replace("sch-", "") : "301";
     return {
       success: true,
       id: "schoology-mat-" + Date.now(),
-      alternateLink: "https://schoology.com/course/" + payload.courseId + "/materials",
+      alternateLink: "https://schoology.com/course/" + cleanCourseId + "/materials",
       message: `Student PDF Worksheet assignment created in Schoology Course materials!`
     };
   }

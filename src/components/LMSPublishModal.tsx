@@ -55,6 +55,7 @@ interface LMSPublishModalProps {
   onClose: () => void;
   simulation: SimulationItem | null;
   allSimulations?: SimulationItem[];
+  initialPlatform?: PlatformType;
 }
 
 type PlatformType = "google_classroom" | "canvas" | "schoology";
@@ -63,12 +64,21 @@ export const LMSPublishModal: React.FC<LMSPublishModalProps> = ({
   isOpen,
   onClose,
   simulation: initialSimulation,
-  allSimulations = []
+  allSimulations = [],
+  initialPlatform
 }) => {
-  const [selectedPlatform, setSelectedPlatform] = useState<PlatformType>("google_classroom");
+  const [selectedPlatform, setSelectedPlatform] = useState<PlatformType>(
+    initialPlatform || "google_classroom"
+  );
   const [currentSim, setCurrentSim] = useState<SimulationItem | null>(initialSimulation);
-  const [courses, setCourses] = useState<LMSCourse[]>([]);
-  const [selectedCourseId, setSelectedCourseId] = useState<string>("");
+  const [courses, setCourses] = useState<LMSCourse[]>(() => {
+    const p = initialPlatform || "google_classroom";
+    return DEMO_COURSES[p] || DEMO_COURSES.google_classroom;
+  });
+  const [selectedCourseId, setSelectedCourseId] = useState<string>(() => {
+    const p = initialPlatform || "google_classroom";
+    return DEMO_COURSES[p]?.[0]?.id || (p === "canvas" ? "canvas-201" : p === "schoology" ? "sch-301" : "gc-101");
+  });
   const [assignmentTitle, setAssignmentTitle] = useState<string>("");
   const [assignmentDesc, setAssignmentDesc] = useState<string>("");
   const [customInstructions, setCustomInstructions] = useState<string>("");
@@ -113,15 +123,22 @@ export const LMSPublishModal: React.FC<LMSPublishModalProps> = ({
 
   useEffect(() => {
     if (currentSim) {
-      setAssignmentTitle(`STEM Lab: ${currentSim.title}`);
+      const isWorksheetFocus = initialPlatform !== undefined;
+      setAssignmentTitle(
+        isWorksheetFocus
+          ? `Lab Inquiry Worksheet: ${currentSim.title}`
+          : `STEM Lab: ${currentSim.title}`
+      );
       setAssignmentDesc(
-        `Complete the interactive lab investigation: "${currentSim.title}". Test parameters, observe real-time dynamic behavior, and solve the integrated inquiry challenges.`
+        isWorksheetFocus
+          ? `Complete the laboratory inquiry worksheet for "${currentSim.title}". Conduct interactive trials, record experimental data, and submit your Claim-Evidence-Reasoning (CER) analysis.`
+          : `Complete the interactive lab investigation: "${currentSim.title}". Test parameters, observe real-time dynamic behavior, and solve the integrated inquiry challenges.`
       );
       setCustomInstructions(
-        `Learning Objectives:\n• ${currentSim.learningObjectives?.join("\n• ") || "Explore STEM concepts and variables"}\n\nDeliverable: Submit your recorded challenge data or screenshot of completion badge.`
+        `Learning Objectives:\n• ${currentSim.learningObjectives?.join("\n• ") || "Explore STEM concepts and variables"}\n\nDeliverable: Submit your completed lab worksheet PDF or enter your experimental findings.`
       );
     }
-  }, [currentSim]);
+  }, [currentSim, initialPlatform]);
 
   useEffect(() => {
     const unsubscribe = initGoogleAuth(
@@ -152,21 +169,37 @@ export const LMSPublishModal: React.FC<LMSPublishModalProps> = ({
         if (result.courses.length > 0) {
           setSelectedCourseId(result.courses[0].id);
         } else {
-          setSelectedCourseId("");
+          setSelectedCourseId(DEMO_COURSES.google_classroom[0]?.id || "gc-101");
         }
       } else if (selectedPlatform === "canvas") {
         const list = await CanvasLmsService.fetchCourses();
-        setCourses(list);
-        if (list.length > 0) setSelectedCourseId(list[0].id);
+        if (list && list.length > 0) {
+          setCourses(list);
+          setSelectedCourseId(list[0].id);
+        } else {
+          setCourses(DEMO_COURSES.canvas);
+          setSelectedCourseId(DEMO_COURSES.canvas[0]?.id || "canvas-201");
+        }
       } else if (selectedPlatform === "schoology") {
         const list = await SchoologyService.fetchCourses();
-        setCourses(list);
-        if (list.length > 0) setSelectedCourseId(list[0].id);
+        if (list && list.length > 0) {
+          setCourses(list);
+          setSelectedCourseId(list[0].id);
+        } else {
+          setCourses(DEMO_COURSES.schoology);
+          setSelectedCourseId(DEMO_COURSES.schoology[0]?.id || "sch-301");
+        }
       }
     } finally {
       setIsLoadingCourses(false);
     }
   };
+
+  useEffect(() => {
+    if (initialPlatform) {
+      handlePlatformChange(initialPlatform);
+    }
+  }, [initialPlatform]);
 
   useEffect(() => {
     if (isOpen) {
@@ -175,6 +208,22 @@ export const LMSPublishModal: React.FC<LMSPublishModalProps> = ({
       setAuthError(null);
     }
   }, [selectedPlatform, isOpen]);
+
+  const handlePlatformChange = (platform: PlatformType) => {
+    setSelectedPlatform(platform);
+    setPublishResult(null);
+    setAuthError(null);
+    if (platform === "canvas") {
+      setCourses(DEMO_COURSES.canvas);
+      setSelectedCourseId(DEMO_COURSES.canvas[0]?.id || "canvas-201");
+    } else if (platform === "schoology") {
+      setCourses(DEMO_COURSES.schoology);
+      setSelectedCourseId(DEMO_COURSES.schoology[0]?.id || "sch-301");
+    } else {
+      setCourses(DEMO_COURSES.google_classroom);
+      setSelectedCourseId(DEMO_COURSES.google_classroom[0]?.id || "gc-101");
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     setIsGoogleSigningIn(true);
@@ -241,6 +290,38 @@ export const LMSPublishModal: React.FC<LMSPublishModalProps> = ({
     window.open(directClassroomShareUrl, "_blank", "noopener,noreferrer");
   };
 
+  const handleOpenCanvasShare = () => {
+    // 1. Download the student PDF worksheet directly straight from the app
+    if (currentSim) {
+      downloadWorksheetPDF(currentSim, { includeAnswerKey: false });
+    }
+    // 2. Open Canvas course assignments
+    let targetCourse = selectedCourseId;
+    if (!targetCourse || targetCourse.startsWith("gc-") || targetCourse.startsWith("sch-")) {
+      targetCourse = "201";
+    } else {
+      targetCourse = targetCourse.replace("canvas-", "");
+    }
+    const canvasUrl = `${canvasConfig.instanceUrl || "https://canvas.instructure.com"}/courses/${targetCourse}/assignments`;
+    window.open(canvasUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const handleOpenSchoologyShare = () => {
+    // 1. Download the student PDF worksheet directly straight from the app
+    if (currentSim) {
+      downloadWorksheetPDF(currentSim, { includeAnswerKey: false });
+    }
+    // 2. Open Schoology course materials
+    let targetCourse = selectedCourseId;
+    if (!targetCourse || targetCourse.startsWith("gc-") || targetCourse.startsWith("canvas-")) {
+      targetCourse = "301";
+    } else {
+      targetCourse = targetCourse.replace("sch-", "");
+    }
+    const schoologyUrl = `https://schoology.com/course/${targetCourse}/materials`;
+    window.open(schoologyUrl, "_blank", "noopener,noreferrer");
+  };
+
   const handleOpenAppInNewTab = () => {
     window.open(window.location.href, "_blank", "noopener,noreferrer");
   };
@@ -267,9 +348,31 @@ export const LMSPublishModal: React.FC<LMSPublishModalProps> = ({
     setIsSubmitting(true);
     setPublishResult(null);
 
+    // Ensure courseId strictly matches selected platform
+    let validCourseId = selectedCourseId;
+    if (selectedPlatform === "canvas") {
+      if (!validCourseId || validCourseId.startsWith("gc-") || validCourseId.startsWith("sch-")) {
+        validCourseId = courses[0]?.id && !courses[0].id.startsWith("gc-") && !courses[0].id.startsWith("sch-")
+          ? courses[0].id
+          : "canvas-201";
+      }
+    } else if (selectedPlatform === "schoology") {
+      if (!validCourseId || validCourseId.startsWith("gc-") || validCourseId.startsWith("canvas-")) {
+        validCourseId = courses[0]?.id && !courses[0].id.startsWith("gc-") && !courses[0].id.startsWith("canvas-")
+          ? courses[0].id
+          : "sch-301";
+      }
+    } else {
+      if (!validCourseId || validCourseId.startsWith("canvas-") || validCourseId.startsWith("sch-")) {
+        validCourseId = courses[0]?.id && !courses[0].id.startsWith("canvas-") && !courses[0].id.startsWith("sch-")
+          ? courses[0].id
+          : "gc-101";
+      }
+    }
+
     const payload: LMSAssignmentPayload = {
       platform: selectedPlatform,
-      courseId: selectedCourseId || (courses[0]?.id ?? "gc-101"),
+      courseId: validCourseId,
       title: assignmentTitle,
       description: assignmentDesc,
       simulationId: currentSim.id,
@@ -348,7 +451,7 @@ export const LMSPublishModal: React.FC<LMSPublishModalProps> = ({
   const activeInfo = platformInfo[selectedPlatform];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
       <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl my-8 animate-in fade-in zoom-in-95 duration-200">
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950/70">
@@ -432,7 +535,7 @@ export const LMSPublishModal: React.FC<LMSPublishModalProps> = ({
               <button
                 type="button"
                 id="select-lms-google-classroom"
-                onClick={() => setSelectedPlatform("google_classroom")}
+                onClick={() => handlePlatformChange("google_classroom")}
                 className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border text-center transition-all cursor-pointer relative overflow-hidden ${
                   selectedPlatform === "google_classroom"
                     ? "bg-emerald-500/15 border-emerald-500 text-emerald-200 ring-2 ring-emerald-500/30 shadow-lg shadow-emerald-500/10"
@@ -455,7 +558,7 @@ export const LMSPublishModal: React.FC<LMSPublishModalProps> = ({
               <button
                 type="button"
                 id="select-lms-canvas"
-                onClick={() => setSelectedPlatform("canvas")}
+                onClick={() => handlePlatformChange("canvas")}
                 className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border text-center transition-all cursor-pointer relative overflow-hidden ${
                   selectedPlatform === "canvas"
                     ? "bg-rose-500/15 border-rose-500 text-rose-200 ring-2 ring-rose-500/30 shadow-lg shadow-rose-500/10"
@@ -476,7 +579,7 @@ export const LMSPublishModal: React.FC<LMSPublishModalProps> = ({
               <button
                 type="button"
                 id="select-lms-schoology"
-                onClick={() => setSelectedPlatform("schoology")}
+                onClick={() => handlePlatformChange("schoology")}
                 className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border text-center transition-all cursor-pointer relative overflow-hidden ${
                   selectedPlatform === "schoology"
                     ? "bg-sky-500/15 border-sky-500 text-sky-200 ring-2 ring-sky-500/30 shadow-lg shadow-sky-500/10"
@@ -767,6 +870,30 @@ export const LMSPublishModal: React.FC<LMSPublishModalProps> = ({
                     <span>Send PDF to Google Classroom</span>
                   </button>
                 )}
+
+                {selectedPlatform === "canvas" && (
+                  <button
+                    type="button"
+                    onClick={handleOpenCanvasShare}
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 text-xs font-semibold cursor-pointer transition-all"
+                    title="Sends the student PDF worksheet directly straight from the app to Canvas LMS"
+                  >
+                    <Share2 className="w-3.5 h-3.5 text-rose-400" />
+                    <span>Send PDF to Canvas LMS</span>
+                  </button>
+                )}
+
+                {selectedPlatform === "schoology" && (
+                  <button
+                    type="button"
+                    onClick={handleOpenSchoologyShare}
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 border border-sky-500/30 text-xs font-semibold cursor-pointer transition-all"
+                    title="Sends the student PDF worksheet directly straight from the app to Schoology"
+                  >
+                    <Share2 className="w-3.5 h-3.5 text-sky-400" />
+                    <span>Send PDF to Schoology</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -848,12 +975,22 @@ export const LMSPublishModal: React.FC<LMSPublishModalProps> = ({
                 <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-400 flex items-center justify-between">
                   <span>No active courses found in this account.</span>
                   <a
-                    href="https://classroom.google.com"
+                    href={
+                      selectedPlatform === "google_classroom"
+                        ? "https://classroom.google.com"
+                        : activeInfo.portalUrl
+                    }
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-emerald-400 font-bold hover:underline flex items-center gap-1"
+                    className={`font-bold hover:underline flex items-center gap-1 ${
+                      selectedPlatform === "canvas"
+                        ? "text-rose-400"
+                        : selectedPlatform === "schoology"
+                        ? "text-sky-400"
+                        : "text-emerald-400"
+                    }`}
                   >
-                    <span>Create a Class in Classroom</span>
+                    <span>Create a Class in {activeInfo.name}</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
@@ -925,12 +1062,24 @@ export const LMSPublishModal: React.FC<LMSPublishModalProps> = ({
               <div
                 className={`p-4 rounded-2xl border flex items-start gap-3 animate-in fade-in zoom-in-95 duration-150 ${
                   publishResult.success
-                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
+                    ? selectedPlatform === "canvas"
+                      ? "bg-rose-500/10 border-rose-500/30 text-rose-300"
+                      : selectedPlatform === "schoology"
+                      ? "bg-sky-500/10 border-sky-500/30 text-sky-300"
+                      : "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
                     : "bg-rose-500/10 border-rose-500/30 text-rose-300"
                 }`}
               >
                 {publishResult.success ? (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                  <CheckCircle2
+                    className={`w-5 h-5 shrink-0 mt-0.5 ${
+                      selectedPlatform === "canvas"
+                        ? "text-rose-400"
+                        : selectedPlatform === "schoology"
+                        ? "text-sky-400"
+                        : "text-emerald-400"
+                    }`}
+                  />
                 ) : (
                   <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
                 )}
@@ -938,7 +1087,11 @@ export const LMSPublishModal: React.FC<LMSPublishModalProps> = ({
                   <div className="font-bold text-sm text-white">{publishResult.message}</div>
                   <p className="text-slate-300 text-xs">
                     {publishResult.success
-                      ? "The coursework assignment with the interactive lab attachment is now live on your Google Classroom course stream."
+                      ? selectedPlatform === "canvas"
+                        ? "The coursework assignment with the interactive lab worksheet attachment is now live in your Canvas LMS course."
+                        : selectedPlatform === "schoology"
+                        ? "The coursework assignment with the interactive lab worksheet attachment is now live in your Schoology course materials."
+                        : "The coursework assignment with the interactive lab attachment is now live on your Google Classroom course stream."
                       : "Could not post assignment. Please check your credentials or permissions."}
                   </p>
                   {publishResult.link && (
@@ -947,9 +1100,15 @@ export const LMSPublishModal: React.FC<LMSPublishModalProps> = ({
                         href={publishResult.link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow"
+                        className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-white font-bold text-xs transition-all shadow ${
+                          selectedPlatform === "canvas"
+                            ? "bg-rose-600 hover:bg-rose-500 shadow-rose-600/20"
+                            : selectedPlatform === "schoology"
+                            ? "bg-sky-600 hover:bg-sky-500 shadow-sky-600/20"
+                            : "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20"
+                        }`}
                       >
-                        <span>View Assignment in Google Classroom</span>
+                        <span>View Assignment in {activeInfo.name}</span>
                         <ExternalLink className="w-3.5 h-3.5" />
                       </a>
                       <button
@@ -969,8 +1128,12 @@ export const LMSPublishModal: React.FC<LMSPublishModalProps> = ({
             <div className="flex items-center justify-between pt-3 border-t border-slate-800">
               <a
                 href={
-                  selectedPlatform === "google_classroom" && selectedCourseId
-                    ? `https://classroom.google.com/c/${selectedCourseId}`
+                  selectedPlatform === "google_classroom"
+                    ? `https://classroom.google.com${selectedCourseId && !selectedCourseId.startsWith("canvas-") && !selectedCourseId.startsWith("sch-") ? `/c/${selectedCourseId}` : ""}`
+                    : selectedPlatform === "canvas"
+                    ? `${canvasConfig.instanceUrl || "https://canvas.instructure.com"}/courses/${selectedCourseId && !selectedCourseId.startsWith("gc-") && !selectedCourseId.startsWith("sch-") ? selectedCourseId.replace("canvas-", "") : "201"}/assignments`
+                    : selectedPlatform === "schoology"
+                    ? `https://schoology.com/course/${selectedCourseId && !selectedCourseId.startsWith("gc-") && !selectedCourseId.startsWith("canvas-") ? selectedCourseId.replace("sch-", "") : "301"}/materials`
                     : activeInfo.portalUrl
                 }
                 target="_blank"

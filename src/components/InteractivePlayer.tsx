@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { SimulationItem, LicenseTier } from "../types";
 import { HtmlAppSimulator } from "./simulators/HtmlAppSimulator";
+import { cleanAiTutorMath } from "../utils/mathFormat";
 import {
   X,
   Maximize2,
@@ -71,11 +72,14 @@ export const InteractivePlayer: React.FC<InteractivePlayerProps> = ({
         }),
       });
       const data = await res.json();
+      const cleanReply = cleanAiTutorMath(
+        data.reply || "Consider testing what happens when you modify extreme values in the simulation. What direct or inverse relationships emerge?"
+      );
       setTutorChat((prev) => [
         ...prev,
         {
           sender: "ai",
-          text: data.reply || "Consider testing what happens when you modify extreme values in the simulation. What direct or inverse relationships emerge?",
+          text: cleanReply,
         },
       ]);
     } catch {
@@ -270,7 +274,9 @@ export const InteractivePlayer: React.FC<InteractivePlayerProps> = ({
                           <Sparkles className="w-3 h-3" />
                           <span>{msg.sender === "ai" ? "Socrates-STEM AI" : "Student / Educator"}</span>
                         </div>
-                        {msg.text}
+                        <div className="whitespace-pre-wrap">
+                          {msg.sender === "ai" ? cleanAiTutorMath(msg.text) : msg.text}
+                        </div>
                       </div>
                     ))}
                     {isTutorLoading && (

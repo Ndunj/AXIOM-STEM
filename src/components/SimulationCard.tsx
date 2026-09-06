@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { SimulationItem, LicenseTier } from "../types";
+import { useLanguage } from "../i18n/LanguageContext";
 import {
   Play,
   ShoppingCart,
@@ -42,12 +43,13 @@ export const SimulationCard: React.FC<SimulationCardProps> = ({
   onEditSimulation,
   onDeleteSimulation,
 }) => {
+  const { t } = useLanguage();
   const [selectedTier, setSelectedTier] = useState<LicenseTier>("single");
 
   const tierPrices = {
-    single: { price: simulation.pricing?.singleTeacher || 19, label: "1 Teacher (150 Students)" },
-    department: { price: simulation.pricing?.schoolDepartment || 200, label: "School Dept (5 Teachers / Unlimited)" },
-    district: { price: simulation.pricing?.districtUnlimited || 400, label: "District Unlimited LMS" },
+    single: { price: simulation.pricing?.singleTeacher || 19, label: t("tierSingleDesc") },
+    department: { price: simulation.pricing?.schoolDepartment || 200, label: t("tierDeptDesc") },
+    district: { price: simulation.pricing?.districtUnlimited || 400, label: t("tierDistrictDesc") },
   };
 
   const formatLastModified = (sim: SimulationItem) => {
@@ -93,11 +95,11 @@ export const SimulationCard: React.FC<SimulationCardProps> = ({
             {isLicensed ? (
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                Licensed
+                {t("licensed")}
               </span>
             ) : (
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex items-center gap-1">
-                Interactive Lab
+                {t("interactiveLab")}
               </span>
             )}
           </div>
@@ -159,7 +161,7 @@ export const SimulationCard: React.FC<SimulationCardProps> = ({
               <span className="font-mono font-bold text-sky-300">{formatLastModified(simulation)}</span>
             </div>
             <span className="text-[10px] font-mono text-emerald-400 px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">
-              {simulation.isCustomImport ? "Custom HTML" : "Catalog App"}
+              {simulation.isCustomImport ? t("customHtmlBadge") : t("catalogAppBadge")}
             </span>
           </div>
         )}
@@ -171,7 +173,7 @@ export const SimulationCard: React.FC<SimulationCardProps> = ({
             title="Classroom & Institutional License"
           >
             <ShieldCheck className="w-3 h-3 text-indigo-400" />
-            <span className="truncate max-w-[160px]">{simulation.licenseType || "Academic STEM License"}</span>
+            <span className="truncate max-w-[160px]">{simulation.licenseType || t("academicLicense")}</span>
           </span>
           {simulation.standards && simulation.standards.slice(0, 2).map((st) => (
             <span
@@ -209,7 +211,7 @@ export const SimulationCard: React.FC<SimulationCardProps> = ({
         {/* Educator Proof / Action */}
         <div className="flex items-center justify-between text-[11px] text-slate-400 pt-3 border-t border-slate-800/80">
           <span className="flex items-center gap-1 text-slate-300">
-            <Users className="w-3.5 h-3.5 text-indigo-400" /> {simulation.teacherCount || 1}+ Classrooms
+            <Users className="w-3.5 h-3.5 text-indigo-400" /> {simulation.teacherCount || 1}+ {t("classroomsCount")}
           </span>
           <div className="flex flex-wrap items-center gap-2">
             {onOpenWorksheet && (
@@ -218,7 +220,7 @@ export const SimulationCard: React.FC<SimulationCardProps> = ({
                 className="flex items-center gap-1 text-sky-400 hover:text-sky-300 font-semibold cursor-pointer transition-colors"
                 title="Download formatted Student Worksheet & Teacher Key PDF"
               >
-                <FileText className="w-3 h-3" /> PDF Lab
+                <FileText className="w-3 h-3" /> {t("pdfLab")}
               </button>
             )}
             {onOpenLMSPublish && (
@@ -227,14 +229,14 @@ export const SimulationCard: React.FC<SimulationCardProps> = ({
                 className="flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-semibold cursor-pointer transition-colors"
                 title="Post interactive assignment to Google Classroom, Canvas, or Schoology"
               >
-                <Share2 className="w-3 h-3" /> LMS Post
+                <Share2 className="w-3 h-3" /> {t("lmsPost")}
               </button>
             )}
             <button
               onClick={() => onOpenLessonPlanner(simulation)}
               className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 font-semibold cursor-pointer transition-colors"
             >
-              <Sparkles className="w-3 h-3" /> Lesson Plan
+              <Sparkles className="w-3 h-3" /> {t("lessonPlan")}
             </button>
           </div>
         </div>
@@ -243,20 +245,20 @@ export const SimulationCard: React.FC<SimulationCardProps> = ({
         <div className="bg-slate-950/80 p-3 rounded-2xl border border-slate-800/90 space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">License Type:</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t("licenseTypeLabel")}:</span>
               <span className="text-[10px] font-semibold text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">
                 {selectedTier === "single"
-                  ? "Single Teacher"
+                  ? t("tierSingle")
                   : selectedTier === "department"
-                  ? "School Department"
-                  : "District Unlimited"}
+                  ? t("tierDepartment")
+                  : t("tierDistrict")}
               </span>
             </div>
             <div className="text-right font-mono">
               <span className="text-xl font-black text-emerald-400">
                 ${tierPrices[selectedTier].price}
               </span>
-              <span className="text-[10px] text-slate-400 ml-1">one-time</span>
+              <span className="text-[10px] text-slate-400 ml-1">{t("oneTime")}</span>
             </div>
           </div>
 
@@ -270,7 +272,7 @@ export const SimulationCard: React.FC<SimulationCardProps> = ({
                   : "bg-slate-900/60 text-slate-400 border-slate-800 hover:text-slate-200"
               }`}
             >
-              <span>Teacher</span>
+              <span>{t("tierSingle")}</span>
               <span className="font-mono text-emerald-400 font-bold text-[11px]">${simulation.pricing?.singleTeacher || 19}</span>
             </button>
             <button
@@ -281,7 +283,7 @@ export const SimulationCard: React.FC<SimulationCardProps> = ({
                   : "bg-slate-900/60 text-slate-400 border-slate-800 hover:text-slate-200"
               }`}
             >
-              <span>School Dept</span>
+              <span>{t("tierDepartment")}</span>
               <span className="font-mono text-emerald-400 font-bold text-[11px]">${simulation.pricing?.schoolDepartment || 200}</span>
             </button>
             <button
@@ -292,7 +294,7 @@ export const SimulationCard: React.FC<SimulationCardProps> = ({
                   : "bg-slate-900/60 text-slate-400 border-slate-800 hover:text-slate-200"
               }`}
             >
-              <span>District</span>
+              <span>{t("tierDistrict")}</span>
               <span className="font-mono text-emerald-400 font-bold text-[11px]">${simulation.pricing?.districtUnlimited || 400}</span>
             </button>
           </div>
@@ -300,10 +302,10 @@ export const SimulationCard: React.FC<SimulationCardProps> = ({
           <div className="text-[10px] text-slate-400 flex items-center justify-between pt-0.5">
             <span className="truncate">
               {selectedTier === "single"
-                ? "✓ 1 Teacher • 150 Student Accounts"
+                ? `✓ ${t("tierSingleDesc")}`
                 : selectedTier === "department"
-                ? "✓ 5 Teachers • 500 Student Accounts"
-                : "✓ District-wide Unlimited LMS & SIS"}
+                ? `✓ ${t("tierDeptDesc")}`
+                : `✓ ${t("tierDistrictDesc")}`}
             </span>
             <span className="text-slate-500 font-mono shrink-0 ml-1">LTI 1.3</span>
           </div>
@@ -315,14 +317,14 @@ export const SimulationCard: React.FC<SimulationCardProps> = ({
             onClick={() => onTestDrive(simulation)}
             className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-semibold border border-slate-700 cursor-pointer transition-all active:scale-95 shadow"
           >
-            <Play className="w-3.5 h-3.5 fill-current text-sky-400" /> Test Drive Live
+            <Play className="w-3.5 h-3.5 fill-current text-sky-400" /> {t("testDriveLive")}
           </button>
 
           <button
             onClick={() => onAddToCart(simulation, selectedTier)}
             className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 text-xs font-bold cursor-pointer transition-all active:scale-95 shadow-md shadow-emerald-500/20"
           >
-            <ShoppingCart className="w-3.5 h-3.5 text-slate-950" /> Add to Cart
+            <ShoppingCart className="w-3.5 h-3.5 text-slate-950" /> {t("addToCart")}
           </button>
         </div>
       </div>

@@ -56,6 +56,14 @@ service cloud.firestore {
              data.simulationId is string && data.simulationId.size() <= 128;
     }
 
+    // Creator Publishing Pass Validation
+    function isValidCreatorPass(data, userId) {
+      return data.creatorUid is string && data.creatorUid == userId &&
+             data.amountPaid is number && data.amountPaid > 0 &&
+             data.transactionId is string && data.transactionId.size() <= 128 &&
+             data.status in ['active', 'pending', 'refunded'];
+    }
+
     // Lesson Plan Validation
     function isValidLessonPlan(data, userId) {
       return data.userId is string && data.userId == userId &&
@@ -99,6 +107,13 @@ service cloud.firestore {
         allow read: if isOwner(userId);
         allow create, update: if isOwner(userId) && isValidId(licenseId) && isValidUserLicense(incoming(), userId);
         allow delete: if isOwner(userId);
+      }
+
+      // User Creator Publishing Pass Subcollection
+      match /creatorPass/{passId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidId(passId) && isValidCreatorPass(incoming(), userId);
+        allow delete: if false; // Immutable receipts
       }
 
       // User Simulation Progress Subcollection

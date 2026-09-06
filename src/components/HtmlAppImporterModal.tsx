@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { SimulationItem, STEMDiscipline, GradeLevel, CurriculumStandard } from "../types";
+import { SimulationItem, STEMDiscipline, GradeLevel, CurriculumStandard, UserProfile } from "../types";
 import { HtmlAppSimulator } from "./simulators/HtmlAppSimulator";
+import {
+  isAxiomstemOwner,
+  checkCreatorUploadPermission,
+  AXIOM_OWNER_EMAIL,
+  CREATOR_UPLOAD_FEE,
+} from "../services/creatorLicenseService";
 import {
   X,
   Code2,
@@ -19,7 +25,9 @@ import {
   FileCode,
   DollarSign,
   ShieldCheck,
-  Tag
+  Tag,
+  Lock,
+  Crown,
 } from "lucide-react";
 
 interface HtmlAppImporterModalProps {
@@ -28,6 +36,8 @@ interface HtmlAppImporterModalProps {
   editingSimulation?: SimulationItem | null;
   availableStandards?: CurriculumStandard[];
   onOpenStandardsManager?: () => void;
+  currentUser?: UserProfile | null;
+  onRequestFeePayment?: () => void;
 }
 
 export const HtmlAppImporterModal: React.FC<HtmlAppImporterModalProps> = ({
@@ -36,7 +46,10 @@ export const HtmlAppImporterModal: React.FC<HtmlAppImporterModalProps> = ({
   editingSimulation,
   availableStandards = [],
   onOpenStandardsManager,
+  currentUser,
+  onRequestFeePayment,
 }) => {
+  const uploadPerm = checkCreatorUploadPermission(currentUser || null);
   const [importMode, setImportMode] = useState<"file" | "code" | "url" | "guide">("file");
 
   // Metadata form state
@@ -307,6 +320,18 @@ window.addEventListener('message', function(event) {
 
   // Submit and save to simulations library
   const handleSaveSimulation = () => {
+    // Gate: Before another creator is allowed to upload/save, they must pay the publishing fee to AXIOMSTEM owner
+    if (!uploadPerm.allowed) {
+      if (onRequestFeePayment) {
+        onRequestFeePayment();
+      } else {
+        alert(
+          `Before another creator is allowed to upload or publish a simulation, a $${CREATOR_UPLOAD_FEE}.00 publishing fee must be remitted to AXIOMSTEM Owner (${AXIOM_OWNER_EMAIL}).`
+        );
+      }
+      return;
+    }
+
     if (!title.trim()) {
       alert("Please enter a simulation title.");
       return;
@@ -392,8 +417,8 @@ window.addEventListener('message', function(event) {
       htmlContent: importMode === "url" ? undefined : htmlCode,
       htmlUrl: importMode === "url" ? externalUrl : undefined,
       isCustomImport: true,
-      authorEmail: "ndunj123@gmail.com",
-      authorName: storeName.trim() || "Master Creator",
+      authorEmail: currentUser?.email || (uploadPerm.isOwner ? AXIOM_OWNER_EMAIL : "ndunj123@gmail.com"),
+      authorName: storeName.trim() || currentUser?.displayName || "Master Creator",
       lemonSqueezyStoreId: storeId.trim() || "store_stem_faculty_101",
       lemonSqueezyStoreName: storeName.trim() || "Dr. Elena Rostova & Axiom STEM Faculty",
       stripeAccountId: storeId.trim() || "store_stem_faculty_101",
@@ -420,9 +445,23 @@ window.addEventListener('message', function(event) {
                 <h2 className="text-base sm:text-lg font-bold text-white">
                   {editingSimulation ? `Edit Simulation: ${editingSimulation.title}` : "Upload & Author HTML Simulation"}
                 </h2>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3" /> Creator Studio
-                </span>
+                {uploadPerm.isOwner ? (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1">
+                    <Crown className="w-3 h-3 text-amber-400" /> AXIOMSTEM Owner (Fee Exempt)
+                  </span>
+                ) : uploadPerm.license ? (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3 text-emerald-400" /> License Active (${uploadPerm.license.amountPaid} Paid to {AXIOM_OWNER_EMAIL})
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={onRequestFeePayment}
+                    className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 flex items-center gap-1 cursor-pointer transition-all"
+                  >
+                    <Lock className="w-3 h-3 text-amber-400" /> Fee Required: ${CREATOR_UPLOAD_FEE} to {AXIOM_OWNER_EMAIL}
+                  </button>
+                )}
               </div>
               <p className="text-xs text-slate-400">
                 Upload raw HTML files or code, connect live parameter sliders, and assign educational standards.
@@ -1125,16 +1164,32 @@ window.addEventListener('message', function(event) {
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between">
-          <div className="text-xs text-slate-500">
-            Author: <span className="text-slate-300 font-medium">ndunj123@gmail.com</span> (Master Creator)
+        <div className="px-6 py-4 bg-slate-950 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-xs text-slate-400 flex items-center gap-2">
+            <span>Author Account:</span>
+            <span className="text-slate-200 font-medium">
+              {currentUser?.email || (uploadPerm.isOwner ? AXIOM_OWNER_EMAIL : "creator@axiomstem.edu")}
+            </span>
+            {uploadPerm.isOwner ? (
+              <span className="text-amber-400 font-semibold text-[11px] flex items-center gap-1">
+                <Crown className="w-3 h-3" /> Platform Owner (Fee Exempt)
+              </span>
+            ) : uploadPerm.license ? (
+              <span className="text-emerald-400 font-semibold text-[11px] flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3" /> Paid Creator Pass Active
+              </span>
+            ) : (
+              <span className="text-amber-400 font-semibold text-[11px] flex items-center gap-1">
+                <Lock className="w-3 h-3" /> ${CREATOR_UPLOAD_FEE}.00 Fee Required to {AXIOM_OWNER_EMAIL}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition-all"
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition-all cursor-pointer"
             >
               Cancel
             </button>

@@ -1,0 +1,235 @@
+export type LanguageCode =
+  | "en"
+  | "es"
+  | "fr"
+  | "de"
+  | "zh"
+  | "ar"
+  | "pt"
+  | "ja"
+  | "it"
+  | "ru"
+  | "ko";
+
+export interface LanguageInfo {
+  code: LanguageCode;
+  name: string;
+  nativeName: string;
+  flag: string;
+  dir: "ltr" | "rtl";
+}
+
+export const SUPPORTED_LANGUAGES: LanguageInfo[] = [
+  { code: "en", name: "English", nativeName: "English", flag: "🇺🇸", dir: "ltr" },
+  { code: "es", name: "Spanish", nativeName: "Español", flag: "🇪🇸", dir: "ltr" },
+  { code: "fr", name: "French", nativeName: "Français", flag: "🇫🇷", dir: "ltr" },
+  { code: "de", name: "German", nativeName: "Deutsch", flag: "🇩🇪", dir: "ltr" },
+  { code: "zh", name: "Chinese (Simplified)", nativeName: "简体中文", flag: "🇨🇳", dir: "ltr" },
+  { code: "ar", name: "Arabic", nativeName: "العربية", flag: "🇸🇦", dir: "rtl" },
+  { code: "pt", name: "Portuguese", nativeName: "Português", flag: "🇧🇷", dir: "ltr" },
+  { code: "ja", name: "Japanese", nativeName: "日本語", flag: "🇯🇵", dir: "ltr" },
+  { code: "it", name: "Italian", nativeName: "Italiano", flag: "🇮🇹", dir: "ltr" },
+  { code: "ru", name: "Russian", nativeName: "Русский", flag: "🇷🇺", dir: "ltr" },
+  { code: "ko", name: "Korean", nativeName: "한국어", flag: "🇰🇷", dir: "ltr" },
+];
+
+export type TranslationKey =
+  // Common & Brand
+  | "brandName"
+  | "brandTagline"
+  | "creatorStudio"
+  | "marketplace"
+  | "allDisciplines"
+  | "physics"
+  | "chemistry"
+  | "biology"
+  | "mathematics"
+  | "close"
+  | "cancel"
+  | "save"
+  | "delete"
+  | "loading"
+  | "search"
+  | "selectLanguage"
+  | "languages"
+
+  // Header
+  | "creatorModeActive"
+  | "unlockCreatorMode"
+  | "stemGrants"
+  | "lmsHub"
+  | "lmsHubTitle"
+  | "lemonStorePayouts"
+  | "exportBackup"
+  | "searchPlaceholder"
+  | "standardsStudio"
+  | "uploadHtmlApp"
+  | "schoolPoQuote"
+  | "teacherLibrary"
+  | "cart"
+  | "cartTitle"
+  | "cartEmpty"
+  | "cartEmptyHint"
+  | "proceedCheckout"
+  | "includesLessonPlan"
+  | "simulationsIncluded"
+  | "educationalTax"
+  | "taxExempt"
+  | "totalDue"
+  | "poFundingAccepted"
+  | "signedIn"
+  | "signInRegister"
+  | "signOut"
+  | "roleTeacher"
+  | "roleCreator"
+  | "roleAdmin"
+  | "roleStudent"
+  | "switchProfile"
+
+  // Hero Banner
+  | "heroBadgeCreator"
+  | "heroBadgeVisitor"
+  | "heroTitlePart1"
+  | "heroTitleHighlight"
+  | "heroSubtitleCreator"
+  | "heroSubtitleVisitor"
+  | "heroCtaUpload"
+  | "heroCtaStandards"
+  | "heroCtaTestDrive"
+  | "heroCtaQuote"
+  | "pillar1Title"
+  | "pillar1Desc"
+  | "pillar2Title"
+  | "pillar2Desc"
+  | "pillar3Title"
+  | "pillar3Desc"
+  | "pillar4Title"
+  | "pillar4Desc"
+
+  // Catalog & Filters
+  | "creatorStudioHub"
+  | "publishedSims"
+  | "curriculumStandardsCount"
+  | "creatorStudioDesc"
+  | "syncLabs"
+  | "manageStandards"
+  | "libraryHeading"
+  | "disciplineLabs"
+  | "showingSimulations"
+  | "waitingFirstUpload"
+  | "html5RuntimeBadge"
+  | "gradeLabel"
+  | "gradeAll"
+  | "gradeMiddle"
+  | "gradeHigh"
+  | "gradeApIb"
+  | "sortLabel"
+  | "sortModified"
+  | "sortPopular"
+  | "sortRating"
+  | "sortPriceAsc"
+  | "noSimulationsFound"
+  | "noSimulationsHint"
+  | "resetFilters"
+  | "uploadFirstApp"
+
+  // Simulation Card
+  | "interactiveLab"
+  | "licensed"
+  | "academicLicense"
+  | "lastModified"
+  | "classroomsCount"
+  | "pdfLab"
+  | "lmsPost"
+  | "lessonPlan"
+  | "licenseTypeLabel"
+  | "oneTime"
+  | "tierSingle"
+  | "tierDepartment"
+  | "tierDistrict"
+  | "tierSingleDesc"
+  | "tierDeptDesc"
+  | "tierDistrictDesc"
+  | "testDriveLive"
+  | "addToCart"
+  | "customHtmlBadge"
+  | "catalogAppBadge"
+
+  // Why Teachers Love
+  | "whyTitle"
+  | "whyBadge"
+  | "whySubtitle"
+  | "stat1Value"
+  | "stat1Title"
+  | "stat1Desc"
+  | "stat2Value"
+  | "stat2Title"
+  | "stat2Desc"
+  | "stat3Value"
+  | "stat3Title"
+  | "stat3Desc"
+
+  // Teacher Dashboard
+  | "dashboardTitle"
+  | "userLabPortal"
+  | "activeLicensesCount"
+  | "browseMarketplace"
+  | "activeSeats"
+  | "seatsDesc"
+  | "activePeriods"
+  | "myLicensedSimulations"
+  | "analyticsTab"
+  | "licensedTab"
+  | "classroomPin"
+  | "copyPin"
+  | "pinCopied"
+  | "launchSimulation"
+  | "assignedClasses"
+
+  // Interactive Player Chrome
+  | "wideStage"
+  | "showGuide"
+  | "pdfWorksheet"
+  | "aiLessonPlan"
+  | "socraticAiTutor"
+  | "challenges"
+  | "curriculumStandards"
+  | "askAiPlaceholder"
+  | "send"
+  | "aiTutorWelcome"
+
+  // Footer
+  | "footerDesc"
+  | "footerTaxExempt"
+  | "disciplines"
+  | "creatorTeacherTools"
+  | "compliancePrivacy"
+  | "ferpaCertified"
+  | "ltiReady"
+  | "wcagCompliant"
+  | "grantEligible"
+  | "allRightsReserved"
+  | "privacyPolicy"
+  | "termsOfService"
+  | "schoolAgreement"
+
+  // Auth Gate
+  | "authGateTitle"
+  | "authGateSubtitle"
+  | "signInTab"
+  | "signUpTab"
+  | "instantRoleDemo"
+  | "demoTeacherBtn"
+  | "demoCreatorBtn"
+  | "demoAdminBtn"
+  | "demoStudentBtn"
+  | "emailLabel"
+  | "passwordLabel"
+  | "fullNameLabel"
+  | "schoolLabel"
+  | "roleLabel"
+  | "signInSubmit"
+  | "signUpSubmit"
+  | "forgotPassword"
+  | "resetPassword"
+  | "backToSignIn";

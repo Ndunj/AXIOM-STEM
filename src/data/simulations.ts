@@ -11,12 +11,12 @@ export const STEM_SIMULATIONS: SimulationItem[] = [
     secondaryDisciplines: ["mathematics"],
     gradeLevel: ["High School (9-12)", "AP / IB STEM", "Undergraduate"],
     standards: ["NGSS HS-PS4-1", "NGSS HS-PS4-2", "NGSS HS-PS2-4", "AP-PHYS-1-U2", "CCSS.MATH.CONTENT.HSF.TF.B.5"],
-    description: "An advanced 3D orbital dynamics and radio frequency (RF) link budget simulator. Explore orbital mechanics across LEO (Starlink 550 km), MEO (O3b 8,063 km), GEO (35,786 km), and HEO (Molniya) orbits with realistic spacecraft bus components (gold-foil MLI, high-gain parabolic dishes, phased arrays, solar panels). Calculate real-time Slant Distance, Free Space Path Loss (FSPL), rain attenuation (mm/hr), Doppler shift, Carrier-to-Noise Ratio (C/N), and link margin to worldwide ground stations in London, New York, Tokyo, and Sydney.",
+    description: "An advanced 3D orbital dynamics, multi-satellite constellation, and radio frequency (RF) link budget simulator. Explore orbital mechanics across LEO (Starlink 550 km), MEO (O3b 8,063 km), GEO (35,786 km), and HEO (Molniya) orbits with a 4-satellite constellation (Sat Alpha, Beta, Gamma, Delta) featuring custom MLI bus foils and solar arrays, real-time voice speech narration, multi-ring ground station terminals in London, New York, Tokyo, and Sydney, and per-satellite RF link budget telemetry (FSPL, Doppler, latency, C/N, rain attenuation).",
     learningObjectives: [
-      "Analyze orbital periods, velocities, and geometry across LEO, MEO, GEO, and Molniya HEO orbits",
-      "Calculate Free Space Path Loss (FSPL) and signal degradation across Ka, Ku, and X frequency bands",
+      "Analyze orbital periods, velocities, and constellation geometries across LEO, MEO, GEO, and Molniya HEO regimes",
+      "Calculate Free Space Path Loss (FSPL) and RF signal degradation across Ka, Ku, and X frequency bands",
       "Evaluate atmospheric and rain attenuation impacts on Carrier-to-Noise ratio (C/N) and QPSK demodulation margins",
-      "Track real-time Doppler shift, slant range latency, and elevation look-angles between orbiting satellites and ground teleports"
+      "Track per-satellite real-time Doppler shift, slant range latency, and elevation look-angles between constellation spacecraft and ground teleports"
     ],
     thumbnailGradient: "from-cyan-600 via-blue-700 to-slate-900",
     badgeColor: "bg-cyan-500/10 text-cyan-300 border-cyan-500/20",
@@ -31,12 +31,12 @@ export const STEM_SIMULATIONS: SimulationItem[] = [
       districtUnlimited: 450
     },
     features: [
-      "High-Fidelity 3D Orbital Engine with Three.js rendering of Earth, atmosphere, and starfield",
-      "Detailed Spacecraft Bus with gold-foil MLI insulation, high-gain parabolic dish, phased arrays, and solar panels",
-      "4 Orbital Regimes: LEO (Starlink), MEO (O3b mPOWER), GEO (ViaSat), and HEO (Molniya)",
-      "RF Link Budget Calculator: Slant Distance, Elevation, Latency, Doppler Shift, FSPL, and Rain Attenuation",
-      "Live Telemetry Panel with C/N Ratio, 6 dB QPSK threshold Margin, and Dynamic Beam Tracking",
-      "Global Teleports: London, New York, Tokyo, and Sydney with variable Earth rotation and orbit speeds"
+      "4-Satellite Multi-Constellation Engine (Alpha, Beta, Gamma, Delta) with RAAN and orbital phase separation",
+      "Integrated Voice Synthesizer Audio Narrator explaining the physical dynamics of each orbital regime",
+      "Interactive 3D Spacecraft Buses with colored MLI foil, solar array wings, parabolic dishes, and phased arrays",
+      "4 Orbital Regimes: LEO (Starlink Walker Constellation), MEO (O3b mPOWER), GEO Arc, and HEO (Molniya)",
+      "Real-Time Link Budget Telemetry HUD with individual satellite tracking, Doppler shift, FSPL, and C/N margin",
+      "Pulsating Multi-Terminal Ground Stations in London, New York, Tokyo, and Sydney with live wave propagation FX"
     ],
     parameterDefaults: {
       orbitPreset: "LEO",

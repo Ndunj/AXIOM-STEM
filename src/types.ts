@@ -6,6 +6,22 @@ export type LicenseTier = "single" | "department" | "district";
 
 export type UserRole = "teacher" | "creator" | "student" | "admin";
 
+export interface CreatorUploadLicense {
+  id: string;
+  creatorUid: string;
+  creatorEmail: string;
+  creatorName: string;
+  ownerEmail: string; // e.g. "kayinebi123@gmail.com"
+  amountPaid: number; // e.g. 49
+  currency: string; // "USD"
+  tier: "single_simulation" | "creator_pass";
+  status: "active" | "pending" | "refunded";
+  paymentMethod: "card" | "school_po" | "grant";
+  transactionId: string;
+  purchasedAt: string;
+  uploadSlotsRemaining?: number;
+}
+
 export interface UserProfile {
   uid: string;
   email: string;
@@ -17,6 +33,7 @@ export interface UserProfile {
   department?: string;
   savedFavorites?: string[];
   lemonSqueezyConfig?: LemonSqueezyStoreConfig;
+  creatorLicense?: CreatorUploadLicense;
   createdAt?: string;
   isDemo?: boolean;
 }

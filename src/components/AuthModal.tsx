@@ -21,7 +21,8 @@ import {
   Compass,
   RefreshCw,
   Send,
-  Check
+  Check,
+  Crown
 } from "lucide-react";
 import { UserProfile, UserRole } from "../types";
 import {
@@ -406,22 +407,39 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </button>
 
                 {/* 1-Click Instant Google User Sign-In */}
-                <button
-                  type="button"
-                  onClick={() => handleGoogleAuth("kayinebi123@gmail.com")}
-                  disabled={isGoogleLoading || isLoading}
-                  className="w-full py-2 px-3 rounded-2xl bg-indigo-950/60 hover:bg-indigo-900/60 border border-indigo-500/30 text-indigo-200 text-xs font-semibold flex items-center justify-between transition-all cursor-pointer"
-                >
-                  <div className="flex items-center gap-2">
-                    <img
-                      src="https://api.dicebear.com/7.x/avataaars/svg?seed=kayinebi123@gmail.com"
-                      alt="Google User Avatar"
-                      className="w-5 h-5 rounded-full border border-indigo-400/40"
-                    />
-                    <span className="truncate">Sign in as <strong>kayinebi123@gmail.com</strong></span>
-                  </div>
-                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 font-bold">1-Click</span>
-                </button>
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => handleGoogleAuth("kayinebi123@gmail.com")}
+                    disabled={isGoogleLoading || isLoading}
+                    className="w-full py-2 px-3 rounded-2xl bg-amber-950/40 hover:bg-amber-900/50 border border-amber-500/30 text-amber-200 text-xs font-semibold flex items-center justify-between transition-all cursor-pointer"
+                    title="Owner account - bypasses creator upload fee"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Crown className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span className="truncate">Sign in as <strong>kayinebi123@gmail.com</strong> (Owner)</span>
+                    </div>
+                    <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold">Fee Exempt</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleGoogleAuth("jordan.creator@stem-sims.io")}
+                    disabled={isGoogleLoading || isLoading}
+                    className="w-full py-2 px-3 rounded-2xl bg-indigo-950/60 hover:bg-indigo-900/60 border border-indigo-500/30 text-indigo-200 text-xs font-semibold flex items-center justify-between transition-all cursor-pointer"
+                    title="Independent creator account - subject to owner upload fee"
+                  >
+                    <div className="flex items-center gap-2">
+                      <img
+                        src="https://api.dicebear.com/7.x/avataaars/svg?seed=jordan.creator"
+                        alt="Creator Avatar"
+                        className="w-4 h-4 rounded-full border border-indigo-400/40"
+                      />
+                      <span className="truncate">Sign in as <strong>jordan.creator@stem-sims.io</strong> (Creator)</span>
+                    </div>
+                    <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 font-bold">$49 Fee Gated</span>
+                  </button>
+                </div>
               </div>
 
               {/* Google Verification / Help Expandable Tip */}

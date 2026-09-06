@@ -29,7 +29,10 @@ import {
 interface WorksheetModalProps {
   simulation: SimulationItem;
   onClose: () => void;
-  onOpenLMSPublish?: (sim: SimulationItem) => void;
+  onOpenLMSPublish?: (
+    sim: SimulationItem,
+    platform?: "google_classroom" | "canvas" | "schoology"
+  ) => void;
 }
 
 export const WorksheetGeneratorModal: React.FC<WorksheetModalProps> = ({
@@ -205,13 +208,54 @@ export const WorksheetGeneratorModal: React.FC<WorksheetModalProps> = ({
               )}
             </button>
             {onOpenLMSPublish && (
-              <button
-                onClick={() => onOpenLMSPublish(simulation)}
-                className="flex items-center gap-1 px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700 font-semibold cursor-pointer transition-colors"
-              >
-                <Share2 className="w-3 h-3" />
-                <span>Attach to LMS Assignment</span>
-              </button>
+              <div className="flex items-center bg-slate-900 border border-slate-700 rounded-lg p-0.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onOpenLMSPublish(simulation);
+                    onClose();
+                  }}
+                  className="flex items-center gap-1 px-2.5 py-1 text-slate-200 hover:text-white hover:bg-slate-800 rounded font-semibold transition-colors cursor-pointer"
+                  title="Open LMS Assignment Hub"
+                >
+                  <Share2 className="w-3 h-3 text-indigo-400" />
+                  <span>Post to LMS</span>
+                </button>
+                <div className="w-[1px] h-3.5 bg-slate-700 mx-0.5" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    onOpenLMSPublish(simulation, "canvas");
+                    onClose();
+                  }}
+                  className="px-2 py-1 text-rose-300 hover:text-rose-200 hover:bg-rose-500/20 rounded font-bold transition-colors cursor-pointer"
+                  title="Post worksheet to Canvas LMS"
+                >
+                  Canvas
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onOpenLMSPublish(simulation, "schoology");
+                    onClose();
+                  }}
+                  className="px-2 py-1 text-sky-300 hover:text-sky-200 hover:bg-sky-500/20 rounded font-bold transition-colors cursor-pointer"
+                  title="Post worksheet to Schoology"
+                >
+                  Schoology
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onOpenLMSPublish(simulation, "google_classroom");
+                    onClose();
+                  }}
+                  className="px-2 py-1 text-emerald-300 hover:text-emerald-200 hover:bg-emerald-500/20 rounded font-bold transition-colors cursor-pointer"
+                  title="Post worksheet to Google Classroom"
+                >
+                  Classroom
+                </button>
+              </div>
             )}
             <button
               onClick={handlePrint}

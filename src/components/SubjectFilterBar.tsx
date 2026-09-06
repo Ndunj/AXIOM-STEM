@@ -1,5 +1,6 @@
 import React from "react";
 import { STEMDiscipline } from "../types";
+import { useLanguage } from "../i18n/LanguageContext";
 
 interface FilterBarProps {
   selectedDiscipline: STEMDiscipline | "all";
@@ -20,12 +21,14 @@ export const SubjectFilterBar: React.FC<FilterBarProps> = ({
   onSelectSort,
   counts,
 }) => {
+  const { t } = useLanguage();
+
   const disciplines: Array<{ id: STEMDiscipline | "all"; label: string; icon: string }> = [
-    { id: "all", label: "All Disciplines", icon: "🌐" },
-    { id: "physics", label: "Physics", icon: "⚡" },
-    { id: "chemistry", label: "Chemistry", icon: "🧪" },
-    { id: "biology", label: "Biology", icon: "🧬" },
-    { id: "mathematics", label: "Mathematics", icon: "📐" },
+    { id: "all", label: t("allDisciplines"), icon: "🌐" },
+    { id: "physics", label: t("physics"), icon: "⚡" },
+    { id: "chemistry", label: t("chemistry"), icon: "🧪" },
+    { id: "biology", label: t("biology"), icon: "🧬" },
+    { id: "mathematics", label: t("mathematics"), icon: "📐" },
   ];
 
   return (
@@ -64,30 +67,30 @@ export const SubjectFilterBar: React.FC<FilterBarProps> = ({
         {/* Filter dropdowns */}
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-300">
-            <span className="text-slate-500">Grade:</span>
+            <span className="text-slate-500">{t("gradeLabel")}</span>
             <select
               value={selectedGrade}
               onChange={(e) => onSelectGrade(e.target.value)}
               className="bg-transparent text-slate-200 focus:outline-none cursor-pointer font-medium"
             >
-              <option value="all">All Grades (6-14)</option>
-              <option value="Middle School">Middle School (6-8)</option>
-              <option value="High School">High School (9-12)</option>
-              <option value="AP / IB">AP / IB Advanced</option>
+              <option value="all">{t("gradeAll")}</option>
+              <option value="Middle School">{t("gradeMiddle")}</option>
+              <option value="High School">{t("gradeHigh")}</option>
+              <option value="AP / IB">{t("gradeApIb")}</option>
             </select>
           </div>
 
           <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-300">
-            <span className="text-slate-500">Sort:</span>
+            <span className="text-slate-500">{t("sortLabel")}</span>
             <select
               value={sortBy}
               onChange={(e) => onSelectSort(e.target.value)}
               className="bg-transparent text-slate-200 focus:outline-none cursor-pointer font-medium"
             >
-              <option value="last-modified">Recently Modified</option>
-              <option value="popular">Most Popular</option>
-              <option value="rating">Highest Rated</option>
-              <option value="price-asc">Price: Low to High</option>
+              <option value="last-modified">{t("sortModified")}</option>
+              <option value="popular">{t("sortPopular")}</option>
+              <option value="rating">{t("sortRating")}</option>
+              <option value="price-asc">{t("sortPriceAsc")}</option>
             </select>
           </div>
         </div>
@@ -95,3 +98,4 @@ export const SubjectFilterBar: React.FC<FilterBarProps> = ({
     </div>
   );
 };
+

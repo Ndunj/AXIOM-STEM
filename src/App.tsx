@@ -22,6 +22,14 @@ import { AppAuthGate } from "./components/AppAuthGate";
 import { PaywallModal } from "./components/PaywallModal";
 import { LemonSqueezyAccountModal } from "./components/LemonSqueezyAccountModal";
 import { StripeAccountModal } from "./components/StripeAccountModal";
+import { CreatorUploadFeeModal } from "./components/CreatorUploadFeeModal";
+import {
+  checkCreatorUploadPermission,
+  isAxiomstemOwner,
+  AXIOM_OWNER_EMAIL,
+  CREATOR_UPLOAD_FEE,
+} from "./services/creatorLicenseService";
+import { useLanguage } from "./i18n/LanguageContext";
 import { recordSimulationPlay } from "./services/analyticsService";
 import {
   getSavedUserProfile,
@@ -49,10 +57,12 @@ import {
   Share2,
   LogIn,
   CreditCard,
-  DollarSign
+  DollarSign,
+  Crown
 } from "lucide-react";
 
 export default function App() {
+  const { t } = useLanguage();
   const [activeView, setActiveView] = useState<"marketplace" | "dashboard">("marketplace");
   const [selectedDiscipline, setSelectedDiscipline] = useState<STEMDiscipline | "all">("all");
   const [selectedGrade, setSelectedGrade] = useState<string>("all");
@@ -106,6 +116,7 @@ export default function App() {
   const [activeSimForWorksheet, setActiveSimForWorksheet] = useState<SimulationItem | null>(null);
   const [isWorksheetModalOpen, setIsWorksheetModalOpen] = useState(false);
   const [activeSimForLMS, setActiveSimForLMS] = useState<SimulationItem | null>(null);
+  const [activeLMSPlatform, setActiveLMSPlatform] = useState<"google_classroom" | "canvas" | "schoology" | undefined>(undefined);
   const [isLMSModalOpen, setIsLMSModalOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -114,6 +125,20 @@ export default function App() {
   const [isStandardsModalOpen, setIsStandardsModalOpen] = useState(false);
   const [isLemonSqueezyModalOpen, setIsLemonSqueezyModalOpen] = useState(false);
   const [editingSim, setEditingSim] = useState<SimulationItem | null>(null);
+
+  // Creator Simulation Upload License & Fee Gating Modal
+  const [isCreatorFeeModalOpen, setIsCreatorFeeModalOpen] = useState(false);
+
+  // Centralized simulation upload launcher with owner fee check
+  const handleOpenUploadSuite = (simToEdit?: SimulationItem | null) => {
+    setEditingSim(simToEdit || null);
+    const perm = checkCreatorUploadPermission(currentUser);
+    if (!perm.allowed) {
+      setIsCreatorFeeModalOpen(true);
+      return;
+    }
+    setIsHtmlImporterOpen(true);
+  };
 
   // Paywall & Feature Protection Modal
   const [isPaywallOpen, setIsPaywallOpen] = useState<boolean>(false);
@@ -436,14 +461,22 @@ export default function App() {
   };
 
   // Intercept LMS Assignment Publishing for unlicensed simulations
-  const handleOpenLMSPublish = (sim: SimulationItem) => {
+  const handleOpenLMSPublish = (
+    sim: SimulationItem,
+    platform?: "google_classroom" | "canvas" | "schoology"
+  ) => {
     if (!isSimLicensed(sim.id)) {
       setPaywallSim(sim);
       setPaywallFeature("lms");
       setIsPaywallOpen(true);
       return;
     }
+    // Explicitly close worksheet modal if open so LMSPublishModal has clean single focus
+    setIsWorksheetModalOpen(false);
+    setActiveSimForWorksheet(null);
+
     setActiveSimForLMS(sim);
+    setActiveLMSPlatform(platform);
     setIsLMSModalOpen(true);
   };
 
@@ -508,10 +541,8 @@ export default function App() {
         onOpenCart={() => setIsCartOpen(true)}
         onOpenTeacherDashboard={() => setActiveView("dashboard")}
         onOpenQuoteModal={() => setIsQuoteModalOpen(true)}
-        onOpenHtmlImporter={() => {
-          setEditingSim(null);
-          setIsHtmlImporterOpen(true);
-        }}
+        onOpenHtmlImporter={() => handleOpenUploadSuite(null)}
+        onOpenCreatorFeeModal={() => setIsCreatorFeeModalOpen(true)}
         onOpenStandardsManager={() => setIsStandardsModalOpen(true)}
         onOpenLMSHub={() => {
           if (!activeSimForLMS && customSimulations.length > 0) {
@@ -546,10 +577,7 @@ export default function App() {
             onExploreDiscipline={(d) => setSelectedDiscipline(d)}
             onOpenQuoteModal={() => setIsQuoteModalOpen(true)}
             isCreatorMode={isCreatorMode}
-            onOpenUpload={() => {
-              setEditingSim(null);
-              setIsHtmlImporterOpen(true);
-            }}
+            onOpenUpload={() => handleOpenUploadSuite(null)}
             onOpenStandards={() => setIsStandardsModalOpen(true)}
             hasSimulations={customSimulations.length > 0}
           />
@@ -566,7 +594,7 @@ export default function App() {
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-base font-bold text-white">
-                        Creator Studio Hub (Author: ndunj123@gmail.com)
+                        Creator Studio Hub (Author: {currentUser?.email || "ndunj123@gmail.com"})
                       </h3>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
                         {customSimulations.length} Published Sim{customSimulations.length === 1 ? "" : "s"}
@@ -610,10 +638,32 @@ export default function App() {
                   </button>
 
                   <button
-                    onClick={() => {
-                      setEditingSim(null);
-                      setIsHtmlImporterOpen(true);
-                    }}
+                    id="banner-creator-pass-btn"
+                    onClick={() => setIsCreatorFeeModalOpen(true)}
+                    className="flex-1 lg:flex-none px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-amber-300 hover:text-amber-200 border border-amber-500/30 font-semibold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                    title={`Creator Publishing Authorization to ${AXIOM_OWNER_EMAIL}`}
+                  >
+                    {isAxiomstemOwner(currentUser?.email) ? (
+                      <>
+                        <Crown className="w-4 h-4 text-amber-400" />
+                        <span>Owner (Fee Exempt)</span>
+                      </>
+                    ) : currentUser?.creatorLicense ? (
+                      <>
+                        <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                        <span>Publishing Pass Active</span>
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="w-4 h-4 text-amber-400" />
+                        <span>Publishing Pass (${CREATOR_UPLOAD_FEE} Due)</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    id="banner-upload-sim-btn"
+                    onClick={() => handleOpenUploadSuite(null)}
                     className="flex-1 lg:flex-none px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
                   >
                     <PlusCircle className="w-4 h-4 text-slate-950" />
@@ -627,18 +677,20 @@ export default function App() {
             <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 border-b border-slate-800 pb-4">
               <div>
                 <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight capitalize">
-                  {selectedDiscipline === "all" ? "Curriculum Simulation Library" : `${selectedDiscipline} Interactive Labs`}
+                  {selectedDiscipline === "all"
+                    ? t("libraryHeading")
+                    : t("disciplineLabs", { discipline: selectedDiscipline })}
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-400 mt-1">
                   {customSimulations.length === 0
-                    ? "Your simulation catalog is currently waiting for your first HTML upload."
-                    : `Showing ${filteredSimulations.length} standard-aligned interactive simulation models`}
+                    ? t("waitingFirstUpload")
+                    : t("showingSimulations", { count: filteredSimulations.length })}
                 </p>
               </div>
 
               <div className="flex items-center gap-2 text-xs text-slate-400">
                 <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                <span>Zero-Plugin HTML5 Runtime (Chromebook, Mac, PC, iPad)</span>
+                <span>{t("html5RuntimeBadge")}</span>
               </div>
             </div>
 
@@ -662,22 +714,19 @@ export default function App() {
                   <FileCode className="w-8 h-8 text-sky-400" />
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-xl font-black text-white">Your Simulation Library is Ready for Upload</h3>
+                  <h3 className="text-xl font-black text-white">{t("noSimulationsFound")}</h3>
                   <p className="text-xs text-slate-300 max-w-lg mx-auto leading-relaxed">
-                    All default sample simulations have been removed. You are the exclusive creator authorized to upload your own HTML/Canvas/JS simulations and define curriculum standards.
+                    {t("noSimulationsHint")}
                   </p>
                 </div>
 
                 <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
                   <button
-                    onClick={() => {
-                      setEditingSim(null);
-                      setIsHtmlImporterOpen(true);
-                    }}
+                    onClick={() => handleOpenUploadSuite(null)}
                     className="px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-sm rounded-2xl shadow-xl shadow-emerald-500/20 transition-all cursor-pointer flex items-center gap-2 active:scale-95"
                   >
                     <PlusCircle className="w-5 h-5 text-slate-950" />
-                    <span>Upload Your First HTML App</span>
+                    <span>{t("uploadFirstApp")}</span>
                   </button>
 
                   <button
@@ -685,7 +734,7 @@ export default function App() {
                     className="px-5 py-3.5 bg-slate-800 hover:bg-slate-700 text-amber-300 font-semibold text-sm rounded-2xl border border-slate-700 transition-all cursor-pointer flex items-center gap-2"
                   >
                     <BookOpen className="w-4 h-4 text-amber-400" />
-                    <span>Manage Standards Hub ({standards.length})</span>
+                    <span>{t("standardsStudio")} ({standards.length})</span>
                   </button>
                 </div>
 
@@ -707,9 +756,9 @@ export default function App() {
             ) : filteredSimulations.length === 0 ? (
               <div className="py-16 text-center space-y-3 bg-slate-900/50 rounded-3xl border border-slate-800">
                 <Atom className="w-10 h-10 stroke-1 mx-auto text-slate-600" />
-                <h3 className="text-base font-bold text-slate-200">No simulations matched your active filters</h3>
+                <h3 className="text-base font-bold text-slate-200">{t("noSimulationsFound")}</h3>
                 <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                  Try clearing your search query or selecting "All Disciplines" to view your uploaded library.
+                  {t("noSimulationsHint")}
                 </p>
                 <button
                   onClick={() => {
@@ -719,7 +768,7 @@ export default function App() {
                   }}
                   className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 cursor-pointer"
                 >
-                  Reset All Filters
+                  {t("resetFilters")}
                 </button>
               </div>
             ) : (
@@ -738,10 +787,7 @@ export default function App() {
                     onOpenLMSPublish={handleOpenLMSPublish}
                     isCreatorMode={isCreatorMode}
                     isLicensed={isSimLicensed(sim.id)}
-                    onEditSimulation={(s) => {
-                      setEditingSim(s);
-                      setIsHtmlImporterOpen(true);
-                    }}
+                    onEditSimulation={(s) => handleOpenUploadSuite(s)}
                     onDeleteSimulation={handleDeleteSimulation}
                   />
                 ))}
@@ -775,7 +821,23 @@ export default function App() {
         />
       )}
 
-      {/* MODAL 0: CREATOR STUDIO HTML APP IMPORTER & AUTHORING SUITE */}
+      {/* MODAL 0: CREATOR SIMULATION UPLOAD FEE & PUBLISHING LICENSE */}
+      {isCreatorFeeModalOpen && (
+        <CreatorUploadFeeModal
+          isOpen={isCreatorFeeModalOpen}
+          onClose={() => setIsCreatorFeeModalOpen(false)}
+          currentUser={currentUser}
+          onPaymentSuccess={(license) => {
+            if (currentUser) {
+              setCurrentUser((prev) => (prev ? { ...prev, creatorLicense: license } : null));
+            }
+            setIsCreatorFeeModalOpen(false);
+            setIsHtmlImporterOpen(true);
+          }}
+        />
+      )}
+
+      {/* MODAL 0.2: CREATOR STUDIO HTML APP IMPORTER & AUTHORING SUITE */}
       {isHtmlImporterOpen && (
         <HtmlAppImporterModal
           onClose={() => {
@@ -786,6 +848,11 @@ export default function App() {
           editingSimulation={editingSim}
           availableStandards={standards}
           onOpenStandardsManager={() => setIsStandardsModalOpen(true)}
+          currentUser={currentUser}
+          onRequestFeePayment={() => {
+            setIsHtmlImporterOpen(false);
+            setIsCreatorFeeModalOpen(true);
+          }}
         />
       )}
 
@@ -803,11 +870,14 @@ export default function App() {
       {/* MODAL 0.8: LMS DIRECT INTEGRATION & ASSIGNMENT PUBLISHER */}
       {isLMSModalOpen && (
         <LMSPublishModal
+          key={`${activeSimForLMS?.id || "sim"}-${activeLMSPlatform || "default"}`}
           isOpen={isLMSModalOpen}
           onClose={() => {
             setIsLMSModalOpen(false);
             setActiveSimForLMS(null);
+            setActiveLMSPlatform(undefined);
           }}
+          initialPlatform={activeLMSPlatform}
           simulation={activeSimForLMS || (customSimulations.length > 0 ? customSimulations[0] : null)}
           allSimulations={customSimulations}
         />
@@ -983,7 +1053,7 @@ export default function App() {
                   </button>
                 </li>
                 <li>
-                  <button onClick={() => setIsHtmlImporterOpen(true)} className="hover:text-white cursor-pointer text-emerald-400">
+                  <button onClick={() => handleOpenUploadSuite(null)} className="hover:text-white cursor-pointer text-emerald-400">
                     + Upload HTML Simulation
                   </button>
                 </li>

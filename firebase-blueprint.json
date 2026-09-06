@@ -116,6 +116,26 @@
         "updatedAt": { "type": "string", "maxLength": 64 }
       },
       "required": ["authorUid", "title", "discipline"]
+    },
+    "CreatorPublishingPass": {
+      "title": "CreatorPublishingPass",
+      "description": "Creator simulation publishing authorization fee paid to AXIOMSTEM owner.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "creatorUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "creatorEmail": { "type": "string", "maxLength": 256 },
+        "creatorName": { "type": "string", "maxLength": 128 },
+        "ownerEmail": { "type": "string", "maxLength": 256 },
+        "amountPaid": { "type": "number" },
+        "currency": { "type": "string", "maxLength": 8 },
+        "tier": { "type": "string", "enum": ["single_simulation", "creator_pass"] },
+        "status": { "type": "string", "enum": ["active", "pending", "refunded"] },
+        "paymentMethod": { "type": "string", "maxLength": 64 },
+        "transactionId": { "type": "string", "maxLength": 128 },
+        "purchasedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["creatorUid", "creatorEmail", "amountPaid", "status", "transactionId"]
     }
   },
   "firestore": {
@@ -130,6 +150,10 @@
     "/users/{userId}/licenses/{licenseId}": {
       "schema": "UserLicense",
       "description": "Active simulation licenses owned by user."
+    },
+    "/users/{userId}/creatorPass/{passId}": {
+      "schema": "CreatorPublishingPass",
+      "description": "Verified creator upload authorization receipts."
     },
     "/users/{userId}/simulationProgress/{simId}": {
       "schema": "SimulationProgress",

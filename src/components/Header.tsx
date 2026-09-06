@@ -1,5 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import { STEMDiscipline, UserProfile } from "../types";
+import { useLanguage } from "../i18n/LanguageContext";
+import { LanguageSelector } from "./LanguageSelector";
+import {
+  isAxiomstemOwner,
+  checkCreatorUploadPermission,
+  AXIOM_OWNER_EMAIL,
+  CREATOR_UPLOAD_FEE,
+} from "../services/creatorLicenseService";
 import {
   Atom,
   ShoppingCart,
@@ -25,7 +33,8 @@ import {
   RefreshCw,
   CreditCard,
   DollarSign,
-  KeyRound
+  KeyRound,
+  Crown
 } from "lucide-react";
 
 interface HeaderProps {
@@ -42,6 +51,7 @@ interface HeaderProps {
   onOpenLMSHub?: () => void;
   onOpenLemonSqueezyHub?: () => void;
   onOpenStripeHub?: () => void;
+  onOpenCreatorFeeModal?: () => void;
   activeView: "marketplace" | "dashboard";
   isCreatorMode: boolean;
   onToggleCreatorMode: () => void;
@@ -65,6 +75,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenLMSHub,
   onOpenLemonSqueezyHub,
   onOpenStripeHub,
+  onOpenCreatorFeeModal,
   activeView,
   isCreatorMode,
   onToggleCreatorMode,
@@ -73,8 +84,10 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAuthModal,
   onSignOut,
 }) => {
+  const { t } = useLanguage();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
+  const uploadPerm = checkCreatorUploadPermission(currentUser || null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -90,14 +103,14 @@ export const Header: React.FC<HeaderProps> = ({
   const getRoleBadge = (role?: string) => {
     switch (role) {
       case "creator":
-        return { label: "Creator / Author", bg: "bg-amber-500/20 text-amber-300 border-amber-500/30" };
+        return { label: t("roleCreator"), bg: "bg-amber-500/20 text-amber-300 border-amber-500/30" };
       case "admin":
-        return { label: "District Admin", bg: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" };
+        return { label: t("roleAdmin"), bg: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" };
       case "student":
-        return { label: "Student", bg: "bg-sky-500/20 text-sky-300 border-sky-500/30" };
+        return { label: t("roleStudent"), bg: "bg-sky-500/20 text-sky-300 border-sky-500/30" };
       case "teacher":
       default:
-        return { label: "STEM Educator", bg: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30" };
+        return { label: t("roleTeacher"), bg: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30" };
     }
   };
 
@@ -112,7 +125,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-[11px] font-semibold text-slate-300">
-                Signed in: <strong className="text-white">{currentUser.displayName}</strong> ({badgeInfo.label})
+                {t("signedIn")}: <strong className="text-white">{currentUser.displayName}</strong> ({badgeInfo.label})
               </span>
               {currentUser.schoolName && (
                 <span className="text-[10px] text-slate-400 hidden sm:inline">&bull; {currentUser.schoolName}</span>
@@ -122,23 +135,26 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="flex items-center gap-2">
               <span className="text-slate-400 text-[11px] flex items-center gap-1">
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <strong>STEM Grants:</strong> 100% Tax-Exempt School POs &amp;
+                <span>{t("stemGrants")}</span>
               </span>
               {onOpenLMSHub && (
                 <button
                   onClick={onOpenLMSHub}
                   className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-300 hover:text-white bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 px-2 py-0.5 rounded-md cursor-pointer transition-all"
-                  title="Open Google Classroom, Canvas, & Schoology Hub"
+                  title={t("lmsHubTitle")}
                 >
                   <Share2 className="w-3 h-3 text-emerald-400" />
-                  <span>Google Classroom, Canvas &amp; Schoology Hub</span>
+                  <span>{t("lmsHubTitle")}</span>
                 </button>
               )}
             </div>
           )}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          {/* Quick Language Selector in top bar */}
+          <LanguageSelector compact id="header-top-language-selector" />
+
           {(onOpenLemonSqueezyHub || onOpenStripeHub) && (
             <button
               id="header-lemon-hub-btn"
@@ -147,7 +163,7 @@ export const Header: React.FC<HeaderProps> = ({
               title="Manage Lemon Squeezy Store, Merchant of Record settings & Creator Payouts"
             >
               <Sparkles className="w-3 h-3 text-amber-400" />
-              <span>Lemon Squeezy Store &amp; Payouts</span>
+              <span>{t("lemonStorePayouts")}</span>
             </button>
           )}
 
@@ -158,7 +174,7 @@ export const Header: React.FC<HeaderProps> = ({
               title="Backup simulation library and standards as JSON"
             >
               <FolderDown className="w-3 h-3 text-indigo-400" />
-              <span>Export JSON Backup</span>
+              <span>{t("exportBackup")}</span>
             </button>
           )}
 
@@ -172,7 +188,7 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             {isCreatorMode ? <Unlock className="w-3 h-3 text-amber-400" /> : <Lock className="w-3 h-3" />}
-            <span>{isCreatorMode ? "Creator Mode Active" : "Unlock Creator Mode"}</span>
+            <span>{isCreatorMode ? t("creatorModeActive") : t("unlockCreatorMode")}</span>
           </button>
         </div>
       </div>
@@ -204,10 +220,10 @@ export const Header: React.FC<HeaderProps> = ({
                   AXIOM<span className="text-sky-400">STEM</span>
                 </span>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                  {isCreatorMode ? "CREATOR" : "MARKETPLACE"}
+                  {isCreatorMode ? t("creatorStudio") : t("marketplace")}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 hidden sm:block">Interactive Simulation Platform</p>
+              <p className="text-[11px] text-slate-400 hidden sm:block">{t("brandTagline")}</p>
             </div>
           </div>
 
@@ -218,13 +234,16 @@ export const Header: React.FC<HeaderProps> = ({
               type="text"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search simulations, standards (e.g. HS-PS4-1, AP Physics)..."
+              placeholder={t("searchPlaceholder")}
               className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all"
             />
           </div>
 
           {/* Navigation Actions */}
           <div className="flex items-center gap-2.5">
+            {/* Language Selector in Main Nav */}
+            <LanguageSelector id="header-main-language-selector" />
+
             {/* Standards Manager (Creator Only) */}
             {isCreatorMode && onOpenStandardsManager && (
               <button
@@ -233,23 +252,44 @@ export const Header: React.FC<HeaderProps> = ({
                 className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold cursor-pointer transition-all"
               >
                 <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-                <span>Standards Studio</span>
+                <span>{t("standardsStudio")}</span>
               </button>
             )}
 
-            {/* HTML Upload Button */}
+            {/* HTML Upload Button - Gated by Creator Publishing Authorization Fee */}
             {onOpenHtmlImporter && (
               <button
                 id="integrate-html-btn"
                 onClick={() => {
                   if (!isCreatorMode) onToggleCreatorMode();
-                  onOpenHtmlImporter();
+                  if (!uploadPerm.allowed && onOpenCreatorFeeModal) {
+                    onOpenCreatorFeeModal();
+                  } else {
+                    onOpenHtmlImporter();
+                  }
                 }}
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 hover:from-emerald-400 hover:to-sky-400 text-slate-950 text-xs font-bold cursor-pointer shadow-md shadow-emerald-500/20 transition-all active:scale-95"
-                title="Upload and author standalone HTML/Canvas simulation"
+                title={
+                  uploadPerm.isOwner
+                    ? "Upload & author HTML simulation (AXIOMSTEM Platform Owner - Fee Exempt)"
+                    : uploadPerm.allowed
+                    ? "Upload & author HTML simulation (Creator Publishing License Active)"
+                    : `Upload HTML simulation (Requires $${CREATOR_UPLOAD_FEE}.00 Publishing Fee to ${AXIOM_OWNER_EMAIL})`
+                }
               >
-                <PlusCircle className="w-3.5 h-3.5 text-slate-950" />
-                <span>+ Upload .html App</span>
+                {!uploadPerm.allowed ? (
+                  <Lock className="w-3.5 h-3.5 text-slate-950" />
+                ) : uploadPerm.isOwner ? (
+                  <Crown className="w-3.5 h-3.5 text-slate-950" />
+                ) : (
+                  <PlusCircle className="w-3.5 h-3.5 text-slate-950" />
+                )}
+                <span>{t("uploadHtmlApp")}</span>
+                {!uploadPerm.allowed && (
+                  <span className="ml-0.5 px-1.5 py-0.5 bg-slate-950 text-emerald-400 rounded text-[10px] font-black tracking-tight">
+                    ${CREATOR_UPLOAD_FEE}
+                  </span>
+                )}
               </button>
             )}
 
@@ -259,7 +299,7 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={onOpenQuoteModal}
               className="hidden lg:flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs font-medium cursor-pointer transition-all"
             >
-              <FileCheck2 className="w-3.5 h-3.5 text-amber-400" /> School PO Quote
+              <FileCheck2 className="w-3.5 h-3.5 text-amber-400" /> {t("schoolPoQuote")}
             </button>
 
             {/* LMS Integration Hub Switcher */}
@@ -271,7 +311,7 @@ export const Header: React.FC<HeaderProps> = ({
                 title="Google Classroom, Canvas LMS, and Schoology Integration Hub"
               >
                 <Share2 className="w-3.5 h-3.5 text-emerald-400" />
-                <span>LMS Hub</span>
+                <span>{t("lmsHub")}</span>
               </button>
             )}
 
@@ -286,7 +326,7 @@ export const Header: React.FC<HeaderProps> = ({
               }`}
             >
               <GraduationCap className="w-4 h-4 text-sky-400" />
-              <span>Teacher Library</span>
+              <span>{t("teacherLibrary")}</span>
             </button>
 
             {/* Shopping Cart Drawer Trigger */}
@@ -296,7 +336,7 @@ export const Header: React.FC<HeaderProps> = ({
               className="relative flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-xs cursor-pointer shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
             >
               <ShoppingCart className="w-4 h-4 text-slate-950" />
-              <span>Cart</span>
+              <span>{t("cart")}</span>
               {cartCount > 0 && (
                 <span className="bg-slate-950 text-emerald-400 text-[10px] font-black px-1.5 py-0.5 rounded-full">
                   {cartCount}
@@ -349,6 +389,36 @@ export const Header: React.FC<HeaderProps> = ({
                       )}
                     </div>
 
+                    {/* Creator Publishing Fee / License Status Pill */}
+                    <div className="p-2.5 bg-slate-950/90 rounded-2xl border border-slate-800 space-y-1">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-slate-400">Simulation Upload:</span>
+                        {uploadPerm.isOwner ? (
+                          <span className="text-amber-400 font-bold flex items-center gap-1">
+                            <Crown className="w-3 h-3" /> Platform Owner
+                          </span>
+                        ) : uploadPerm.license ? (
+                          <span className="text-emerald-400 font-bold flex items-center gap-1">
+                            <ShieldCheck className="w-3 h-3" /> License Active
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsProfileMenuOpen(false);
+                              if (onOpenCreatorFeeModal) onOpenCreatorFeeModal();
+                            }}
+                            className="text-amber-400 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                          >
+                            <Lock className="w-3 h-3" /> ${CREATOR_UPLOAD_FEE} Fee Due
+                          </button>
+                        )}
+                      </div>
+                      <div className="text-[10px] text-slate-500">
+                        Owner Payee: <span className="font-mono text-slate-400">{AXIOM_OWNER_EMAIL}</span>
+                      </div>
+                    </div>
+
                     {/* Menu Actions */}
                     <button
                       onClick={() => {
@@ -358,7 +428,7 @@ export const Header: React.FC<HeaderProps> = ({
                       className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-800 text-xs font-medium text-slate-300 hover:text-white flex items-center gap-2 transition-colors cursor-pointer"
                     >
                       <GraduationCap className="w-4 h-4 text-sky-400" />
-                      <span>My Teacher Library</span>
+                      <span>{t("teacherLibrary")}</span>
                     </button>
 
                     {onOpenLMSHub && (
@@ -370,7 +440,7 @@ export const Header: React.FC<HeaderProps> = ({
                         className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-800 text-xs font-medium text-slate-300 hover:text-white flex items-center gap-2 transition-colors cursor-pointer"
                       >
                         <Share2 className="w-4 h-4 text-emerald-400" />
-                        <span>Google Classroom &amp; LMS</span>
+                        <span>{t("lmsHub")}</span>
                       </button>
                     )}
 
@@ -384,7 +454,7 @@ export const Header: React.FC<HeaderProps> = ({
                         className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-800 text-xs font-medium text-amber-300 hover:text-white flex items-center gap-2 transition-colors cursor-pointer"
                       >
                         <Sparkles className="w-4 h-4 text-amber-400" />
-                        <span>Lemon Squeezy Store &amp; Payouts</span>
+                        <span>{t("lemonStorePayouts")}</span>
                       </button>
                     )}
 
@@ -396,7 +466,7 @@ export const Header: React.FC<HeaderProps> = ({
                       className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-800 text-xs font-medium text-slate-300 hover:text-white flex items-center gap-2 transition-colors cursor-pointer"
                     >
                       <ShieldCheck className="w-4 h-4 text-amber-400" />
-                      <span>{isCreatorMode ? "Exit Creator Mode" : "Switch to Creator Mode"}</span>
+                      <span>{isCreatorMode ? "Exit Creator Mode" : t("unlockCreatorMode")}</span>
                     </button>
 
                     <button
@@ -407,7 +477,7 @@ export const Header: React.FC<HeaderProps> = ({
                       className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-800 text-xs font-medium text-slate-300 hover:text-white flex items-center gap-2 transition-colors cursor-pointer"
                     >
                       <RefreshCw className="w-4 h-4 text-indigo-400" />
-                      <span>Switch Account / Demo Role</span>
+                      <span>{t("switchProfile")}</span>
                     </button>
 
                     <button
@@ -418,7 +488,7 @@ export const Header: React.FC<HeaderProps> = ({
                       className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-800 text-xs font-medium text-slate-300 hover:text-white flex items-center gap-2 transition-colors cursor-pointer"
                     >
                       <KeyRound className="w-4 h-4 text-sky-400" />
-                      <span>Recover / Reset Password</span>
+                      <span>{t("resetPassword")}</span>
                     </button>
 
                     <div className="h-px bg-slate-800 my-1" />
@@ -431,7 +501,7 @@ export const Header: React.FC<HeaderProps> = ({
                       className="w-full px-3 py-2 text-left rounded-xl hover:bg-rose-500/15 text-xs font-semibold text-rose-400 hover:text-rose-300 flex items-center gap-2 transition-colors cursor-pointer"
                     >
                       <LogOut className="w-4 h-4 text-rose-400" />
-                      <span>Sign Out</span>
+                      <span>{t("signOut")}</span>
                     </button>
                   </div>
                 )}
@@ -444,7 +514,7 @@ export const Header: React.FC<HeaderProps> = ({
                 title="Sign in or create free educator account"
               >
                 <LogIn className="w-3.5 h-3.5" />
-                <span>Sign In</span>
+                <span>{t("signInRegister")}</span>
               </button>
             )}
           </div>

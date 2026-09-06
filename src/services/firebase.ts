@@ -342,3 +342,46 @@ export async function getSimulationReviewsFromFirestore(simId: string): Promise<
     handleFirestoreError(error, OperationType.LIST, path);
   }
 }
+
+// 10. Creator Publishing Pass & Upload Authorization
+export async function saveCreatorPassToFirestore(
+  userId: string,
+  pass: {
+    id: string;
+    creatorUid: string;
+    creatorEmail: string;
+    creatorName: string;
+    ownerEmail: string;
+    amountPaid: number;
+    currency: string;
+    tier: string;
+    status: string;
+    paymentMethod: string;
+    transactionId: string;
+    purchasedAt: string;
+  }
+): Promise<void> {
+  if (!userId || !isAuthReadyForUser(userId)) return;
+  const path = `users/${userId}/creatorPass/${pass.id}`;
+  try {
+    await setDoc(doc(db, "users", userId, "creatorPass", pass.id), pass, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function getCreatorPassFromFirestore(userId: string): Promise<any | null> {
+  if (!userId || !isAuthReadyForUser(userId)) return null;
+  const path = `users/${userId}/creatorPass`;
+  try {
+    const colRef = collection(db, "users", userId, "creatorPass");
+    const snap = await getDocs(colRef);
+    if (!snap.empty) {
+      return snap.docs[0].data();
+    }
+    return null;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.GET, path);
+  }
+}
+

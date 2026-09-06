@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SatCom-Sim 3D | Real-Time Earth & Orbital Link Engine</title>
+    <title>SatCom-Sim 3D | Real-Time Earth & Multi-Satellite Constellation Engine</title>
     <style>
         :root {
             --panel-bg: rgba(10, 15, 30, 0.85);
@@ -140,7 +140,7 @@
             overflow-y: auto;
         }
 
-        /* Right Telemetry Panel (Hidden by default) */
+        /* Right Telemetry Panel */
         #telemetry-panel {
             top: 70px;
             right: 20px;
@@ -260,7 +260,35 @@
         .status-warn { color: var(--accent-warn); }
         .status-alert { color: var(--accent-danger); }
 
-        /* Modal Explanatory Note Backdrop */
+        /* Satellite Selection Legend Items */
+        .sat-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .sat-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(5, 8, 15, 0.6);
+            border: 1px solid var(--panel-border);
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+        }
+
+        .sat-color-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        /* Modal Backdrop */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -398,13 +426,16 @@
             <span>📡</span> SATCOM-SIM 3D
         </div>
         <div class="header-controls">
+            <button class="hdr-btn active" id="audioToggleBtn" onclick="toggleAudioNarrator()">
+                <span id="audioIcon">🔊</span> <span id="audioStatusText">Voice Narrator ON</span>
+            </button>
             <button class="hdr-btn" id="telemetryToggleBtn" onclick="toggleTelemetry()">
                 <span>📊</span> Link Telemetry
             </button>
             <button class="hdr-btn" onclick="toggleModal(true)">
                 <span>ℹ️</span> Explanatory Note
             </button>
-            <div class="status-badge" id="sim-status">PHYSICS & RF ENGINE ONLINE</div>
+            <div class="status-badge" id="sim-status">4-SAT CONSTELLATION ONLINE</div>
         </div>
     </header>
 
@@ -416,15 +447,15 @@
         <div class="control-group">
             <label for="orbitPreset">Orbital Regime</label>
             <select id="orbitPreset" onchange="updateOrbitPreset()">
-                <option value="LEO">LEO - Starlink (550 km, 53° Inc)</option>
-                <option value="MEO">MEO - O3b mPOWER (8,063 km, 0° Inc)</option>
-                <option value="GEO">GEO - ViaSat High-Throughput (35,786 km)</option>
-                <option value="HEO">HEO - Molniya (1,000 x 39,700 km, 63.4°)</option>
+                <option value="LEO">LEO - Starlink / Walker Constellation (550 km)</option>
+                <option value="MEO">MEO - O3b mPOWER Constellation (8,063 km)</option>
+                <option value="GEO">GEO - Geostationary Equatorial Arc (35,786 km)</option>
+                <option value="HEO">HEO - Molniya Highly Elliptical Orbits</option>
             </select>
         </div>
 
         <div class="control-group">
-            <label for="satSpeed">Satellite Speed</label>
+            <label for="satSpeed">Constellation Orbit Speed</label>
             <input type="range" id="satSpeed" min="0" max="500" value="250" oninput="updateSatSpeedLabel(this.value)">
             <span id="satSpeedLabel" style="font-size:0.7rem; font-family:var(--font-mono); color:var(--accent-cyan)">250x Speed (Ultra-Fast)</span>
         </div>
@@ -447,11 +478,31 @@
             </select>
         </div>
 
+        <div class="panel-title" style="margin-top: 6px;">Active Constellation</div>
+        <div class="sat-legend">
+            <div class="sat-item">
+                <div><span class="sat-color-dot" style="background:#00f0ff;"></span>Sat Alpha (Cyan Wings)</div>
+                <span style="color:var(--text-muted)">RAAN 0°</span>
+            </div>
+            <div class="sat-item">
+                <div><span class="sat-color-dot" style="background:#ff00aa;"></span>Sat Beta (Magenta Wings)</div>
+                <span style="color:var(--text-muted)">RAAN 90°</span>
+            </div>
+            <div class="sat-item">
+                <div><span class="sat-color-dot" style="background:#00ff66;"></span>Sat Gamma (Emerald Wings)</div>
+                <span style="color:var(--text-muted)">RAAN 180°</span>
+            </div>
+            <div class="sat-item">
+                <div><span class="sat-color-dot" style="background:#ffb700;"></span>Sat Delta (Amber Wings)</div>
+                <span style="color:var(--text-muted)">RAAN 270°</span>
+            </div>
+        </div>
+
         <div class="panel-title" style="margin-top: 6px;">RF Link Parameters</div>
 
         <div class="control-group">
             <label for="freqBand">Frequency Band</label>
-            <select id="freqBand" onchange="recalculateLink()">
+            <select id="freqBand" onchange="recalculateLinks()">
                 <option value="28.5">Ka-Band (28.5 GHz Uplink)</option>
                 <option value="19.0">Ka-Band (19.0 GHz Downlink)</option>
                 <option value="14.2">Ku-Band (14.2 GHz Uplink)</option>
@@ -461,18 +512,28 @@
 
         <div class="control-group">
             <label for="rainRate">Rain Attenuation (mm/hr)</label>
-            <input type="range" id="rainRate" min="0" max="80" value="0" oninput="updateRainLabel(this.value); recalculateLink();">
+            <input type="range" id="rainRate" min="0" max="80" value="0" oninput="updateRainLabel(this.value); recalculateLinks();">
             <span id="rainLabel" style="font-size:0.7rem; font-family:var(--font-mono); color:var(--accent-cyan)">0 mm/hr (Clear Sky)</span>
         </div>
 
-        <button class="action-btn" onclick="resetSatellitePosition()">Reset Orbital Epoch</button>
+        <button class="action-btn" onclick="resetSatellitePositions()">Reset Orbital Epoch</button>
     </div>
 
-    <!-- Telemetry Panel (Hidden initially until requested) -->
+    <!-- Telemetry Panel -->
     <div class="hud-panel" id="telemetry-panel">
         <div class="panel-title">
-            <span>Link Budget Telemetry</span>
+            <span>Link Telemetry</span>
             <button class="close-btn" onclick="toggleTelemetry(false)" style="font-size: 1.1rem;">&times;</button>
+        </div>
+
+        <div class="control-group">
+            <label for="trackedSatSelect">Track Satellite</label>
+            <select id="trackedSatSelect" onchange="recalculateLinks()">
+                <option value="0">Sat Alpha (Cyan Wings)</option>
+                <option value="1">Sat Beta (Magenta Wings)</option>
+                <option value="2">Sat Gamma (Emerald Wings)</option>
+                <option value="3">Sat Delta (Amber Wings)</option>
+            </select>
         </div>
 
         <div class="telemetry-grid">
@@ -528,19 +589,19 @@
                 <button class="close-btn" onclick="toggleModal(false)">&times;</button>
             </div>
             <div class="modal-body">
-                <p>Welcome to <strong>SatCom-Sim 3D</strong>, an interactive physical visualizer and RF link budget simulator for satellite communications.</p>
+                <p>Welcome to <strong>SatCom-Sim 3D</strong>, an interactive physical visualizer and RF link budget simulator featuring a 4-satellite constellation with interactive voice explanations.</p>
                 
-                <p><strong>Key Visual Features:</strong></p>
+                <p><strong>Constellation Architecture:</strong></p>
                 <ul>
-                    <li><span><strong>Realistic Spacecraft Bus:</strong> Detailed gold-foil MLI insulation, high-gain parabolic dishes, phased-array panels, and blue silicon solar arrays.</span></li>
-                    <li><span><strong>Dynamic Orbital Motion:</strong> Orbit speeds are significantly accelerated (250x base default) to observe real-time handovers and elevation changes across LEO, MEO, GEO, and HEO orbits.</span></li>
+                    <li><span><strong>Identical Satellite Geometry:</strong> Each satellite utilizes identical high-detail spacecraft geometry featuring MLI foil buses, dual solar wings, parabolic dishes, phased array antennas, and thrusters.</span></li>
+                    <li><span><strong>Color Differentiation:</strong> Satellites feature distinct color schemes on both their MLI bus foil and solar panel array wings, corresponding to their orbital beam vectors (Cyan, Magenta, Emerald, and Amber).</span></li>
+                    <li><span><strong>Voice Synthesis Explanations:</strong> Built-in real-time speech narration automatically explains the dynamics, latency, and operational features of every selected orbital regime.</span></li>
                 </ul>
 
                 <p><strong>RF Physics Engine Details:</strong></p>
                 <ul>
-                    <li><span><strong>FSPL (Free Space Path Loss):</strong> Calculates signal degradation across distance and frequency using ITU-R formulas.</span></li>
-                    <li><span><strong>Rain Attenuation:</strong> Simulates atmospheric absorption based on millimeter rain rates and elevation angle look-vector.</span></li>
-                    <li><span><strong>Link Margin:</strong> Evaluates carrier-to-noise ratio against a 6.0 dB QPSK demodulation threshold. Active beam locks when above horizon.</span></li>
+                    <li><span><strong>FSPL (Free Space Path Loss):</strong> Signal loss dynamically calculated over slant range and carrier frequency.</span></li>
+                    <li><span><strong>Link Budget Tracking:</strong> Use the dropdown in the Telemetry Panel to monitor telemetry metrics for any individual satellite in real time.</span></li>
                 </ul>
             </div>
         </div>
@@ -553,7 +614,7 @@
         const KM_TO_UNITS = EARTH_SCALE / EARTH_RADIUS_KM;
         const C_KMS = 299792.458; // Speed of Light in km/s
 
-        // Ground Stations Data (Lat, Lon)
+        // Ground Stations Data
         const GROUND_STATIONS = {
             London: { lat: 51.5074, lon: -0.1278, name: "London Teleport" },
             NewYork: { lat: 40.7128, lon: -74.0060, name: "New York Gateway" },
@@ -561,23 +622,108 @@
             Sydney: { lat: -33.8688, lon: 151.2093, name: "Sydney Facility" }
         };
 
-        // Orbital Presets Configuration
+        // Offsets (in degrees lat/lon) for 4 ground station terminals clustered inside the selected city
+        const STATION_OFFSETS = [
+            { dLat: 0.2,  dLon: -0.2 },
+            { dLat: 0.2,  dLon: 0.2  },
+            { dLat: -0.2, dLon: -0.2 },
+            { dLat: -0.2, dLon: 0.2  }
+        ];
+
+        // Orbital Presets Configuration with Dedicated Voice Narration Texts
         const ORBIT_PRESETS = {
-            LEO: { hpKm: 550, haKm: 550, incDeg: 53.0, periodMin: 95.6 },
-            MEO: { hpKm: 8063, haKm: 8063, incDeg: 0.0, periodMin: 288 },
-            GEO: { hpKm: 35786, haKm: 35786, incDeg: 0.0, periodMin: 1436 },
-            HEO: { hpKm: 1000, haKm: 39700, incDeg: 63.4, periodMin: 718 }
+            LEO: { 
+                hpKm: 550, 
+                haKm: 550, 
+                incDeg: 53.0, 
+                periodMin: 95.6,
+                narration: "Low Earth Orbit selected. Operating at an altitude of 550 kilometers with an inclination of 53 degrees. Low Earth Orbit provides ultra-low signal latency under 15 milliseconds, ideal for global high-speed broadband constellations like Starlink, though it requires frequent ground handovers due to fast satellite passes."
+            },
+            MEO: { 
+                hpKm: 8063, 
+                haKm: 8063, 
+                incDeg: 15.0, 
+                periodMin: 288,
+                narration: "Medium Earth Orbit selected. Operating at 8,063 kilometers altitude. Medium Earth Orbit offers a sweet spot between latency and coverage, requiring fewer satellites than Low Earth Orbit to achieve regional high-throughput broadband coverage, as used by O3b mPOWER."
+            },
+            GEO: { 
+                hpKm: 35786, 
+                haKm: 35786, 
+                incDeg: 0.0, 
+                periodMin: 1436,
+                narration: "Geostationary Equatorial Orbit selected. At 35,786 kilometers altitude, satellites match Earth's rotational speed, appearing stationary over the equator. GEO provides continuous fixed-antenna coverage over entire continents, though with higher round-trip latency around 240 milliseconds."
+            },
+            HEO: { 
+                hpKm: 1000, 
+                haKm: 39700, 
+                incDeg: 63.4, 
+                periodMin: 718,
+                narration: "Highly Elliptical Molniya Orbit selected. Featuring a low perigee of 1,000 kilometers and a high apogee of nearly 40,000 kilometers at a 63.4 degree critical inclination. Satellites dwell for extended hours over high northern latitudes to serve polar regions inaccessible to geostationary satellites."
+            }
         };
+
+        // Satellite Configuration (4 Satellites with distinct bus foil colors, solar wing colors, RAAN offsets, and Phase offsets)
+        const SATELLITE_CONFIGS = [
+            { id: 0, name: "Sat Alpha", hexColor: 0x00f0ff, busFoilColor: 0xffcc33, solarWingColor: 0x00f0ff, raanDeg: 0, phaseOffset: 0 },
+            { id: 1, name: "Sat Beta", hexColor: 0xff00aa, busFoilColor: 0xff00aa, solarWingColor: 0xff00aa, raanDeg: 90, phaseOffset: Math.PI * 0.5 },
+            { id: 2, name: "Sat Gamma", hexColor: 0x00ff66, busFoilColor: 0x00ff66, solarWingColor: 0x00ff66, raanDeg: 180, phaseOffset: Math.PI },
+            { id: 3, name: "Sat Delta", hexColor: 0xffb700, busFoilColor: 0xff8800, solarWingColor: 0xffb700, raanDeg: 270, phaseOffset: Math.PI * 1.5 }
+        ];
 
         // State Machine Variables
         let scene, camera, renderer, controls;
-        let earthMesh, atmosphereMesh, satMesh, orbitLine, linkLine, gsMesh;
+        let earthMesh, atmosphereMesh;
+        let groundStationNodes = []; // Holds 4 dynamic ground station objects within selected city
+        let satellites = []; // Stores satellite meshes, orbit lines, and link lines
         let activeOrbit = ORBIT_PRESETS.LEO;
         let activeGS = GROUND_STATIONS.London;
-        let trueAnomaly = 0;
-        let satSpeedMultiplier = 0.0025; // Boosted default orbit speed (250x)
+        let baseTrueAnomaly = 0;
+        let satSpeedMultiplier = 0.0025; // 250x Speed
         let earthRotationBaseSpeed = 0.0003;
         let earthRotationMultiplier = 1.0;
+        let voiceNarratorEnabled = true;
+
+        // Voice Synthesizer Speech Engine
+        function speakExplanation(text) {
+            if (!voiceNarratorEnabled) return;
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Stop any ongoing speech
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 1.0;
+                utterance.pitch = 1.0;
+                utterance.volume = 1.0;
+
+                // Select clean English voice if available
+                const voices = window.speechSynthesis.getVoices();
+                const preferredVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Daniel')));
+                if (preferredVoice) {
+                    utterance.voice = preferredVoice;
+                }
+
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function toggleAudioNarrator() {
+            voiceNarratorEnabled = !voiceNarratorEnabled;
+            const btn = document.getElementById('audioToggleBtn');
+            const icon = document.getElementById('audioIcon');
+            const text = document.getElementById('audioStatusText');
+
+            if (voiceNarratorEnabled) {
+                btn.classList.add('active');
+                icon.innerText = '🔊';
+                text.innerText = 'Voice Narrator ON';
+                speakExplanation(activeOrbit.narration);
+            } else {
+                btn.classList.remove('active');
+                icon.innerText = '🔇';
+                text.innerText = 'Voice Narrator OFF';
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                }
+            }
+        }
 
         // Telemetry Visibility Toggle
         function toggleTelemetry(forceState) {
@@ -606,7 +752,7 @@
 
             // 2. Camera Setup
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 8, 22);
+            camera.position.set(0, 10, 26);
 
             // 3. Renderer Setup
             renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -620,7 +766,7 @@
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
-            controls.maxDistance = 150;
+            controls.maxDistance = 180;
             controls.minDistance = 6.5;
 
             // 5. Lighting System
@@ -634,26 +780,31 @@
             // 6. Build World Elements
             createStarfield();
             createEarth();
-            createGroundStation();
-            createSatellite();
-            createOrbitLine();
-            createLinkLine();
+            createFourGroundStations();
+
+            // Build Satellite Constellation
+            SATELLITE_CONFIGS.forEach(cfg => {
+                const satObj = buildSatelliteInstance(cfg);
+                satellites.push(satObj);
+            });
 
             // Event Listeners
             window.addEventListener('resize', onWindowResize);
 
-            // Start Rendering
+            // Start Rendering Loop
             animate();
+
+            // Preload Speech Voices if needed
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.onvoiceschanged = () => {};
+            }
         }
 
         // Modal Explanatory Note Controls
         function toggleModal(show) {
             const modal = document.getElementById('infoModal');
-            if (show) {
-                modal.classList.add('active');
-            } else {
-                modal.classList.remove('active');
-            }
+            if (show) modal.classList.add('active');
+            else modal.classList.remove('active');
         }
 
         function handleModalClick(event) {
@@ -677,21 +828,18 @@
             scene.add(starfield);
         }
 
-        // Earth & Atmosphere Construction
+        // Earth Construction
         function createEarth() {
             const earthGeo = new THREE.SphereGeometry(EARTH_SCALE, 64, 64);
 
-            // Procedural Canvas Texture Engine (Generates High-Res Earth Blue Marble + Continents)
             const canvas = document.createElement('canvas');
             canvas.width = 2048;
             canvas.height = 1024;
             const ctx = canvas.getContext('2d');
 
-            // Deep ocean base
             ctx.fillStyle = "#0a192f";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Render Stylized Topo-Continent Lines
             ctx.fillStyle = "#1e3a5f";
             for (let i = 0; i < 1800; i++) {
                 const x = Math.random() * canvas.width;
@@ -702,7 +850,6 @@
                 ctx.fill();
             }
 
-            // Grid Lines (Latitude/Longitude Lines)
             ctx.strokeStyle = "rgba(0, 240, 255, 0.12)";
             ctx.lineWidth = 1;
             for(let x=0; x<=canvas.width; x+=128) {
@@ -723,7 +870,6 @@
             earthMesh = new THREE.Mesh(earthGeo, earthMat);
             scene.add(earthMesh);
 
-            // Atmosphere Glow Mesh
             const atmosGeo = new THREE.SphereGeometry(EARTH_SCALE * 1.025, 64, 64);
             const atmosMat = new THREE.MeshBasicMaterial({
                 color: 0x00f0ff,
@@ -735,31 +881,84 @@
             scene.add(atmosphereMesh);
         }
 
-        // Ground Station Mesh & Location Marker
-        function createGroundStation() {
-            const gsGeo = new THREE.SphereGeometry(0.1, 16, 16);
-            const gsMat = new THREE.MeshBasicMaterial({ color: 0xff0055 });
-            gsMesh = new THREE.Mesh(gsGeo, gsMat);
-            scene.add(gsMesh);
+        // Create 4 Ground Stations in the active city area
+        function createFourGroundStations() {
+            groundStationNodes = [];
+
+            for (let i = 0; i < 4; i++) {
+                const gsGroup = new THREE.Group();
+
+                // 1. Core High-Glow Pulsating Dot
+                const gsGeo = new THREE.SphereGeometry(0.08, 16, 16);
+                const gsMat = new THREE.MeshBasicMaterial({ color: 0xff0044 });
+                const coreMesh = new THREE.Mesh(gsGeo, gsMat);
+                gsGroup.add(coreMesh);
+
+                // 2. Halo Glow Ring
+                const ringGeo = new THREE.RingGeometry(0.1, 0.14, 24);
+                const ringMat = new THREE.MeshBasicMaterial({
+                    color: 0xff0055,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+                ringMesh.lookAt(0, 0, 0);
+                gsGroup.add(ringMesh);
+
+                // 3. Expanding Signal Wave Ring FX
+                const waveGeo = new THREE.RingGeometry(0.14, 0.2, 24);
+                const waveMat = new THREE.MeshBasicMaterial({
+                    color: 0xff0055,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.6
+                });
+                const waveMesh = new THREE.Mesh(waveGeo, waveMat);
+                waveMesh.lookAt(0, 0, 0);
+                gsGroup.add(waveMesh);
+
+                // 4. Point Light for Environmental Surface Glow
+                const gsLight = new THREE.PointLight(0xff0055, 1.5, 2.5);
+                gsLight.position.set(0, 0, 0.1);
+                gsGroup.add(gsLight);
+
+                scene.add(gsGroup);
+
+                groundStationNodes.push({
+                    group: gsGroup,
+                    coreMesh: coreMesh,
+                    ringMesh: ringMesh,
+                    waveMesh: waveMesh,
+                    offset: STATION_OFFSETS[i]
+                });
+            }
 
             updateGroundStationPosition();
         }
 
         function updateGroundStationPosition() {
-            const pos = latLonToVector3(activeGS.lat, activeGS.lon, EARTH_SCALE + 0.02);
-            if (earthMesh) {
-                pos.applyAxisAngle(new THREE.Vector3(0, 1, 0), earthMesh.rotation.y);
-            }
-            gsMesh.position.copy(pos);
+            groundStationNodes.forEach((node) => {
+                const nodeLat = activeGS.lat + node.offset.dLat;
+                const nodeLon = activeGS.lon + node.offset.dLon;
+
+                const pos = latLonToVector3(nodeLat, nodeLon, EARTH_SCALE + 0.02);
+                if (earthMesh) {
+                    pos.applyAxisAngle(new THREE.Vector3(0, 1, 0), earthMesh.rotation.y);
+                }
+                if (node.group) {
+                    node.group.position.copy(pos);
+                    node.group.lookAt(pos.clone().multiplyScalar(2));
+                }
+            });
         }
 
-        // Realistic High-Detail Satellite Model
-        function createSatellite() {
-            satMesh = new THREE.Group();
+        // Satellite Model Generator with Custom Bus & Solar Wing Color Customization
+        function createSatelliteMesh(busColorHex, solarWingColorHex) {
+            const satGroup = new THREE.Group();
 
-            // Materials
-            const goldFoilMat = new THREE.MeshStandardMaterial({
-                color: 0xffcc33,
+            const foilMat = new THREE.MeshStandardMaterial({
+                color: busColorHex,
                 metalness: 0.9,
                 roughness: 0.25
             });
@@ -776,88 +975,118 @@
                 roughness: 0.2
             });
 
+            // Distinct colored material for solar wings
             const solarMat = new THREE.MeshStandardMaterial({
-                color: 0x0033aa,
-                metalness: 0.6,
-                roughness: 0.1
+                color: solarWingColorHex,
+                metalness: 0.7,
+                roughness: 0.15,
+                emissive: solarWingColorHex,
+                emissiveIntensity: 0.15
             });
 
-            // 1. Central Main Body (Gold Foil Bus)
+            // 1. Central Bus
             const busGeo = new THREE.BoxGeometry(0.5, 0.5, 0.7);
-            const bus = new THREE.Mesh(busGeo, goldFoilMat);
-            satMesh.add(bus);
+            const bus = new THREE.Mesh(busGeo, foilMat);
+            satGroup.add(bus);
 
             // Radiator Panels
             const radGeo = new THREE.BoxGeometry(0.52, 0.42, 0.6);
             const rad = new THREE.Mesh(radGeo, silverMat);
-            satMesh.add(rad);
+            satGroup.add(rad);
 
-            // 2. Parabolic High-Gain Dish Antenna
+            // 2. Parabolic Dish Antenna
             const dishGeo = new THREE.CylinderGeometry(0.32, 0.02, 0.1, 32, 1, true);
             const dish = new THREE.Mesh(dishGeo, silverMat);
             dish.rotation.x = Math.PI / 2;
             dish.position.set(0, 0, -0.42);
-            satMesh.add(dish);
+            satGroup.add(dish);
 
             // Feed Horn
             const hornGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.25, 12);
             const horn = new THREE.Mesh(hornGeo, darkMetalMat);
             horn.rotation.x = Math.PI / 2;
             horn.position.set(0, 0, -0.52);
-            satMesh.add(horn);
+            satGroup.add(horn);
 
-            // 3. Phased Array Communication Antenna
+            // 3. Phased Array Antenna
             const arrayGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.04, 6);
             const arrayMesh = new THREE.Mesh(arrayGeo, darkMetalMat);
             arrayMesh.position.set(0, -0.27, 0);
-            satMesh.add(arrayMesh);
+            satGroup.add(arrayMesh);
 
-            // 4. Solar Array Wings
+            // 4. Custom Colored Solar Wings
             const boomGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.4, 8);
-            
-            // Left Array
+            const panelWingGeo = new THREE.BoxGeometry(1.0, 0.04, 0.42);
+            const frameGeo = new THREE.BoxGeometry(1.02, 0.02, 0.44);
+
+            // Left Wing
             const leftBoom = new THREE.Mesh(boomGeo, darkMetalMat);
             leftBoom.rotation.z = Math.PI / 2;
             leftBoom.position.set(0.42, 0, 0);
-            satMesh.add(leftBoom);
+            satGroup.add(leftBoom);
 
-            const panelWingGeo = new THREE.BoxGeometry(1.0, 0.04, 0.42);
             const leftWing = new THREE.Mesh(panelWingGeo, solarMat);
             leftWing.position.set(1.1, 0, 0);
-            satMesh.add(leftWing);
+            satGroup.add(leftWing);
 
-            // Right Array
+            const leftFrame = new THREE.Mesh(frameGeo, darkMetalMat);
+            leftFrame.position.set(1.1, 0, 0);
+            satGroup.add(leftFrame);
+
+            // Right Wing
             const rightBoom = new THREE.Mesh(boomGeo, darkMetalMat);
             rightBoom.rotation.z = Math.PI / 2;
             rightBoom.position.set(-0.42, 0, 0);
-            satMesh.add(rightBoom);
+            satGroup.add(rightBoom);
 
             const rightWing = new THREE.Mesh(panelWingGeo, solarMat);
             rightWing.position.set(-1.1, 0, 0);
-            satMesh.add(rightWing);
-
-            // Structural Frames
-            const frameGeo = new THREE.BoxGeometry(1.02, 0.02, 0.44);
-            const leftFrame = new THREE.Mesh(frameGeo, darkMetalMat);
-            leftFrame.position.set(1.1, 0, 0);
-            satMesh.add(leftFrame);
+            satGroup.add(rightWing);
 
             const rightFrame = new THREE.Mesh(frameGeo, darkMetalMat);
             rightFrame.position.set(-1.1, 0, 0);
-            satMesh.add(rightFrame);
+            satGroup.add(rightFrame);
 
-            // 5. Engine Thruster
+            // 5. Thruster
             const thrusterGeo = new THREE.CylinderGeometry(0.05, 0.1, 0.12, 16);
             const thruster = new THREE.Mesh(thrusterGeo, darkMetalMat);
             thruster.position.set(0, 0, 0.4);
             thruster.rotation.x = Math.PI / 2;
-            satMesh.add(thruster);
+            satGroup.add(thruster);
 
-            scene.add(satMesh);
+            return satGroup;
         }
 
-        // Orbital Vector Path Trajectory Visualizer
-        function createOrbitLine() {
+        // Build Individual Satellite Entity
+        function buildSatelliteInstance(config) {
+            const mesh = createSatelliteMesh(config.busFoilColor, config.solarWingColor);
+            scene.add(mesh);
+
+            // Orbital Path Line
+            const orbitLine = generateOrbitLineMesh(config);
+            scene.add(orbitLine);
+
+            // RF Beam Link Line
+            const linkGeo = new THREE.BufferGeometry();
+            const linkMat = new THREE.LineDashedMaterial({
+                color: config.hexColor,
+                dashSize: 0.3,
+                gapSize: 0.15,
+                scale: 1
+            });
+            const linkLine = new THREE.Line(linkGeo, linkMat);
+            scene.add(linkLine);
+
+            return {
+                config: config,
+                mesh: mesh,
+                orbitLine: orbitLine,
+                linkLine: linkLine
+            };
+        }
+
+        // Generate Orbit Trajectory Visualizer for a Satellite Plane
+        function generateOrbitLineMesh(config) {
             const points = [];
             const segments = 128;
             
@@ -865,42 +1094,49 @@
             const aUnits = aKm * KM_TO_UNITS;
             const e = (activeOrbit.haKm - activeOrbit.hpKm) / (activeOrbit.haKm + activeOrbit.hpKm + 2 * EARTH_RADIUS_KM);
             const incRad = activeOrbit.incDeg * (Math.PI / 180);
+            const raanRad = config.raanDeg * (Math.PI / 180);
 
             for (let i = 0; i <= segments; i++) {
                 const nu = (i / segments) * Math.PI * 2;
                 const rUnits = (aUnits * (1 - e * e)) / (1 + e * Math.cos(nu));
 
-                const x = rUnits * Math.cos(nu);
-                const z = rUnits * Math.sin(nu);
+                // Orbital plane coordinates
+                const xOrb = rUnits * Math.cos(nu);
+                const yOrb = rUnits * Math.sin(nu);
 
-                const yRot = z * Math.sin(incRad);
-                const zRot = z * Math.cos(incRad);
+                // Inclination transformation
+                const xInc = xOrb;
+                const yInc = yOrb * Math.sin(incRad);
+                const zInc = yOrb * Math.cos(incRad);
 
-                points.push(new THREE.Vector3(x, yRot, zRot));
+                // RAAN transformation (Rotation around Y-axis)
+                const xWorld = xInc * Math.cos(raanRad) + zInc * Math.sin(raanRad);
+                const yWorld = yInc;
+                const zWorld = -xInc * Math.sin(raanRad) + zInc * Math.cos(raanRad);
+
+                points.push(new THREE.Vector3(xWorld, yWorld, zWorld));
             }
 
             const orbitGeo = new THREE.BufferGeometry().setFromPoints(points);
-            const orbitMat = new THREE.LineBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.4 });
-            
-            if (orbitLine) scene.remove(orbitLine);
-            orbitLine = new THREE.LineLoop(orbitGeo, orbitMat);
-            scene.add(orbitLine);
-        }
-
-        // Active RF Laser Beam Visualizer
-        function createLinkLine() {
-            const linkGeo = new THREE.BufferGeometry();
-            const linkMat = new THREE.LineDashedMaterial({
-                color: 0x00f0ff,
-                dashSize: 0.3,
-                gapSize: 0.15,
-                scale: 1
+            const orbitMat = new THREE.LineBasicMaterial({ 
+                color: config.hexColor, 
+                transparent: true, 
+                opacity: 0.45 
             });
-            linkLine = new THREE.Line(linkGeo, linkMat);
-            scene.add(linkLine);
+            
+            return new THREE.LineLoop(orbitGeo, orbitMat);
         }
 
-        // Coordinate Transformation Utility: Lat/Lon -> Cartesian 3D Vector
+        // Rebuild All Orbital Lines on Preset Change
+        function updateAllOrbitLines() {
+            satellites.forEach(sat => {
+                scene.remove(sat.orbitLine);
+                sat.orbitLine = generateOrbitLineMesh(sat.config);
+                scene.add(sat.orbitLine);
+            });
+        }
+
+        // Lat/Lon -> Vector3 Utility
         function latLonToVector3(lat, lon, radius) {
             const phi = (90 - lat) * (Math.PI / 180);
             const theta = (lon + 180) * (Math.PI / 180);
@@ -912,20 +1148,23 @@
             return new THREE.Vector3(x, y, z);
         }
 
-        // Math Controls & Orbit Updates
+        // GUI Controls Handlers
         function updateOrbitPreset() {
             const presetKey = document.getElementById('orbitPreset').value;
             activeOrbit = ORBIT_PRESETS[presetKey];
-            trueAnomaly = 0;
-            createOrbitLine();
-            recalculateLink();
+            baseTrueAnomaly = 0;
+            updateAllOrbitLines();
+            recalculateLinks();
+
+            // Speak Voice Explanation for the selected orbital regime
+            speakExplanation(activeOrbit.narration);
         }
 
         function updateGroundStation() {
             const gsKey = document.getElementById('gsLocation').value;
             activeGS = GROUND_STATIONS[gsKey];
             updateGroundStationPosition();
-            recalculateLink();
+            recalculateLinks();
         }
 
         function updateSatSpeedLabel(val) {
@@ -946,114 +1185,151 @@
             document.getElementById('rainLabel').innerText = `${val} mm/hr (${desc})`;
         }
 
-        function resetSatellitePosition() {
-            trueAnomaly = 0;
+        function resetSatellitePositions() {
+            baseTrueAnomaly = 0;
         }
 
-        // Core Communication Mechanics Engine
-        function recalculateLink() {
+        // Link Budget Physics and Position Updates for Entire Constellation
+        function recalculateLinks() {
             updateGroundStationPosition();
 
-            // 1. Calculate Satellite Position
             const aKm = EARTH_RADIUS_KM + (activeOrbit.hpKm + activeOrbit.haKm) / 2;
             const aUnits = aKm * KM_TO_UNITS;
             const e = (activeOrbit.haKm - activeOrbit.hpKm) / (activeOrbit.haKm + activeOrbit.hpKm + 2 * EARTH_RADIUS_KM);
             const incRad = activeOrbit.incDeg * (Math.PI / 180);
 
-            const rUnits = (aUnits * (1 - e * e)) / (1 + e * Math.cos(trueAnomaly));
-            const satX = rUnits * Math.cos(trueAnomaly);
-            const satZ = rUnits * Math.sin(trueAnomaly);
-
-            const satYRot = satZ * Math.sin(incRad);
-            const satZRot = satZ * Math.cos(incRad);
-
-            satMesh.position.set(satX, satYRot, satZRot);
-            satMesh.lookAt(0, 0, 0);
-
-            // 2. Vector Math between Ground Station & Satellite
-            const gsPos = gsMesh.position;
-            const satPos = satMesh.position;
-
-            const distanceUnits = gsPos.distanceTo(satPos);
-            const slantRangeKm = distanceUnits / KM_TO_UNITS;
-
-            const upVec = gsPos.clone().normalize();
-            const satVec = satPos.clone().sub(gsPos).normalize();
-            let elevationRad = Math.PI / 2 - Math.acos(upVec.dot(satVec));
-            let elevationDeg = elevationRad * (180 / Math.PI);
-
-            // 3. Link Budget Physics
             const freqGHz = parseFloat(document.getElementById('freqBand').value);
             const rainRate = parseFloat(document.getElementById('rainRate').value);
+            const trackedSatIdx = parseInt(document.getElementById('trackedSatSelect').value);
 
-            const fspl = 20 * Math.log10(slantRangeKm) + 20 * Math.log10(freqGHz) + 92.45;
+            satellites.forEach((sat, index) => {
+                // Calculate satellite position with RAAN and phase offset
+                const currentAnomaly = baseTrueAnomaly + sat.config.phaseOffset;
+                const raanRad = sat.config.raanDeg * (Math.PI / 180);
 
-            let rainLoss = 0;
-            if (rainRate > 0 && elevationDeg > 0) {
-                const gamma = 0.012 * Math.pow(freqGHz, 1.15) * Math.pow(rainRate, 0.73);
-                const pathLength = 4.5 / Math.sin(Math.max(elevationDeg, 3) * Math.PI / 180);
-                rainLoss = Math.min(gamma * pathLength, 40);
-            }
+                const rUnits = (aUnits * (1 - e * e)) / (1 + e * Math.cos(currentAnomaly));
+                const xOrb = rUnits * Math.cos(currentAnomaly);
+                const yOrb = rUnits * Math.sin(currentAnomaly);
 
-            const latencyMs = (slantRangeKm / C_KMS) * 1000;
-            const orbitalVelKms = Math.sqrt(398600 / aKm);
-            const dopplerKHz = (orbitalVelKms / C_KMS) * (freqGHz * 1e9) * Math.sin(trueAnomaly) / 1000;
+                const xInc = xOrb;
+                const yInc = yOrb * Math.sin(incRad);
+                const zInc = yOrb * Math.cos(incRad);
 
-            const eirpDbw = 58.0;
-            const gtDbK = 14.5;
-            const kBoltz = -228.6;
-            const bandwidthHz = 36e6;
+                const xWorld = xInc * Math.cos(raanRad) + zInc * Math.sin(raanRad);
+                const yWorld = yInc;
+                const zWorld = -xInc * Math.sin(raanRad) + zInc * Math.cos(raanRad);
 
-            const cnRatio = eirpDbw - fspl - rainLoss + gtDbK - kBoltz - (10 * Math.log10(bandwidthHz));
-            const margin = cnRatio - 6.0;
+                sat.mesh.position.set(xWorld, yWorld, zWorld);
+                sat.mesh.lookAt(0, 0, 0);
 
-            // 4. Update Link Visualizer Beam Line
-            if (elevationDeg > 0 && margin > 0) {
-                linkLine.geometry.setFromPoints([gsPos, satPos]);
-                linkLine.computeLineDistances();
-                linkLine.visible = true;
-            } else {
-                linkLine.visible = false;
-            }
+                // Target the primary terminal node (index 0) of the selected city cluster
+                const primaryGS = groundStationNodes[0];
+                const gsPos = primaryGS ? primaryGS.group.position : new THREE.Vector3();
+                const satPos = sat.mesh.position;
 
-            // 5. Update Telemetry HUD metrics (runs in background regardless of panel visibility)
-            document.getElementById('valRange').innerText = slantRangeKm.toFixed(1);
-            document.getElementById('valElevation').innerText = elevationDeg.toFixed(1);
-            document.getElementById('valLatency').innerText = latencyMs.toFixed(1);
-            document.getElementById('valDoppler').innerText = dopplerKHz.toFixed(1);
-            document.getElementById('valFSPL').innerText = fspl.toFixed(1);
-            document.getElementById('valAtmospheric').innerText = rainLoss.toFixed(2);
+                const distanceUnits = gsPos.distanceTo(satPos);
+                const slantRangeKm = distanceUnits / KM_TO_UNITS;
 
-            const cnEl = document.getElementById('valCN');
-            const marginEl = document.getElementById('valMargin');
+                const upVec = gsPos.clone().normalize();
+                const satVec = satPos.clone().sub(gsPos).normalize();
+                let elevationRad = Math.PI / 2 - Math.acos(upVec.dot(satVec));
+                let elevationDeg = elevationRad * (180 / Math.PI);
 
-            cnEl.innerText = cnRatio.toFixed(1);
-            marginEl.innerText = margin.toFixed(1);
+                // Link Budget calculations
+                const fspl = 20 * Math.log10(slantRangeKm) + 20 * Math.log10(freqGHz) + 92.45;
 
-            if (elevationDeg <= 0 || margin < 0) {
-                marginEl.className = "metric-value status-alert";
-                cnEl.className = "metric-value status-alert";
-            } else if (margin < 3.0) {
-                marginEl.className = "metric-value status-warn";
-                cnEl.className = "metric-value status-warn";
-            } else {
-                marginEl.className = "metric-value status-ok";
-                cnEl.className = "metric-value status-ok";
-            }
+                let rainLoss = 0;
+                if (rainRate > 0 && elevationDeg > 0) {
+                    const gamma = 0.012 * Math.pow(freqGHz, 1.15) * Math.pow(rainRate, 0.73);
+                    const pathLength = 4.5 / Math.sin(Math.max(elevationDeg, 3) * Math.PI / 180);
+                    rainLoss = Math.min(gamma * pathLength, 40);
+                }
+
+                const latencyMs = (slantRangeKm / C_KMS) * 1000;
+                const orbitalVelKms = Math.sqrt(398600 / aKm);
+                const dopplerKHz = (orbitalVelKms / C_KMS) * (freqGHz * 1e9) * Math.sin(currentAnomaly) / 1000;
+
+                const eirpDbw = 58.0;
+                const gtDbK = 14.5;
+                const kBoltz = -228.6;
+                const bandwidthHz = 36e6;
+
+                const cnRatio = eirpDbw - fspl - rainLoss + gtDbK - kBoltz - (10 * Math.log10(bandwidthHz));
+                const margin = cnRatio - 6.0;
+
+                // Visual RF beam update
+                if (elevationDeg > 0 && margin > 0) {
+                    sat.linkLine.geometry.setFromPoints([gsPos, satPos]);
+                    sat.linkLine.computeLineDistances();
+                    sat.linkLine.visible = true;
+                } else {
+                    sat.linkLine.visible = false;
+                }
+
+                // Push telemetry data to HUD if this satellite is currently tracked
+                if (index === trackedSatIdx) {
+                    document.getElementById('valRange').innerText = slantRangeKm.toFixed(1);
+                    document.getElementById('valElevation').innerText = elevationDeg.toFixed(1);
+                    document.getElementById('valLatency').innerText = latencyMs.toFixed(1);
+                    document.getElementById('valDoppler').innerText = dopplerKHz.toFixed(1);
+                    document.getElementById('valFSPL').innerText = fspl.toFixed(1);
+                    document.getElementById('valAtmospheric').innerText = rainLoss.toFixed(2);
+
+                    const cnEl = document.getElementById('valCN');
+                    const marginEl = document.getElementById('valMargin');
+
+                    cnEl.innerText = cnRatio.toFixed(1);
+                    marginEl.innerText = margin.toFixed(1);
+
+                    if (elevationDeg <= 0 || margin < 0) {
+                        marginEl.className = "metric-value status-alert";
+                        cnEl.className = "metric-value status-alert";
+                    } else if (margin < 3.0) {
+                        marginEl.className = "metric-value status-warn";
+                        cnEl.className = "metric-value status-warn";
+                    } else {
+                        marginEl.className = "metric-value status-ok";
+                        cnEl.className = "metric-value status-ok";
+                    }
+                }
+            });
         }
 
-        // Animation Loop Engine
+        // Render & Animation Loop
         function animate() {
             requestAnimationFrame(animate);
+
+            const time = performance.now() * 0.003;
+
+            // Animate all 4 Ground Station Pulsating Signal Points simultaneously
+            groundStationNodes.forEach((node, i) => {
+                const phaseOffset = i * 0.5; // Offset pulse phase slightly for visual interest
+
+                // Core Pulsating Glow
+                const pulseScale = 1 + 0.25 * Math.sin(time * 3 + phaseOffset);
+                node.coreMesh.scale.set(pulseScale, pulseScale, pulseScale);
+                node.coreMesh.material.color.setHSL(0.95 + 0.03 * Math.sin(time * 2 + phaseOffset), 1, 0.5 + 0.2 * Math.sin(time * 4));
+
+                // Pulsating Halo Ring
+                const ringScale = 1 + 0.3 * Math.cos(time * 2.5 + phaseOffset);
+                node.ringMesh.scale.set(ringScale, ringScale, ringScale);
+                node.ringMesh.material.opacity = 0.5 + 0.4 * Math.sin(time * 3 + phaseOffset);
+
+                // Expanding Signal Wave Propagation FX
+                const waveCycle = (time * 1.5 + phaseOffset * 0.25) % 1.0;
+                const waveScale = 1.0 + waveCycle * 3.5;
+                node.waveMesh.scale.set(waveScale, waveScale, waveScale);
+                node.waveMesh.material.opacity = (1.0 - waveCycle) * 0.75;
+            });
 
             if (earthMesh) {
                 earthMesh.rotation.y += earthRotationBaseSpeed * earthRotationMultiplier;
             }
 
-            trueAnomaly += satSpeedMultiplier;
-            if (trueAnomaly > Math.PI * 2) trueAnomaly -= Math.PI * 2;
+            baseTrueAnomaly += satSpeedMultiplier;
+            if (baseTrueAnomaly > Math.PI * 2) baseTrueAnomaly -= Math.PI * 2;
 
-            recalculateLink();
+            recalculateLinks();
 
             controls.update();
             renderer.render(scene, camera);
@@ -1065,7 +1341,7 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        // Execute Simulation Start
+        // Launch Application Engine
         window.onload = initEngine;
     </script>
 </body>

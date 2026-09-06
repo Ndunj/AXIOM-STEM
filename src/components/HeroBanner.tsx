@@ -1,5 +1,6 @@
 import React from "react";
 import { STEMDiscipline } from "../types";
+import { useLanguage } from "../i18n/LanguageContext";
 import {
   Sparkles,
   ShieldCheck,
@@ -31,6 +32,8 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
   onOpenStandards,
   hasSimulations = false,
 }) => {
+  const { t } = useLanguage();
+
   return (
     <div className="relative overflow-hidden pt-8 pb-12 sm:pt-12 sm:pb-16 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border-b border-slate-800">
       {/* Background Radial Glow */}
@@ -52,30 +55,22 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
             <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
             <span className="font-semibold text-white">
               {isCreatorMode
-                ? "Creator Control Center: ndunj123@gmail.com"
-                : "Interactive STEM Simulation Platform for Modern Classrooms"}
+                ? t("heroBadgeCreator")
+                : t("heroBadgeVisitor")}
             </span>
           </div>
 
           {/* Main Headline */}
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.15]">
-            Publish & License Your Interactive STEM{" "}
+            {t("heroTitlePart1")}{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-indigo-300 to-purple-400">
-              HTML5 Simulations
+              {t("heroTitleHighlight")}
             </span>
           </h1>
 
           {/* Subtitle */}
           <p className="mt-5 text-base sm:text-lg text-slate-300 leading-relaxed">
-            {isCreatorMode ? (
-              <>
-                You have exclusive creator rights to upload standalone <strong>HTML, Canvas, WebGL, or hosted simulations</strong>, author custom curriculum standards, and license interactive models to schools.
-              </>
-            ) : (
-              <>
-                Equip your students with interactive laboratory inquiry across <strong>Physics, Mathematics, Chemistry, and Biology</strong>. Complete with live parameter controls and instant <strong>AI Lesson Plan generation</strong>.
-              </>
-            )}
+            {isCreatorMode ? t("heroSubtitleCreator") : t("heroSubtitleVisitor")}
           </p>
 
           {/* CTAs */}
@@ -86,7 +81,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
                 className="flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-sm shadow-xl shadow-emerald-500/25 cursor-pointer transition-all active:scale-95"
               >
                 <PlusCircle className="w-5 h-5 text-slate-950" />
-                <span>+ Upload .html Simulation</span>
+                <span>{t("heroCtaUpload")}</span>
               </button>
             )}
 
@@ -96,7 +91,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
                 className="flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-amber-300 hover:text-amber-200 font-semibold text-sm border border-amber-500/30 cursor-pointer transition-all"
               >
                 <BookOpen className="w-4 h-4 text-amber-400" />
-                <span>Author Curriculum Standards</span>
+                <span>{t("heroCtaStandards")}</span>
               </button>
             )}
 
@@ -105,7 +100,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
                 onClick={onTestDriveFeatured}
                 className="flex items-center gap-2.5 px-5 py-3.5 rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-600 to-purple-600 hover:from-sky-400 hover:to-purple-500 text-white font-bold text-sm shadow-xl shadow-indigo-500/25 cursor-pointer transition-all active:scale-95"
               >
-                <Play className="w-4 h-4 fill-current" /> Test Drive Simulation
+                <Play className="w-4 h-4 fill-current" /> {t("heroCtaTestDrive")}
               </button>
             )}
 
@@ -113,7 +108,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
               onClick={onOpenQuoteModal}
               className="flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white font-semibold text-sm border border-slate-700 cursor-pointer transition-all"
             >
-              <School className="w-4 h-4 text-amber-400" /> Request District PO / Quote
+              <School className="w-4 h-4 text-amber-400" /> {t("heroCtaQuote")}
             </button>
           </div>
 
@@ -124,8 +119,8 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
                 <Code2 className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-xs font-bold text-white">Zero-Plugin HTML5</div>
-                <div className="text-[11px] text-slate-400">Pure Canvas, WebGL & DOM simulation runtime</div>
+                <div className="text-xs font-bold text-white">{t("pillar1Title")}</div>
+                <div className="text-[11px] text-slate-400">{t("pillar1Desc")}</div>
               </div>
             </div>
 
@@ -134,8 +129,8 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
                 <Award className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-xs font-bold text-white">Custom Standards</div>
-                <div className="text-[11px] text-slate-400">Tag NGSS, AP, IB, or custom curriculum codes</div>
+                <div className="text-xs font-bold text-white">{t("pillar2Title")}</div>
+                <div className="text-[11px] text-slate-400">{t("pillar2Desc")}</div>
               </div>
             </div>
 
@@ -144,8 +139,8 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
                 <Sparkles className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-xs font-bold text-white">AI Lesson Builder</div>
-                <div className="text-[11px] text-slate-400">Generates custom lab handouts in seconds</div>
+                <div className="text-xs font-bold text-white">{t("pillar3Title")}</div>
+                <div className="text-[11px] text-slate-400">{t("pillar3Desc")}</div>
               </div>
             </div>
 
@@ -154,8 +149,8 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
                 <ShieldCheck className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-xs font-bold text-white">Creator Protected</div>
-                <div className="text-[11px] text-slate-400">Only authorized author can upload & edit</div>
+                <div className="text-xs font-bold text-white">{t("pillar4Title")}</div>
+                <div className="text-[11px] text-slate-400">{t("pillar4Desc")}</div>
               </div>
             </div>
           </div>
@@ -164,3 +159,4 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
     </div>
   );
 };
+
