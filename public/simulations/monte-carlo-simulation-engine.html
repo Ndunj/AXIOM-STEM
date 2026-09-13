@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monte Carlo Simulation & Concept Explorer</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- MathJax CDN for rendering LaTeX -->
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .mono-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        canvas {
+            touch-action: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+
+    <!-- Header Section -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/30">
+                    MC
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-slate-100 leading-none">Monte Carlo Engine</h1>
+                    <p class="text-xs text-slate-400 mt-0.5">Probabilistic Numerical Simulation &amp; Visualizer</p>
+                </div>
+            </div>
+            <button id="open-info-btn" class="flex items-center space-x-2 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-3 py-2 rounded-lg border border-slate-700 transition">
+                <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span>History &amp; Theory</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Controls & Configuration Panel -->
+        <section class="lg:col-span-4 flex flex-col space-y-5">
+            
+            <!-- Mode Selector -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
+                <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Simulation Objective</h2>
+                <div class="grid grid-cols-2 gap-2 p-1 bg-slate-950 rounded-lg border border-slate-800">
+                    <button id="mode-pi-btn" class="py-2 px-3 text-xs font-semibold rounded-md transition bg-indigo-600 text-white shadow">
+                        Estimate &pi; Value
+                    </button>
+                    <button id="mode-area-btn" class="py-2 px-3 text-xs font-semibold rounded-md transition text-slate-400 hover:text-slate-200">
+                        Area Under Curve
+                    </button>
+                </div>
+
+                <!-- Mode Specific Parameters -->
+                <div id="function-select-container" class="mt-4 hidden">
+                    <label for="function-preset" class="block text-xs font-medium text-slate-300 mb-1">Target Function \(f(x)\)</label>
+                    <select id="function-preset" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+                        <option value="sin">f(x) = sin(x) + 1  [x ∈ 0, π]</option>
+                        <option value="parabola">f(x) = x²  [x ∈ 0, 2]</option>
+                        <option value="gaussian">f(x) = e^(-x²)  [x ∈ 0, 2]</option>
+                    </select>
+                    <p id="function-math-display" class="text-xs text-indigo-400 mt-2 text-center mono-font bg-slate-950/60 p-2 rounded border border-slate-800/80">
+                        <!-- MathJax Formula -->
+                    </p>
+                </div>
+            </div>
+
+            <!-- Execution & Batch Controls -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4 shadow-sm">
+                <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Execution Controls</h2>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="start-btn" class="flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 px-4 rounded-lg transition shadow-lg shadow-emerald-900/20">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        <span id="start-btn-text">Run</span>
+                    </button>
+                    <button id="reset-btn" class="flex items-center justify-center space-x-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium py-2.5 px-4 rounded-lg border border-slate-700 transition">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+                        <span>Reset</span>
+                    </button>
+                </div>
+
+                <!-- Instant Point Adders -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-2">Instant Batch Injections</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button data-batch="100" class="batch-btn bg-slate-800 hover:bg-slate-700 text-xs font-medium py-2 rounded border border-slate-700 text-slate-300 hover:text-white transition">+100</button>
+                        <button data-batch="1000" class="batch-btn bg-slate-800 hover:bg-slate-700 text-xs font-medium py-2 rounded border border-slate-700 text-slate-300 hover:text-white transition">+1k</button>
+                        <button data-batch="10000" class="batch-btn bg-slate-800 hover:bg-slate-700 text-xs font-medium py-2 rounded border border-slate-700 text-slate-300 hover:text-white transition">+10k</button>
+                        <button data-batch="50000" class="batch-btn bg-slate-800 hover:bg-slate-700 text-xs font-medium py-2 rounded border border-slate-700 text-slate-300 hover:text-white transition">+50k</button>
+                    </div>
+                </div>
+
+                <!-- Simulation Speed Slider -->
+                <div class="pt-2 border-t border-slate-800/80">
+                    <div class="flex justify-between items-center mb-1">
+                        <label for="speed-slider" class="text-xs font-medium text-slate-300">Continuous Speed</label>
+                        <span id="speed-display" class="text-xs text-indigo-400 mono-font font-medium">500 pts/frame</span>
+                    </div>
+                    <input id="speed-slider" type="range" min="1" max="5000" step="10" value="500" class="w-full h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                </div>
+            </div>
+
+            <!-- Live Computational Metrics -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-3 shadow-sm flex-1">
+                <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Live Statistics</h2>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg">
+                        <div class="text-xs text-slate-400">Total Samples (\(N\))</div>
+                        <div id="stat-total" class="text-lg font-bold text-slate-100 mono-font mt-0.5">0</div>
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg">
+                        <div class="text-xs text-slate-400">Hits (\(k\))</div>
+                        <div id="stat-hits" class="text-lg font-bold text-emerald-400 mono-font mt-0.5">0</div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-slate-400">Estimated Value:</span>
+                        <span id="stat-estimated" class="text-base font-bold text-indigo-400 mono-font">0.000000</span>
+                    </div>
+                    <div class="flex justify-between items-center border-t border-slate-800/80 pt-2">
+                        <span class="text-xs text-slate-400">Theoretical Exact:</span>
+                        <span id="stat-exact" class="text-xs text-slate-300 mono-font">3.141592...</span>
+                    </div>
+                    <div class="flex justify-between items-center border-t border-slate-800/80 pt-2">
+                        <span class="text-xs text-slate-400">Absolute Error:</span>
+                        <span id="stat-error" class="text-xs text-rose-400 mono-font">0.000000</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Visualizations Panel -->
+        <section class="lg:col-span-8 flex flex-col space-y-6">
+            
+            <!-- Canvas Simulation Display -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm flex flex-col items-center justify-center relative">
+                <div class="w-full flex justify-between items-center mb-3">
+                    <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center space-x-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span>Spatial Sampling Space</span>
+                    </h2>
+                    <span id="canvas-status-tag" class="text-xs bg-slate-800 border border-slate-700 text-slate-300 px-2.5 py-0.5 rounded-full mono-font">Idle</span>
+                </div>
+
+                <!-- Canvas Container -->
+                <div class="relative w-full max-w-[420px] aspect-square bg-slate-950 rounded-lg border border-slate-800/80 overflow-hidden flex items-center justify-center">
+                    <canvas id="sim-canvas" width="800" height="800" class="w-full h-full object-contain"></canvas>
+                </div>
+            </div>
+
+            <!-- Convergence Chart -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm flex-1 min-h-[280px] flex flex-col">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Law of Large Numbers Convergence Chart</h2>
+                    <span class="text-xs text-slate-400">Estimate vs Total Samples \(N\)</span>
+                </div>
+                <div class="flex-1 w-full min-h-[220px] relative">
+                    <canvas id="convergence-chart"></canvas>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal for History & Educational Background (Updated Rephrased Content) -->
+    <div id="info-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            <!-- Modal Header -->
+            <div class="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+                <h3 class="text-lg font-bold text-slate-100 flex items-center space-x-2">
+                    <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                    <span>The Monte Carlo Method: History &amp; Principles</span>
+                </h3>
+                <button id="close-modal-btn" class="text-slate-400 hover:text-white text-xl p-1 rounded-lg hover:bg-slate-800 transition">&times;</button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="p-6 overflow-y-auto space-y-5 text-sm text-slate-300 leading-relaxed">
+                <div>
+                    <h4 class="text-indigo-400 font-semibold mb-1 uppercase tracking-wider text-xs">Conceptual Foundations</h4>
+                    <p>
+                        The Monte Carlo technique is a stochastic numerical method designed to approximate complex quantitative results through high-volume random sampling. When a system is governed by mathematical or geometry-based constraints that make exact analytical solutions difficult to calculate, Monte Carlo methods solve the problem by repeatedly generating random scenarios and observing the outcomes.
+                    </p>
+                    <p class="mt-2">
+                        By taking advantage of the <strong>Law of Large Numbers</strong>, individual random trials—which appear completely unpredictable on a small scale—aggregate into precise, deterministic results as the sample size increases. In visual integration problems (often described via random point-in-region tests), the proportion of randomly dropped points falling within a designated boundary reflects the exact geometric area or mathematical constant under investigation.
+                    </p>
+                </div>
+
+                <div class="border-t border-slate-800 pt-4">
+                    <h4 class="text-indigo-400 font-semibold mb-1 uppercase tracking-wider text-xs">Historical Roots &amp; Milestones</h4>
+                    <ul class="space-y-2 text-slate-300">
+                        <li>
+                            <strong class="text-slate-100">The Solitaire Discovery:</strong> In the late 1940s, while recovering from an illness at Los Alamos, mathematician <strong>Stanislaw Ulam</strong> pondered the likelihood of winning a game of Solitaire. Rather than slogging through the near-impossible combinatorial math required to count every possible card layout, he realized he could simply deal hundreds of hands, record the wins, and calculate the empirical win-rate.
+                        </li>
+                        <li>
+                            <strong class="text-slate-100">The Manhattan Project &amp; Supercomputing:</strong> Ulam shared his insight with <strong>John von Neumann</strong>, who immediately saw its potential for nuclear physics research. Von Neumann implemented the technique on early electronic computers like the ENIAC to model neutron diffusion during thermonuclear weapon development.
+                        </li>
+                        <li>
+                            <strong class="text-slate-100">The Code Name:</strong> Given the top-secret nature of nuclear energy research during the Cold War, the algorithm required a code word. Von Neumann dubbed it <em>"Monte Carlo"</em> in a humorous nod to the famous gambling casino in Monaco frequented by Ulam's uncle.
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="border-t border-slate-800 pt-4">
+                    <h4 class="text-indigo-400 font-semibold mb-1 uppercase tracking-wider text-xs">Modern Industrial Impact</h4>
+                    <p>
+                        What began as a wartime calculation shortcut has become a foundational pillar of modern computational science:
+                    </p>
+                    <ul class="list-disc list-inside space-y-1 mt-2 text-slate-400">
+                        <li><strong class="text-slate-200">Artificial Intelligence &amp; Games:</strong> Powers decision-tree evaluation in complex strategy engines (such as Monte Carlo Tree Search in Go and chess engines).</li>
+                        <li><strong class="text-slate-200">Quantitative Risk &amp; Finance:</strong> Used by financial institutions to price complex stock options, project market portfolio volatility, and calculate risk exposure.</li>
+                        <li><strong class="text-slate-200">Visual Rendering &amp; CGI:</strong> Forms the engine behind modern path-tracing graphics algorithms, simulating millions of individual light trajectories to produce realistic lighting, reflection, and shadows in cinema and video games.</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="p-4 border-t border-slate-800 bg-slate-900/80 text-right">
+                <button id="modal-ok-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-5 py-2 rounded-lg transition">Got it</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Logic Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // State Variables
+            let mode = 'pi'; // 'pi' or 'area'
+            let isRunning = false;
+            let animationFrameId = null;
+            let batchSpeed = 500;
+
+            // Counters & Statistics
+            let totalPoints = 0;
+            let hits = 0;
+            let currentEstimate = 0;
+            let exactValue = Math.PI;
+
+            // Function presets configuration
+            const functionPresets = {
+                sin: {
+                    mathJaxText: '\\[ f(x) = \\sin(x) + 1, \\quad x \\in [0, \\pi] \\]',
+                    f: (x) => Math.sin(x) + 1,
+                    xMin: 0,
+                    xMax: Math.PI,
+                    yMin: 0,
+                    yMax: 2,
+                    exactArea: Math.PI + 2
+                },
+                parabola: {
+                    mathJaxText: '\\[ f(x) = x^2, \\quad x \\in [0, 2] \\]',
+                    f: (x) => x * x,
+                    xMin: 0,
+                    xMax: 2,
+                    yMin: 0,
+                    yMax: 4,
+                    exactArea: 8 / 3
+                },
+                gaussian: {
+                    mathJaxText: '\\[ f(x) = e^{-x^2}, \\quad x \\in [0, 2] \\]',
+                    f: (x) => Math.exp(-x * x),
+                    xMin: 0,
+                    xMax: 2,
+                    yMin: 0,
+                    yMax: 1,
+                    exactArea: 0.8820813907619305
+                }
+            };
+            let currentFuncKey = 'sin';
+
+            // Canvas Setup
+            const simCanvas = document.getElementById('sim-canvas');
+            const ctx = simCanvas.getContext('2d');
+            const CANVAS_SIZE = 800; // Native canvas resolution
+
+            // Offscreen canvas for fast point accumulation rendering
+            const offscreenCanvas = document.createElement('canvas');
+            offscreenCanvas.width = CANVAS_SIZE;
+            offscreenCanvas.height = CANVAS_SIZE;
+            const offCtx = offscreenCanvas.getContext('2d');
+
+            // Chart setup
+            const chartCanvas = document.getElementById('convergence-chart').getContext('2d');
+            let convergenceChart;
+
+            function initChart() {
+                convergenceChart = new Chart(chartCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [
+                            {
+                                label: 'Estimated Value',
+                                data: [],
+                                borderColor: '#818cf8',
+                                backgroundColor: 'rgba(129, 140, 248, 0.1)',
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                fill: false,
+                                tension: 0.1
+                            },
+                            {
+                                label: 'Exact Value',
+                                data: [],
+                                borderColor: '#34d399',
+                                borderWidth: 1.5,
+                                borderDash: [4, 4],
+                                pointRadius: 0,
+                                fill: false
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        scales: {
+                            x: {
+                                type: 'linear',
+                                title: { display: true, text: 'Total Samples (N)', color: '#64748b', font: { size: 10 } },
+                                ticks: { color: '#64748b', font: { size: 10 } },
+                                grid: { color: 'rgba(51, 65, 85, 0.3)' }
+                            },
+                            y: {
+                                title: { display: true, text: 'Value', color: '#64748b', font: { size: 10 } },
+                                ticks: { color: '#64748b', font: { size: 10 } },
+                                grid: { color: 'rgba(51, 65, 85, 0.3)' }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                labels: { color: '#94a3b8', font: { size: 11 } }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // DOM Elements
+            const modePiBtn = document.getElementById('mode-pi-btn');
+            const modeAreaBtn = document.getElementById('mode-area-btn');
+            const functionSelectContainer = document.getElementById('function-select-container');
+            const functionPresetSelect = document.getElementById('function-preset');
+            const functionMathDisplay = document.getElementById('function-math-display');
+
+            const startBtn = document.getElementById('start-btn');
+            const startBtnText = document.getElementById('start-btn-text');
+            const resetBtn = document.getElementById('reset-btn');
+            const speedSlider = document.getElementById('speed-slider');
+            const speedDisplay = document.getElementById('speed-display');
+
+            const statTotal = document.getElementById('stat-total');
+            const statHits = document.getElementById('stat-hits');
+            const statEstimated = document.getElementById('stat-estimated');
+            const statExact = document.getElementById('stat-exact');
+            const statError = document.getElementById('stat-error');
+            const canvasStatusTag = document.getElementById('canvas-status-tag');
+
+            // Modal DOM
+            const infoModal = document.getElementById('info-modal');
+            const openInfoBtn = document.getElementById('open-info-btn');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const modalOkBtn = document.getElementById('modal-ok-btn');
+
+            // Event Listeners for Modal
+            openInfoBtn.addEventListener('click', () => infoModal.classList.remove('hidden'));
+            closeModalBtn.addEventListener('click', () => infoModal.classList.add('hidden'));
+            modalOkBtn.addEventListener('click', () => infoModal.classList.add('hidden'));
+
+            // Switch Simulation Modes
+            modePiBtn.addEventListener('click', () => setMode('pi'));
+            modeAreaBtn.addEventListener('click', () => setMode('area'));
+
+            function setMode(newMode) {
+                if (mode === newMode) return;
+                mode = newMode;
+                if (mode === 'pi') {
+                    modePiBtn.className = "py-2 px-3 text-xs font-semibold rounded-md transition bg-indigo-600 text-white shadow";
+                    modeAreaBtn.className = "py-2 px-3 text-xs font-semibold rounded-md transition text-slate-400 hover:text-slate-200";
+                    functionSelectContainer.classList.add('hidden');
+                    exactValue = Math.PI;
+                } else {
+                    modeAreaBtn.className = "py-2 px-3 text-xs font-semibold rounded-md transition bg-indigo-600 text-white shadow";
+                    modePiBtn.className = "py-2 px-3 text-xs font-semibold rounded-md transition text-slate-400 hover:text-slate-200";
+                    functionSelectContainer.classList.remove('hidden');
+                    updateFunctionPreset();
+                }
+                resetSimulation();
+            }
+
+            function updateFunctionPreset() {
+                currentFuncKey = functionPresetSelect.value;
+                const preset = functionPresets[currentFuncKey];
+                exactValue = preset.exactArea;
+                functionMathDisplay.innerHTML = preset.mathJaxText;
+                if (window.MathJax) {
+                    MathJax.typesetPromise([functionMathDisplay]);
+                }
+                resetSimulation();
+            }
+
+            functionPresetSelect.addEventListener('change', updateFunctionPreset);
+
+            // Controls & Execution
+            speedSlider.addEventListener('input', (e) => {
+                batchSpeed = parseInt(e.target.value, 10);
+                speedDisplay.textContent = `${batchSpeed.toLocaleString()} pts/frame`;
+            });
+
+            startBtn.addEventListener('click', toggleRun);
+            resetBtn.addEventListener('click', resetSimulation);
+
+            document.querySelectorAll('.batch-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const amount = parseInt(btn.getAttribute('data-batch'), 10);
+                    injectPoints(amount);
+                });
+            });
+
+            function toggleRun() {
+                isRunning = !isRunning;
+                if (isRunning) {
+                    startBtnText.textContent = "Pause";
+                    startBtn.className = "flex items-center justify-center space-x-2 bg-amber-600 hover:bg-amber-500 text-white font-medium py-2.5 px-4 rounded-lg transition shadow-lg shadow-amber-900/20";
+                    canvasStatusTag.textContent = "Running";
+                    canvasStatusTag.className = "text-xs bg-emerald-950 border border-emerald-800 text-emerald-400 px-2.5 py-0.5 rounded-full mono-font";
+                    loop();
+                } else {
+                    pauseSimulation();
+                }
+            }
+
+            function pauseSimulation() {
+                isRunning = false;
+                startBtnText.textContent = "Run";
+                startBtn.className = "flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 px-4 rounded-lg transition shadow-lg shadow-emerald-900/20";
+                canvasStatusTag.textContent = "Paused";
+                canvasStatusTag.className = "text-xs bg-slate-800 border border-slate-700 text-slate-300 px-2.5 py-0.5 rounded-full mono-font";
+                if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            }
+
+            function resetSimulation() {
+                pauseSimulation();
+                totalPoints = 0;
+                hits = 0;
+                currentEstimate = 0;
+
+                // Clear offscreen canvas
+                offCtx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+                // Clear chart
+                convergenceChart.data.labels = [];
+                convergenceChart.data.datasets[0].data = [];
+                convergenceChart.data.datasets[1].data = [];
+                convergenceChart.update();
+
+                updateStatsUI();
+                drawBaseCanvas();
+            }
+
+            // Canvas Render Routines
+            function drawBaseCanvas() {
+                ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+                ctx.fillStyle = '#020617'; // slate-950
+                ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+                if (mode === 'pi') {
+                    // Draw Unit Circle inside Square [-1, 1] x [-1, 1]
+                    ctx.strokeStyle = '#4f46e5'; // indigo-600
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.arc(CANVAS_SIZE / 2, CANVAS_SIZE / 2, CANVAS_SIZE / 2 - 8, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    // Inner grid crosshairs
+                    ctx.strokeStyle = 'rgba(51, 65, 85, 0.4)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(CANVAS_SIZE / 2, 0); ctx.lineTo(CANVAS_SIZE / 2, CANVAS_SIZE);
+                    ctx.moveTo(0, CANVAS_SIZE / 2); ctx.lineTo(CANVAS_SIZE, CANVAS_SIZE / 2);
+                    ctx.stroke();
+
+                } else if (mode === 'area') {
+                    const preset = functionPresets[currentFuncKey];
+                    const padding = 40;
+                    const w = CANVAS_SIZE - padding * 2;
+                    const h = CANVAS_SIZE - padding * 2;
+
+                    // Plot Axes
+                    ctx.strokeStyle = '#475569';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(padding, padding);
+                    ctx.lineTo(padding, CANVAS_SIZE - padding);
+                    ctx.lineTo(CANVAS_SIZE - padding, CANVAS_SIZE - padding);
+                    ctx.stroke();
+
+                    // Render Curve
+                    ctx.strokeStyle = '#818cf8';
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    const steps = 200;
+                    for (let i = 0; i <= steps; i++) {
+                        const xVal = preset.xMin + (i / steps) * (preset.xMax - preset.xMin);
+                        const yVal = preset.f(xVal);
+
+                        const canvasX = padding + (i / steps) * w;
+                        const canvasY = (CANVAS_SIZE - padding) - (yVal / preset.yMax) * h;
+
+                        if (i === 0) ctx.moveTo(canvasX, canvasY);
+                        else ctx.lineTo(canvasX, canvasY);
+                    }
+                    ctx.stroke();
+                }
+
+                // Composite accumulation layer
+                ctx.drawImage(offscreenCanvas, 0, 0);
+            }
+
+            function injectPoints(count) {
+                let newHits = 0;
+
+                if (mode === 'pi') {
+                    const radius = CANVAS_SIZE / 2;
+                    const radiusSq = radius * radius;
+
+                    for (let i = 0; i < count; i++) {
+                        const px = Math.random() * CANVAS_SIZE;
+                        const py = Math.random() * CANVAS_SIZE;
+
+                        const dx = px - radius;
+                        const dy = py - radius;
+
+                        const isHit = (dx * dx + dy * dy) <= radiusSq;
+                        if (isHit) newHits++;
+
+                        // Draw directly onto offscreen canvas
+                        offCtx.fillStyle = isHit ? 'rgba(52, 211, 153, 0.6)' : 'rgba(244, 63, 94, 0.4)';
+                        offCtx.fillRect(px, py, 1.5, 1.5);
+                    }
+
+                    totalPoints += count;
+                    hits += newHits;
+                    currentEstimate = 4 * (hits / totalPoints);
+
+                } else if (mode === 'area') {
+                    const preset = functionPresets[currentFuncKey];
+                    const padding = 40;
+                    const w = CANVAS_SIZE - padding * 2;
+                    const h = CANVAS_SIZE - padding * 2;
+
+                    for (let i = 0; i < count; i++) {
+                        const rx = Math.random();
+                        const ry = Math.random();
+
+                        const xVal = preset.xMin + rx * (preset.xMax - preset.xMin);
+                        const yVal = ry * preset.yMax;
+
+                        const isHit = yVal <= preset.f(xVal);
+                        if (isHit) newHits++;
+
+                        const canvasX = padding + rx * w;
+                        const canvasY = (CANVAS_SIZE - padding) - ry * h;
+
+                        offCtx.fillStyle = isHit ? 'rgba(52, 211, 153, 0.6)' : 'rgba(244, 63, 94, 0.4)';
+                        offCtx.fillRect(canvasX, canvasY, 1.5, 1.5);
+                    }
+
+                    totalPoints += count;
+                    hits += newHits;
+                    const boundingBoxArea = (preset.xMax - preset.xMin) * preset.yMax;
+                    currentEstimate = boundingBoxArea * (hits / totalPoints);
+                }
+
+                // Update Visuals
+                drawBaseCanvas();
+                updateStatsUI();
+                appendChartPoint();
+            }
+
+            function updateStatsUI() {
+                statTotal.textContent = totalPoints.toLocaleString();
+                statHits.textContent = hits.toLocaleString();
+                statEstimated.textContent = totalPoints > 0 ? currentEstimate.toFixed(6) : "0.000000";
+                statExact.textContent = exactValue.toFixed(6);
+                
+                const error = totalPoints > 0 ? Math.abs(currentEstimate - exactValue) : 0;
+                statError.textContent = error.toFixed(6);
+            }
+
+            function appendChartPoint() {
+                if (totalPoints === 0) return;
+
+                const labels = convergenceChart.data.labels;
+                const estimateData = convergenceChart.data.datasets[0].data;
+                const exactData = convergenceChart.data.datasets[1].data;
+
+                if (labels.length > 150) {
+                    labels.shift();
+                    estimateData.shift();
+                    exactData.shift();
+                }
+
+                labels.push(totalPoints);
+                estimateData.push(currentEstimate);
+                exactData.push(exactValue);
+
+                convergenceChart.update('none');
+            }
+
+            // Animation Loop
+            function loop() {
+                if (!isRunning) return;
+                injectPoints(batchSpeed);
+                animationFrameId = requestAnimationFrame(loop);
+            }
+
+            // Initial Setup Call
+            initChart();
+            updateFunctionPreset();
+            resetSimulation();
+        });
+    </script>
+</body>
+</html>

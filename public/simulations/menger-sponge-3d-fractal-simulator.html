@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menger Sponge 3D & Statistical Simulator</title>
+    <!-- Three.js for WebGL 3D Rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Chart.js for Mathematical Scaling Graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.95);
+            --accent-blue: #0284c7; /* Vibrant Blue for Metrics */
+            --sponge-blue: #0284c7;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --highlight-gold: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #ffffff;
+            color: var(--text-light);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: rgba(15, 23, 42, 0.95);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        header h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-light);
+        }
+
+        header h1 span {
+            color: #38bdf8;
+            font-size: 0.85rem;
+            border: 1px solid #38bdf8;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .container {
+            display: flex;
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #canvas-container {
+            flex: 1;
+            height: 100%;
+            position: relative;
+            background-color: #ffffff;
+        }
+
+        .sidebar {
+            width: 420px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border-left: 1px solid var(--border-color);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+            z-index: 5;
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .panel-box {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .panel-box h3 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #38bdf8;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-group {
+            margin-bottom: 14px;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        label span.val {
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: #38bdf8;
+            cursor: pointer;
+        }
+
+        .toggle-btn-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            background: #1e293b;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+        }
+
+        .toggle-btn.active {
+            background: #38bdf8;
+            color: #000;
+            font-weight: 600;
+            border-color: #38bdf8;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .metric-card {
+            background: rgba(30, 41, 59, 0.5);
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .metric-card .title {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .metric-card .value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #38bdf8;
+            margin-top: 4px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 160px;
+            width: 100%;
+        }
+
+        #view-overlay {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            pointer-events: none;
+            display: flex;
+            gap: 10px;
+            z-index: 2;
+        }
+
+        .badge {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #ffffff;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        /* --- Revealing Explanatory Notes Controls & Styling --- */
+        .reveal-btn {
+            width: 100%;
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid #38bdf8;
+            color: #38bdf8;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .reveal-btn:hover {
+            background: #38bdf8;
+            color: #0f172a;
+        }
+
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease-out;
+            margin-top: 0;
+        }
+
+        .collapsible-content.expanded {
+            max-height: 500px;
+            margin-top: 12px;
+        }
+
+        .info-tab-buttons {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 12px;
+        }
+
+        .info-tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+        }
+
+        .info-tab-btn.active {
+            color: #38bdf8;
+            border-bottom-color: #38bdf8;
+        }
+
+        .info-content {
+            display: none;
+            font-size: 0.82rem;
+            line-height: 1.55;
+            color: #cbd5e1;
+        }
+
+        .info-content.active {
+            display: block;
+        }
+
+        .info-content p {
+            margin-bottom: 10px;
+        }
+
+        .info-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        .highlight {
+            color: var(--highlight-gold);
+            font-weight: 600;
+        }
+
+        .formula-box {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px dashed var(--border-color);
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin: 8px 0;
+            text-align: center;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 0.85rem;
+            color: #38bdf8;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .loading-overlay.visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .spinner {
+            border: 3px solid #cbd5e1;
+            border-top: 3px solid #0284c7;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Menger Sponge Simulator <span>Karl Menger (1926)</span></h1>
+        <div style="font-size: 0.85rem; color: var(--text-muted);">Hausdorff Dimension: <strong style="color:var(--text-light)">~2.7268</strong></div>
+    </header>
+
+    <div class="container">
+        <!-- 3D Canvas Viewport -->
+        <div id="canvas-container">
+            <div id="view-overlay">
+                <div class="badge">Drag to Rotate</div>
+                <div class="badge">Scroll to Zoom</div>
+            </div>
+            <div class="loading-overlay" id="loader">
+                <div class="spinner"></div>
+            </div>
+        </div>
+
+        <!-- Sidebar Controls & Analytics -->
+        <div class="sidebar">
+            
+            <!-- On-Click Revealed Historical & Explanatory Box -->
+            <div class="panel-box">
+                <button class="reveal-btn" id="toggle-info-btn" onclick="toggleInfoPanel()">
+                    <span>Show Historical Context & Explanatory Notes</span>
+                    <span id="btn-arrow">&#9660;</span>
+                </button>
+
+                <div class="collapsible-content" id="info-collapsible">
+                    <div class="info-tab-buttons">
+                        <button class="info-tab-btn active" onclick="switchInfoTab('history')">History (1926)</button>
+                        <button class="info-tab-btn" onclick="switchInfoTab('paradox')">Math Paradox</button>
+                        <button class="info-tab-btn" onclick="switchInfoTab('engineering')">Engineering</button>
+                    </div>
+
+                    <!-- Historical Background -->
+                    <div class="info-content active" id="tab-history">
+                        <p>In 1926, Austrian mathematician <span class="highlight">Karl Menger</span> introduced this 3D fractal construction while attempting to formulate a rigorous topological definition of dimension.</p>
+                        <p>Building upon Wacław Sierpiński's earlier work on 2D carpet fractals, Menger proved that his 3D sponge was a <span class="highlight">universal curve</span>: any topological curve of dimension 1 can be embedded inside a Menger Sponge structure without self-intersection.</p>
+                    </div>
+
+                    <!-- Mathematical Paradox -->
+                    <div class="info-content" id="tab-paradox">
+                        <p>The Menger Sponge exhibits a famous geometric paradox as iteration level L approaches infinity:</p>
+                        <div class="formula-box">
+                            lim (L &rarr; &infty;) Volume = (20/27)^L = 0
+                            <br>
+                            lim (L &rarr; &infty;) Area = &infty;
+                        </div>
+                        <p>Its fractional topological scale is governed by the Hausdorff Dimension formula:</p>
+                        <div class="formula-box">
+                            D_H = log(20) / log(3) &approx; 2.7268
+                        </div>
+                        <p>This places the sponge strictly between a 2D surface (Dimension = 2) and a 3D solid (Dimension = 3).</p>
+                    </div>
+
+                    <!-- Engineering Applications -->
+                    <div class="info-content" id="tab-engineering">
+                        <p><span class="highlight">High-Efficiency Heat Exchangers:</span> The explosive growth of internal surface area while reducing core volume enables ultra-compact fluid-to-air cooling radiators.</p>
+                        <p><span class="highlight">Aerospace Metamaterials:</span> Porous fractal lattices yield high stiffness-to-weight ratios, absorbing mechanical shock while removing unnecessary structural mass.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls Box -->
+            <div class="panel-box">
+                <h3>Parameters</h3>
+                
+                <div class="control-group">
+                    <label>Iteration Level (L): <span class="val" id="lvl-val">1</span></label>
+                    <input type="range" id="lvl-slider" min="0" max="3" step="1" value="1">
+                </div>
+
+                <div class="control-group">
+                    <label>Cross-Section Cut: <span class="val" id="cut-val">Off</span></label>
+                    <input type="range" id="cut-slider" min="0" max="100" step="1" value="100">
+                </div>
+
+                <div class="control-group">
+                    <label>Cut Axis</label>
+                    <div class="toggle-btn-group">
+                        <button class="toggle-btn active" id="axis-x" onclick="setCutAxis('X')">X-Axis</button>
+                        <button class="toggle-btn" id="axis-y" onclick="setCutAxis('Y')">Y-Axis</button>
+                        <button class="toggle-btn" id="axis-z" onclick="setCutAxis('Z')">Z-Axis</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Material Render</label>
+                    <div class="toggle-btn-group">
+                        <button class="toggle-btn active" id="mat-solid" onclick="setMaterialMode('solid')">Solid</button>
+                        <button class="toggle-btn" id="mat-wire" onclick="setMaterialMode('wire')">Wireframe</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mathematical Metrics Box -->
+            <div class="panel-box">
+                <h3>Real-Time Metrics</h3>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="title">Active Cubes (N)</div>
+                        <div class="value" id="m-cubes">20</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="title">Scale Factor (r)</div>
+                        <div class="value" id="m-scale">0.333</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="title">Volume (V)</div>
+                        <div class="value" id="m-vol">0.7407</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="title">Surface Area (A)</div>
+                        <div class="value" id="m-sa">13.333</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scaling Trends Graph Box -->
+            <div class="panel-box">
+                <h3>Scaling Trends (L0 - L3)</h3>
+                <div class="chart-container">
+                    <canvas id="scalingChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- State Management ---
+        const state = {
+            level: 1,
+            cutPercent: 100,
+            cutAxis: 'X',
+            materialMode: 'solid',
+            infoExpanded: false
+        };
+
+        // --- Three.js Variables ---
+        let scene, camera, renderer, controls, spongeGroup;
+        let localClippingPlane;
+
+        // --- Chart.js Variable ---
+        let chart;
+
+        // --- Mathematical Formulations ---
+        function calculateMetrics(L) {
+            const N = Math.pow(20, L);
+            const scale = Math.pow(1/3, L);
+            const volume = Math.pow(20/27, L);
+            
+            let surfaceArea;
+            if (L === 0) {
+                surfaceArea = 6;
+            } else {
+                surfaceArea = 2 * Math.pow(20/9, L) + 4 * Math.pow(8/9, L);
+            }
+
+            return {
+                N: N.toLocaleString(),
+                scale: scale.toFixed(4),
+                volume: volume.toFixed(4),
+                surfaceArea: surfaceArea.toFixed(3)
+            };
+        }
+
+        // --- Toggle Explanatory Panel ---
+        function toggleInfoPanel() {
+            state.infoExpanded = !state.infoExpanded;
+            const collapsible = document.getElementById('info-collapsible');
+            const arrow = document.getElementById('btn-arrow');
+            const btnText = document.querySelector('#toggle-info-btn span:first-child');
+
+            if (state.infoExpanded) {
+                collapsible.classList.add('expanded');
+                arrow.innerHTML = '&#9650;';
+                btnText.innerText = 'Hide Historical Context & Explanatory Notes';
+            } else {
+                collapsible.classList.remove('expanded');
+                arrow.innerHTML = '&#9660;';
+                btnText.innerText = 'Show Historical Context & Explanatory Notes';
+            }
+        }
+
+        // --- UI Tab Switching ---
+        function switchInfoTab(tabKey) {
+            document.querySelectorAll('.info-tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.info-content').forEach(content => content.classList.remove('active'));
+
+            if (tabKey === 'history') {
+                document.querySelectorAll('.info-tab-btn')[0].classList.add('active');
+                document.getElementById('tab-history').classList.add('active');
+            } else if (tabKey === 'paradox') {
+                document.querySelectorAll('.info-tab-btn')[1].classList.add('active');
+                document.getElementById('tab-paradox').classList.add('active');
+            } else if (tabKey === 'engineering') {
+                document.querySelectorAll('.info-tab-btn')[2].classList.add('active');
+                document.getElementById('tab-engineering').classList.add('active');
+            }
+        }
+
+        // --- Initialization ---
+        function init() {
+            const container = document.getElementById('canvas-container');
+
+            // Scene setup with Crisp White Background
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xffffff);
+
+            // Camera setup
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+            camera.position.set(2.2, 1.8, 2.5);
+
+            // Renderer setup with Local Clipping Enabled
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.localClippingEnabled = true;
+            container.appendChild(renderer.domElement);
+
+            // Orbit Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            // Lighting tailored for white background contrast
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+
+            const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight1.position.set(5, 10, 7);
+            scene.add(dirLight1);
+
+            const dirLight2 = new THREE.DirectionalLight(0x0284c7, 0.3);
+            dirLight2.position.set(-5, -5, -5);
+            scene.add(dirLight2);
+
+            // Clipping Plane Setup
+            localClippingPlane = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 1.0);
+
+            // Initial Build
+            buildSponge();
+            initChart();
+            updateUI();
+
+            // Event Listeners
+            window.addEventListener('resize', onWindowResize);
+            setupControls();
+
+            // Render Loop
+            animate();
+        }
+
+        // --- Menger Fractal Generation Algorithm ---
+        function generateMengerCubes(x, y, z, size, level) {
+            if (level === 0) {
+                return [{ x, y, z, size }];
+            }
+
+            const subCubes = [];
+            const newSize = size / 3;
+
+            for (let dx = -1; dx <= 1; dx++) {
+                for (let dy = -1; dy <= 1; dy++) {
+                    for (let dz = -1; dz <= 1; dz++) {
+                        const sumZero = (dx === 0 ? 1 : 0) + (dy === 0 ? 1 : 0) + (dz === 0 ? 1 : 0);
+                        if (sumZero < 2) {
+                            const subX = x + dx * newSize;
+                            const subY = y + dy * newSize;
+                            const subZ = z + dz * newSize;
+                            subCubes.push(...generateMengerCubes(subX, subY, subZ, newSize, level - 1));
+                        }
+                    }
+                }
+            }
+            return subCubes;
+        }
+
+        function buildSponge() {
+            showLoader(true);
+
+            setTimeout(() => {
+                if (spongeGroup) scene.remove(spongeGroup);
+                spongeGroup = new THREE.Group();
+
+                const cubesData = generateMengerCubes(0, 0, 0, 1.2, state.level);
+                
+                // Instanced Mesh for Performance
+                const geometry = new THREE.BoxGeometry(1, 1, 1);
+                
+                // Rich Electric Blue Material for High Contrast on White Background
+                const material = new THREE.MeshStandardMaterial({
+                    color: 0x0284c7,
+                    roughness: 0.25,
+                    metalness: 0.1,
+                    wireframe: state.materialMode === 'wire',
+                    clippingPlanes: [localClippingPlane],
+                    clipShadows: true
+                });
+
+                const instancedMesh = new THREE.InstancedMesh(geometry, material, cubesData.length);
+                const dummy = new THREE.Object3D();
+
+                cubesData.forEach((cube, i) => {
+                    dummy.position.set(cube.x, cube.y, cube.z);
+                    dummy.scale.set(cube.size, cube.size, cube.size);
+                    dummy.updateMatrix();
+                    instancedMesh.setMatrixAt(i, dummy.matrix);
+                });
+
+                instancedMesh.instanceMatrix.needsUpdate = true;
+                spongeGroup.add(instancedMesh);
+
+                // Wireframe Bounding Box with Darker Edges for Sharp Contrast
+                const bboxGeo = new THREE.BoxGeometry(1.2, 1.2, 1.2);
+                const bboxMat = new THREE.MeshBasicMaterial({ color: 0x64748b, wireframe: true, transparent: true, opacity: 0.4 });
+                const bbox = new THREE.Mesh(bboxGeo, bboxMat);
+                spongeGroup.add(bbox);
+
+                scene.add(spongeGroup);
+                updateClippingPlane();
+                showLoader(false);
+            }, 20);
+        }
+
+        // --- Clipping Plane Logic ---
+        function updateClippingPlane() {
+            const cutVal = (state.cutPercent / 100) * 1.3 - 0.65;
+            
+            if (state.cutPercent === 100) {
+                localClippingPlane.constant = 10;
+            } else {
+                if (state.cutAxis === 'X') {
+                    localClippingPlane.normal.set(-1, 0, 0);
+                } else if (state.cutAxis === 'Y') {
+                    localClippingPlane.normal.set(0, -1, 0);
+                } else {
+                    localClippingPlane.normal.set(0, 0, -1);
+                }
+                localClippingPlane.constant = cutVal;
+            }
+        }
+
+        // --- User Controls Setup ---
+        function setupControls() {
+            const lvlSlider = document.getElementById('lvl-slider');
+            const cutSlider = document.getElementById('cut-slider');
+
+            lvlSlider.addEventListener('input', (e) => {
+                state.level = parseInt(e.target.value);
+                document.getElementById('lvl-val').innerText = state.level;
+                buildSponge();
+                updateUI();
+            });
+
+            cutSlider.addEventListener('input', (e) => {
+                state.cutPercent = parseInt(e.target.value);
+                document.getElementById('cut-val').innerText = state.cutPercent === 100 ? 'Off' : `${state.cutPercent}%`;
+                updateClippingPlane();
+            });
+        }
+
+        function setCutAxis(axis) {
+            state.cutAxis = axis;
+            ['x', 'y', 'z'].forEach(a => {
+                document.getElementById(`axis-${a}`).classList.remove('active');
+            });
+            document.getElementById(`axis-${axis.toLowerCase()}`).classList.add('active');
+            updateClippingPlane();
+        }
+
+        function setMaterialMode(mode) {
+            state.materialMode = mode;
+            document.getElementById('mat-solid').classList.toggle('active', mode === 'solid');
+            document.getElementById('mat-wire').classList.toggle('active', mode === 'wire');
+            buildSponge();
+        }
+
+        // --- Metric UI & Chart Updates ---
+        function updateUI() {
+            const metrics = calculateMetrics(state.level);
+            document.getElementById('m-cubes').innerText = metrics.N;
+            document.getElementById('m-scale').innerText = metrics.scale;
+            document.getElementById('m-vol').innerText = metrics.volume;
+            document.getElementById('m-sa').innerText = metrics.surfaceArea;
+
+            if (chart) {
+                chart.data.datasets[0].pointBackgroundColor = [0,1,2,3].map(l => l === state.level ? '#38bdf8' : '#334155');
+                chart.data.datasets[1].pointBackgroundColor = [0,1,2,3].map(l => l === state.level ? '#f43f5e' : '#334155');
+                chart.update();
+            }
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('scalingChart').getContext('2d');
+            const labels = ['L0', 'L1', 'L2', 'L3'];
+            const volumes = [0, 1, 2, 3].map(l => calculateMetrics(l).volume);
+            const surfaceAreas = [0, 1, 2, 3].map(l => calculateMetrics(l).surfaceArea);
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Volume (V -> 0)',
+                            data: volumes,
+                            borderColor: '#38bdf8',
+                            backgroundColor: '#38bdf8',
+                            tension: 0.3,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Surface Area (A -> Infinity)',
+                            data: surfaceAreas,
+                            borderColor: '#f43f5e',
+                            backgroundColor: '#f43f5e',
+                            tension: 0.3,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#94a3b8', font: { size: 10 } } }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            ticks: { color: '#38bdf8' },
+                            grid: { color: '#334155' },
+                            title: { display: true, text: 'Volume', color: '#38bdf8', font: { size: 9 } }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            ticks: { color: '#f43f5e' },
+                            grid: { drawOnChartArea: false },
+                            title: { display: true, text: 'Surface Area', color: '#f43f5e', font: { size: 9 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function showLoader(visible) {
+            const loader = document.getElementById('loader');
+            if (visible) loader.classList.add('visible');
+            else loader.classList.remove('visible');
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('canvas-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize App on Page Load
+        window.onload = init;
+    </script>
+</body>
+</html>

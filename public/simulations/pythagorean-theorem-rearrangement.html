@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A Pythagorean Theorem Visualizer: Proof by Rearrangement</title>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --accent-a: #ef4444;   /* Red for side a */
+      --accent-b: #3b82f6;   /* Blue for side b */
+      --accent-c: #10b981;   /* Green for side c / hypotenuse */
+      --triangle-fill: rgba(245, 158, 11, 0.25);
+      --triangle-stroke: #f59e0b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: #334155;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      max-width: 800px;
+      margin-bottom: 24px;
+    }
+
+    header h1 {
+      font-size: 2.2rem;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--accent-a), var(--accent-b), var(--accent-c));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    @media (min-width: 900px) {
+      .container {
+        grid-template-columns: 340px 1fr;
+      }
+    }
+
+    .panel {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .control-label {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .label-a { color: var(--accent-a); }
+    .label-b { color: var(--accent-b); }
+    .label-c { color: var(--accent-c); }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: #6366f1;
+      cursor: pointer;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      flex: 1;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background-color: #334155;
+      color: var(--text-main);
+    }
+
+    button:hover {
+      background-color: #475569;
+    }
+
+    button.active {
+      background-color: #6366f1;
+      color: #fff;
+    }
+
+    .stats-card {
+      background-color: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 14px;
+      font-family: monospace;
+      font-size: 0.95rem;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .stats-row {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .canvas-container {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      min-height: 480px;
+    }
+
+    svg {
+      max-width: 100%;
+      max-height: 500px;
+      overflow: visible;
+    }
+
+    /* SVG Elements Styling */
+    .outer-square {
+      fill: none;
+      stroke: var(--text-muted);
+      stroke-dasharray: 4 4;
+      stroke-width: 1.5;
+    }
+
+    .square-a {
+      fill: rgba(239, 68, 68, 0.25);
+      stroke: var(--accent-a);
+      stroke-width: 2;
+    }
+
+    .square-b {
+      fill: rgba(59, 130, 246, 0.25);
+      stroke: var(--accent-b);
+      stroke-width: 2;
+    }
+
+    .square-c {
+      fill: rgba(16, 185, 129, 0.25);
+      stroke: var(--accent-c);
+      stroke-width: 2;
+    }
+
+    .triangle {
+      fill: var(--triangle-fill);
+      stroke: var(--triangle-stroke);
+      stroke-width: 2;
+      transition: transform 0.05s linear;
+    }
+
+    .area-label {
+      font-size: 16px;
+      font-weight: bold;
+      text-anchor: middle;
+      dominant-baseline: central;
+      pointer-events: none;
+    }
+
+    .side-label {
+      font-size: 14px;
+      font-weight: bold;
+      text-anchor: middle;
+      dominant-baseline: central;
+      pointer-events: none;
+    }
+
+    .side-label.a { fill: var(--accent-a); }
+    .side-label.b { fill: var(--accent-b); }
+    .side-label.c { fill: var(--accent-c); }
+
+    .explanation {
+      margin-top: 24px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 1100px;
+      width: 100%;
+      line-height: 1.6;
+    }
+
+    .explanation h2 {
+      font-size: 1.3rem;
+      margin-bottom: 10px;
+      color: #6366f1;
+    }
+
+    .explanation ul {
+      margin-left: 20px;
+      margin-top: 8px;
+    }
+
+    .explanation li {
+      margin-bottom: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Pythagorean Theorem Visualizer</h1>
+    <p>Proof by Rearrangement (Zhou Bi Suan Jing Variation). Witness how total area remains conserved (a² + b² = c²) as four identical right triangles move inside an (a + b) bounding square.</p>
+  </header>
+
+  <div class="container">
+    <!-- Controls Side Panel -->
+    <div class="panel">
+      <div class="control-group">
+        <div class="control-label">
+          <span class="label-a">Side a (leg 1):</span>
+          <span id="val-a-text">100</span>
+        </div>
+        <input type="range" id="slider-a" min="40" max="160" value="100">
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">
+          <span class="label-b">Side b (leg 2):</span>
+          <span id="val-b-text">120</span>
+        </div>
+        <input type="range" id="slider-b" min="40" max="160" value="120">
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">
+          <span>Animation Progress (0 = a²+b², 1 = c²):</span>
+          <span id="val-p-text">0%</span>
+        </div>
+        <input type="range" id="slider-p" min="0" max="100" value="0">
+      </div>
+
+      <div class="btn-group">
+        <button id="btn-state1" class="active">State 1 (a² + b²)</button>
+        <button id="btn-state2">State 2 (c²)</button>
+      </div>
+
+      <div class="btn-group">
+        <button id="btn-play">Animate Transition</button>
+      </div>
+
+      <!-- Live Calculations Readout -->
+      <div class="stats-card">
+        <div class="stats-row"><span class="label-a">a:</span><span id="stat-a">0</span></div>
+        <div class="stats-row"><span class="label-b">b:</span><span id="stat-b">0</span></div>
+        <div class="stats-row"><span class="label-c">c = √(a²+b²):</span><span id="stat-c">0</span></div>
+        <hr style="border-color: var(--border-color); margin: 4px 0;">
+        <div class="stats-row"><span class="label-a">Area a²:</span><span id="stat-a2">0</span></div>
+        <div class="stats-row"><span class="label-b">Area b²:</span><span id="stat-b2">0</span></div>
+        <div class="stats-row"><span style="color: #a855f7;">a² + b²:</span><span id="stat-sum">0</span></div>
+        <div class="stats-row"><span class="label-c">Area c²:</span><span id="stat-c2">0</span></div>
+      </div>
+    </div>
+
+    <!-- Canvas Container -->
+    <div class="canvas-container">
+      <svg id="viz" width="400" height="400" viewBox="0 0 400 400">
+        <!-- Background bounding square (a+b) x (a+b) -->
+        <rect id="bg-square" class="outer-square" x="0" y="0" width="0" height="0" />
+
+        <!-- Inner Area Regions -->
+        <rect id="sq-a" class="square-a" />
+        <rect id="sq-b" class="square-b" />
+        <polygon id="sq-c" class="square-c" />
+
+        <!-- Area Labels -->
+        <text id="lbl-a" class="area-label" fill="var(--accent-a)">a²</text>
+        <text id="lbl-b" class="area-label" fill="var(--accent-b)">b²</text>
+        <text id="lbl-c" class="area-label" fill="var(--accent-c)">c²</text>
+
+        <!-- 4 Triangles -->
+        <g id="triangles"></g>
+
+        <!-- Perimeter Side Labels -->
+        <g id="side-labels">
+          <!-- Top Edge -->
+          <text id="side-top-a" class="side-label a">a</text>
+          <text id="side-top-b" class="side-label b">b</text>
+          <!-- Right Edge -->
+          <text id="side-right-a" class="side-label a">a</text>
+          <text id="side-right-b" class="side-label b">b</text>
+          <!-- Bottom Edge -->
+          <text id="side-bottom-a" class="side-label a">a</text>
+          <text id="side-bottom-b" class="side-label b">b</text>
+          <!-- Left Edge -->
+          <text id="side-left-a" class="side-label a">a</text>
+          <text id="side-left-b" class="side-label b">b</text>
+        </g>
+
+        <!-- Inner Square Side Labels (c) -->
+        <g id="inner-c-labels">
+          <text id="lbl-c-side-0" class="side-label c">c</text>
+          <text id="lbl-c-side-1" class="side-label c">c</text>
+          <text id="lbl-c-side-2" class="side-label c">c</text>
+          <text id="lbl-c-side-3" class="side-label c">c</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Explanation Section -->
+  <div class="explanation">
+    <h2>The Geometric Logic</h2>
+    <p>Both arrangements are enclosed within the exact same outer square of side length <strong>(a + b)</strong>, giving a total outer area of <strong>(a + b)²</strong>.</p>
+    <ul>
+      <li><strong>Four Triangles:</strong> Each arrangement contains four identical right-angled triangles with area ½ab. Total area of 4 triangles = 2ab.</li>
+      <li><strong>State 1:</strong> The 4 triangles are paired into two rectangles, leaving two inner empty squares of area <strong>a²</strong> and <strong>b²</strong>.</li>
+      <li><strong>State 2:</strong> The same 4 triangles are moved to the four corners of the outer square, leaving a single centered tilted square with all four sides equal to <strong>c</strong> and area <strong>c²</strong>.</li>
+      <li><strong>Conclusion:</strong> Since both configurations subtract the exact same 4 triangles from the same overall square, the remaining inner area must be equal: <strong>a² + b² = c²</strong>.</li>
+    </ul>
+  </div>
+
+  <script>
+    // State Variables
+    let a = 100;
+    let b = 120;
+    let progress = 0; // 0 to 1
+    let animId = null;
+
+    // DOM Elements
+    const sliderA = document.getElementById('slider-a');
+    const sliderB = document.getElementById('slider-b');
+    const sliderP = document.getElementById('slider-p');
+    
+    const valAText = document.getElementById('val-a-text');
+    const valBText = document.getElementById('val-b-text');
+    const valPText = document.getElementById('val-p-text');
+
+    const btnState1 = document.getElementById('btn-state1');
+    const btnState2 = document.getElementById('btn-state2');
+    const btnPlay = document.getElementById('btn-play');
+
+    const statA = document.getElementById('stat-a');
+    const statB = document.getElementById('stat-b');
+    const statC = document.getElementById('stat-c');
+    const statA2 = document.getElementById('stat-a2');
+    const statB2 = document.getElementById('stat-b2');
+    const statSum = document.getElementById('stat-sum');
+    const statC2 = document.getElementById('stat-c2');
+
+    const svg = document.getElementById('viz');
+    const bgSquare = document.getElementById('bg-square');
+    const sqA = document.getElementById('sq-a');
+    const sqB = document.getElementById('sq-b');
+    const sqC = document.getElementById('sq-c');
+    const lblA = document.getElementById('lbl-a');
+    const lblB = document.getElementById('lbl-b');
+    const lblC = document.getElementById('lbl-c');
+    const trianglesGroup = document.getElementById('triangles');
+
+    // Side Label DOM Elements
+    const sideTopA = document.getElementById('side-top-a');
+    const sideTopB = document.getElementById('side-top-b');
+    const sideRightA = document.getElementById('side-right-a');
+    const sideRightB = document.getElementById('side-right-b');
+    const sideBottomA = document.getElementById('side-bottom-a');
+    const sideBottomB = document.getElementById('side-bottom-b');
+    const sideLeftA = document.getElementById('side-left-a');
+    const sideLeftB = document.getElementById('side-left-b');
+
+    // Inner Square c Side Labels
+    const lblCSides = [
+      document.getElementById('lbl-c-side-0'),
+      document.getElementById('lbl-c-side-1'),
+      document.getElementById('lbl-c-side-2'),
+      document.getElementById('lbl-c-side-3')
+    ];
+
+    // Linear Interpolation
+    function lerp(start, end, t) {
+      return start + (end - start) * t;
+    }
+
+    // Initialize 4 Triangle SVG elements
+    const triangles = [];
+    for (let i = 0; i < 4; i++) {
+      const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      polygon.setAttribute('class', 'triangle');
+      trianglesGroup.appendChild(polygon);
+      triangles.push(polygon);
+    }
+
+    function update() {
+      const L = a + b; // Outer square side length
+      const c = Math.sqrt(a * a + b * b);
+
+      // SVG ViewBox Sizing with margin for perimeter labels
+      const margin = 35;
+      const svgSize = L + margin * 2;
+      svg.setAttribute('viewBox', `${-margin} ${-margin} ${svgSize} ${svgSize}`);
+
+      // Update Text Readouts
+      valAText.innerText = a;
+      valBText.innerText = b;
+      valPText.innerText = `${Math.round(progress * 100)}%`;
+
+      statA.innerText = a;
+      statB.innerText = b;
+      statC.innerText = c.toFixed(2);
+      statA2.innerText = (a * a);
+      statB2.innerText = (b * b);
+      statSum.innerText = (a * a + b * b);
+      statC2.innerText = Math.round(c * c);
+
+      // Outer bounding square
+      bgSquare.setAttribute('x', 0);
+      bgSquare.setAttribute('y', 0);
+      bgSquare.setAttribute('width', L);
+      bgSquare.setAttribute('height', L);
+
+      // --- Perimeter Side Labels ---
+      const offset = 18; // Distance from square edge
+
+      // Top Edge (a then b)
+      sideTopA.setAttribute('x', a / 2);
+      sideTopA.setAttribute('y', -offset);
+      sideTopB.setAttribute('x', a + b / 2);
+      sideTopB.setAttribute('y', -offset);
+
+      // Right Edge (a then b)
+      sideRightA.setAttribute('x', L + offset);
+      sideRightA.setAttribute('y', a / 2);
+      sideRightB.setAttribute('x', L + offset);
+      sideRightB.setAttribute('y', a + b / 2);
+
+      // Bottom Edge (b then a)
+      sideBottomB.setAttribute('x', b / 2);
+      sideBottomB.setAttribute('y', L + offset);
+      sideBottomA.setAttribute('x', b + a / 2);
+      sideBottomA.setAttribute('y', L + offset);
+
+      // Left Edge (b then a)
+      sideLeftB.setAttribute('x', -offset);
+      sideLeftB.setAttribute('y', b / 2);
+      sideLeftA.setAttribute('x', -offset);
+      sideLeftA.setAttribute('y', b + a / 2);
+
+      // --- Define Triangle Positions for State 1 (a² + b²) ---
+      const t1_0 = [ [0, 0], [a, 0], [0, b] ];
+      const t1_1 = [ [a, 0], [L, 0], [a, b] ];
+      const t1_2 = [ [0, b], [a, L], [0, L] ];
+      const t1_3 = [ [a, L], [L, L], [L, b] ];
+
+      // --- Define Triangle Positions for State 2 (c²) ---
+      const t2_0 = [ [0, 0], [a, 0], [0, b] ];
+      const t2_1 = [ [L, 0], [L, a], [a, 0] ];
+      const t2_2 = [ [L, L], [b, L], [L, a] ];
+      const t2_3 = [ [0, L], [0, b], [b, L] ];
+
+      const state1 = [t1_0, t1_1, t1_2, t1_3];
+      const state2 = [t2_0, t2_1, t2_2, t2_3];
+
+      // Interpolate Triangle Vertices based on progress
+      triangles.forEach((tri, idx) => {
+        const pts1 = state1[idx];
+        const pts2 = state2[idx];
+        const currentPts = pts1.map((pt, pIdx) => [
+          lerp(pt[0], pts2[pIdx][0], progress),
+          lerp(pt[1], pts2[pIdx][1], progress)
+        ]);
+        
+        tri.setAttribute('points', currentPts.map(p => p.join(',')).join(' '));
+      });
+
+      // --- Inner Squares & Area Labels ---
+      // State 1: Inner squares a² and b²
+      sqA.setAttribute('x', 0);
+      sqA.setAttribute('y', b);
+      sqA.setAttribute('width', a);
+      sqA.setAttribute('height', a);
+      sqA.style.opacity = 1 - progress;
+
+      sqB.setAttribute('x', a);
+      sqB.setAttribute('y', 0);
+      sqB.setAttribute('width', b);
+      sqB.setAttribute('height', b);
+      sqB.style.opacity = 1 - progress;
+
+      lblA.setAttribute('x', a / 2);
+      lblA.setAttribute('y', b + a / 2);
+      lblA.style.opacity = 1 - progress;
+
+      lblB.setAttribute('x', a + b / 2);
+      lblB.setAttribute('y', b / 2);
+      lblB.style.opacity = 1 - progress;
+
+      // State 2: Inner square c²
+      const cPoints = [
+        [a, 0],
+        [L, a],
+        [b, L],
+        [0, b]
+      ];
+      sqC.setAttribute('points', cPoints.map(p => p.join(',')).join(' '));
+      sqC.style.opacity = progress;
+
+      lblC.setAttribute('x', L / 2);
+      lblC.setAttribute('y', L / 2);
+      lblC.style.opacity = progress;
+
+      // Position the 4 side labels 'c' along the edges of the inner tilted square
+      const cSideOffset = 14; // Distance inward from edge towards center
+      cPoints.forEach((p1, idx) => {
+        const p2 = cPoints[(idx + 1) % 4];
+        
+        // Midpoint of side
+        const midX = (p1[0] + p2[0]) / 2;
+        const midY = (p1[1] + p2[1]) / 2;
+        
+        // Offset vector towards the center of the inner square (L/2, L/2)
+        const toCenterX = (L / 2) - midX;
+        const toCenterY = (L / 2) - midY;
+        const dist = Math.sqrt(toCenterX * toCenterX + toCenterY * toCenterY);
+        
+        const labelX = midX + (toCenterX / dist) * cSideOffset;
+        const labelY = midY + (toCenterY / dist) * cSideOffset;
+
+        lblCSides[idx].setAttribute('x', labelX);
+        lblCSides[idx].setAttribute('y', labelY);
+        lblCSides[idx].style.opacity = progress;
+      });
+
+      // Update button active state highlighting
+      btnState1.classList.toggle('active', progress === 0);
+      btnState2.classList.toggle('active', progress === 1);
+    }
+
+    // Animation Handler
+    function animateTo(targetProgress, duration = 800) {
+      if (animId) cancelAnimationFrame(animId);
+      const startProgress = progress;
+      const startTime = performance.now();
+
+      function step(currentTime) {
+        const elapsed = currentTime - startTime;
+        const t = Math.min(elapsed / duration, 1);
+        // Easing function (easeInOutCubic)
+        const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+        progress = lerp(startProgress, targetProgress, ease);
+        sliderP.value = Math.round(progress * 100);
+        update();
+
+        if (t < 1) {
+          animId = requestAnimationFrame(step);
+        }
+      }
+      animId = requestAnimationFrame(step);
+    }
+
+    // Event Listeners
+    sliderA.addEventListener('input', (e) => {
+      a = parseInt(e.target.value, 10);
+      update();
+    });
+
+    sliderB.addEventListener('input', (e) => {
+      b = parseInt(e.target.value, 10);
+      update();
+    });
+
+    sliderP.addEventListener('input', (e) => {
+      if (animId) cancelAnimationFrame(animId);
+      progress = parseInt(e.target.value, 10) / 100;
+      update();
+    });
+
+    btnState1.addEventListener('click', () => animateTo(0));
+    btnState2.addEventListener('click', () => animateTo(1));
+    btnPlay.addEventListener('click', () => {
+      const target = progress > 0.5 ? 0 : 1;
+      animateTo(target);
+    });
+
+    // Initial render
+    update();
+  </script>
+</body>
+</html>

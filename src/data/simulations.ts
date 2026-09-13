@@ -4,11 +4,278 @@ import { SimulationItem, CurriculumStandard } from "../types";
 // The creator-authored STEM Simulation Apps
 export const STEM_SIMULATIONS: SimulationItem[] = [
   {
+    id: "sim-menger-sponge-3d-fractal-simulator",
+    title: "Menger Sponge 3D & Statistical Simulator",
+    tagline: "Explore Karl Menger's 3D universal fractal curve: recursive topological voiding, real-time cross-section clipping, Hausdorff dimension ~2.7268, and the infinite surface area vs. zero volume paradox",
+    discipline: "mathematics",
+    gradeLevel: ["High School (9-12)", "AP / IB STEM", "Undergraduate"],
+    standards: ["CCSS.MATH.HSG.MG.A.1", "CCSS.MATH.HSG.MG.A.2", "CCSS.MATH.HSF.BF.A.2", "NGSS SEP-2", "NGSS SEP-5"],
+    description: "An interactive 3D WebGL laboratory investigating Karl Menger's (1926) renowned fractal curve. Users can step recursively through iteration levels L = 0 to 3 (up to 8,000 instanced sub-cubes), dynamically slice through internal voids using local clipping planes along X, Y, or Z axes, and toggle between solid PBR shading and wireframe geometry. Accompanied by real-time mathematical metric readouts (active sub-cubes N, scale factor r = (1/3)^L, remaining volume V = (20/27)^L, and total surface area A) alongside an interactive Chart.js dual-axis graph demonstrating the geometric paradox of vanishing volume and exploding surface area.",
+    learningObjectives: [
+      "Understand recursive self-similar 3D fractal generation where 20 of 27 sub-cubes are retained at each iteration step",
+      "Calculate and interpret fractional Hausdorff dimension D_H = log(20)/log(3) ≈ 2.7268",
+      "Analyze the asymptotic paradox: lim(L→∞) Volume = 0 while lim(L→∞) Surface Area = ∞",
+      "Inspect interior fractal geometry and porous cross-sections using multi-axis spatial clipping planes",
+      "Connect fractal geometry to modern engineering applications such as compact heat exchangers and lightweight aerospace metamaterials"
+    ],
+    thumbnailGradient: "from-sky-600 via-cyan-700 to-slate-800",
+    badgeColor: "bg-sky-500/10 text-sky-300 border-sky-500/20",
+    iconName: "Box",
+    rating: 5.0,
+    reviewCount: 39,
+    teacherCount: 154,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 180,
+      districtUnlimited: 390
+    },
+    features: [
+      "Three.js WebGL 3D viewport with OrbitControls, custom directional lighting, and loading feedback",
+      "GPU-accelerated InstancedMesh rendering supporting thousands of recursive fractal sub-cubes without lag",
+      "Dynamic cross-section slicing with adjustable penetration percentage and X/Y/Z clipping axis toggles",
+      "Solid PBR standard material versus wireframe topological mesh rendering modes",
+      "Live mathematical metrics grid: Active cubes N, scale factor r, volume V, and surface area A",
+      "Dual-axis Chart.js scaling trends graph plotting Volume (V → 0) and Surface Area (A → ∞) across L0–L3",
+      "Collapsible pedagogical dossier detailing Karl Menger's 1926 breakthrough, the mathematical paradox, and industrial engineering applications"
+    ],
+    parameterDefaults: {
+      level: 1,
+      cutPercent: 100,
+      cutAxis: "X",
+      materialMode: "solid"
+    },
+    parameterControls: [
+      {
+        key: "level",
+        label: "Iteration Level (L)",
+        min: 0,
+        max: 3,
+        step: 1,
+        unit: "lvl",
+        description: "Recursion depth of the fractal (L0: 1 cube, L1: 20 cubes, L2: 400 cubes, L3: 8,000 cubes)"
+      },
+      {
+        key: "cutPercent",
+        label: "Cross-Section Cut",
+        min: 0,
+        max: 100,
+        step: 1,
+        unit: "%",
+        description: "Position of the internal clipping plane across the selected axis"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-menger-1",
+        title: "Observe the 8,000 Cube Threshold",
+        instruction: "Advance the iteration level to L = 3 and observe how remaining volume drops to ~0.406 while surface area climbs to ~29.87.",
+        targetMetric: "Active Cubes N",
+        targetValue: 8000,
+        tolerance: 1,
+        currentValueKey: "N",
+        rewardBadge: "Fractal Architect"
+      },
+      {
+        id: "ch-menger-2",
+        title: "Cross-Sectional Void Inspection",
+        instruction: "Set iteration to L = 2 and adjust the cross-section slider to 50% along the X-axis to reveal the internal central tunnels.",
+        targetMetric: "Cut Percentage",
+        targetValue: 50,
+        tolerance: 5,
+        currentValueKey: "cut",
+        rewardBadge: "Internal Topology Explorer"
+      }
+    ],
+    previewFacts: [
+      "Karl Menger proved in 1926 that the Menger Sponge is a universal curve: every one-dimensional topological metric space is homeomorphic to a subset of it.",
+      "With a Hausdorff dimension of ~2.7268, the Menger Sponge topologically exists strictly between a 2D surface and a 3D solid body."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/menger-sponge-3d-fractal-simulator.html"
+  },
+  {
+    id: "sim-monte-carlo-concept-explorer",
+    title: "Monte Carlo Simulation & Concept Explorer",
+    tagline: "Probabilistic numerical simulation engine: estimate π and calculate definite integrals via high-volume stochastic sampling, live dual-layer canvas rendering, and real-time convergence tracking",
+    discipline: "mathematics",
+    gradeLevel: ["High School (9-12)", "AP / IB STEM", "Undergraduate"],
+    standards: ["CCSS.MATH.HSS.MD.B.6", "CCSS.MATH.HSS.MD.B.7", "CCSS.MATH.HSS.IC.A.2", "NGSS SEP-4", "NGSS SEP-5"],
+    description: "A high-performance stochastic numerical engine demonstrating the Monte Carlo method and the Law of Large Numbers. Explore random spatial sampling across two primary computational modes: estimating π through unit circle point-in-region tests (ratio 4·k/N), and computing definite integrals (area under curve) for trigonometric (sin(x)+1), polynomial (x²), and Gaussian (e^(-x²)) functions. Features offscreen double-buffered accumulation rendering, live convergence line plotting via Chart.js, instant batch point injections (+100 to +50k), real-time absolute error computation, and an educational primer on the history of Stanislaw Ulam and John von Neumann.",
+    learningObjectives: [
+      "Understand how random stochastic sampling converges to deterministic analytical solutions via the Law of Large Numbers",
+      "Derive the relationship between circular geometric area and the empirical estimation of π (ratio 4·hits/total)",
+      "Apply Monte Carlo rejection sampling to approximate definite integrals of non-trivial functions",
+      "Analyze the asymptotic error reduction proportional to 1/√N as sample volume increases"
+    ],
+    thumbnailGradient: "from-indigo-600 via-blue-700 to-emerald-600",
+    badgeColor: "bg-indigo-500/10 text-indigo-300 border-indigo-500/20",
+    iconName: "Activity",
+    rating: 5.0,
+    reviewCount: 48,
+    teacherCount: 192,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 180,
+      districtUnlimited: 390
+    },
+    features: [
+      "Dual simulation modes: Circle-in-Square π estimation & Area under curve for sin(x)+1, x², and Gaussian e^(-x²)",
+      "High-speed point generation loop with continuous speed slider up to 5,000 pts/frame",
+      "Instant batch injection buttons (+100, +1k, +10k, +50k) for rapid high-N empirical sampling",
+      "Double-buffered offscreen canvas for rendering tens of thousands of hit/miss particles without frame drops",
+      "Real-time Law of Large Numbers convergence chart tracking empirical estimate vs. theoretical exact baseline",
+      "Live metrics panel: Total samples N, hits k, current estimate, theoretical exact, and absolute error",
+      "Interactive History & Theory modal detailing Ulam, von Neumann, and modern industrial applications"
+    ],
+    parameterDefaults: {
+      mode: "pi",
+      batchSpeed: 500,
+      functionPreset: "sin"
+    },
+    parameterControls: [
+      {
+        key: "batchSpeed",
+        label: "Continuous Speed",
+        min: 1,
+        max: 5000,
+        step: 10,
+        unit: "pts/frame",
+        description: "Rate of random samples injected per animation frame"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-mc-1",
+        title: "Achieve Sub-0.01 Error on π",
+        instruction: "Run the simulation or inject batches until total samples N exceed 10,000 and the absolute error drops below 0.01.",
+        targetMetric: "Absolute Error",
+        targetValue: 0.01,
+        tolerance: 0.01,
+        currentValueKey: "error",
+        rewardBadge: "Precision Estimator"
+      },
+      {
+        id: "ch-mc-2",
+        title: "Integrate the Gaussian Bell Curve",
+        instruction: "Switch to Area Under Curve mode with the Gaussian function e^(-x²) and inject 50k points to approximate the integral.",
+        targetMetric: "Estimated Integral",
+        targetValue: 0.882,
+        tolerance: 0.02,
+        currentValueKey: "estimate",
+        rewardBadge: "Stochastic Integrator"
+      }
+    ],
+    previewFacts: [
+      "The Monte Carlo method was named by John von Neumann after the casino in Monaco where Stanislaw Ulam's uncle frequently gambled.",
+      "The precision of Monte Carlo integration improves with the square root of the number of samples (1/√N), regardless of the dimensionality of the integral."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/monte-carlo-simulation-engine.html"
+  },
+  {
+    id: "sim-pythagorean-theorem-rearrangement",
+    title: "Pythagorean Theorem Visualizer: Proof by Rearrangement",
+    tagline: "Interactive geometric proof by rearrangement (Zhou Bi Suan Jing variation): witness area conservation (a² + b² = c²) as four identical right triangles animate inside an (a + b) bounding square",
+    discipline: "mathematics",
+    gradeLevel: ["Middle School (6-8)", "High School (9-12)", "Undergraduate"],
+    standards: ["CCSS.MATH.8.G.B.6", "CCSS.MATH.8.G.B.7", "CCSS.MATH.HSG.SRT.C.8", "CCSS.MATH.MP.3", "CCSS.MATH.MP.7"],
+    description: "An intuitive, mathematically rigorous interactive demonstration of the Pythagorean Theorem via geometric dissection and rearrangement. By adjusting leg lengths a and b, students observe four congruent right triangles moving continuously inside an enclosing (a + b) × (a + b) square. State 1 arranges the triangles to reveal two empty interior squares of area a² and b², while State 2 rearranges the same triangles to reveal a single central square of area c². Real-time statistics demonstrate exact numerical and visual area conservation: a² + b² = c².",
+    learningObjectives: [
+      "Understand the visual and geometric proof of the Pythagorean Theorem through area dissection and rearrangement",
+      "Demonstrate why four congruent right triangles of area ½ab leave equal uncovered area in both configurations",
+      "Verify the identity a² + b² = c² through real-time numerical leg and hypotenuse calculations",
+      "Identify the relationship between side lengths a, b, and the hypotenuse c = √(a² + b²)"
+    ],
+    thumbnailGradient: "from-amber-600 via-rose-600 to-indigo-700",
+    badgeColor: "bg-amber-500/10 text-amber-300 border-amber-500/20",
+    iconName: "Triangle",
+    rating: 5.0,
+    reviewCount: 36,
+    teacherCount: 165,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 180,
+      districtUnlimited: 390
+    },
+    features: [
+      "Smooth vertex interpolation animating four right triangles between State 1 (a² + b²) and State 2 (c²)",
+      "Continuous leg controls for side a (40–160 px) and side b (40–160 px)",
+      "Instant state toggle buttons and automated cubic-bezier smooth transition player",
+      "Live mathematical statistics readout: a, b, c = √(a² + b²), a², b², a² + b², and c²",
+      "Perimeter side labels for edges a and b, plus interior edge labels for hypotenuse c",
+      "Comprehensive geometric deduction notes explaining area subtractions from (a + b)²"
+    ],
+    parameterDefaults: {
+      sideA: 100,
+      sideB: 120,
+      progress: 0
+    },
+    parameterControls: [
+      {
+        key: "sideA",
+        label: "Side a (Leg 1)",
+        min: 40,
+        max: 160,
+        step: 1,
+        unit: "px",
+        description: "Length of the first leg"
+      },
+      {
+        key: "sideB",
+        label: "Side b (Leg 2)",
+        min: 40,
+        max: 160,
+        step: 1,
+        unit: "px",
+        description: "Length of the second leg"
+      },
+      {
+        key: "progress",
+        label: "Rearrangement Progress",
+        min: 0,
+        max: 100,
+        step: 1,
+        unit: "%",
+        description: "0% for State 1 (a² + b²), 100% for State 2 (c²)"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-pyth-1",
+        title: "Construct a 3-4-5 Scaled Triangle",
+        instruction: "Adjust legs a and b to form a right triangle with integer hypotenuse c, such as a=60 and b=80.",
+        targetMetric: "Hypotenuse c",
+        targetValue: 100,
+        tolerance: 0.5,
+        currentValueKey: "c",
+        rewardBadge: "Pythagorean Triplet Explorer"
+      },
+      {
+        id: "ch-pyth-2",
+        title: "Isosceles Right Triangle Proof",
+        instruction: "Set side a equal to side b (e.g., both 100) and verify that the two squares a² and b² are identical in State 1.",
+        targetMetric: "Square equality",
+        targetValue: 0,
+        tolerance: 0.1,
+        currentValueKey: "diff",
+        rewardBadge: "Symmetry Master"
+      }
+    ],
+    previewFacts: [
+      "This geometric proof is known historically in China as the 'hypotenuse diagram' (Xian Tu) from the ancient astronomical text Zhou Bi Suan Jing.",
+      "Because both states start with an identical outer square of area (a + b)² and remove four congruent triangles of area ½ab, the remaining area must be equal: a² + b² = c²."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/pythagorean-theorem-rearrangement.html"
+  },
+  {
     id: "sim-linear-algebra-matrix-transformation-lab",
     title: "Linear Algebra & Matrix Transformation Lab (2D & 3D)",
     tagline: "Higher-education visual geometry engine: explore 2D & 3D linear transformations, determinants, eigenvalues/eigenvectors, matrix inversion, and Cramer's rule in real time",
     discipline: "mathematics",
-    secondaryDisciplines: ["physics"],
     gradeLevel: ["High School (9-12)", "AP / IB STEM", "Undergraduate"],
     standards: ["CCSS.MATH.HSN.VM.C.7", "CCSS.MATH.HSN.VM.C.8", "CCSS.MATH.HSN.VM.C.9", "CCSS.MATH.HSN.VM.C.12", "NGSS SEP-5"],
     description: "An interactive university-grade linear algebra laboratory that visualizes matrices as geometric transformations of space. Toggle seamlessly between 2D (2×2) and 3D (3×3) modes. Directly edit transformation matrix coefficients, explore parametric rotation and scaling sliders, test curated presets (Identity, Uniform Scale, Shear, 45° Rotation, Reflection, Singular), and observe space deformation via transformed grid meshes, basis vectors (i, j, k), and unit area/volume parallelepipeds. Includes live step-by-step mathematical computations for determinants, area/volume scaling factors, real eigenvalues with invariant eigen-lines, trace, matrix inversion, and Cramer's rule solutions for AX = B.",
@@ -121,7 +388,6 @@ export const STEM_SIMULATIONS: SimulationItem[] = [
     title: "Parallelepiped Volume Explorer: Scalar Triple Product & 3x3 Determinants",
     tagline: "Interactive 3D vector geometry laboratory: visualize vectors a, b, c, cross product normal vectors N = b × c, base parallelogram areas, and compute volumes via scalar triple product a · (b × c) and 3×3 matrix determinants",
     discipline: "mathematics",
-    secondaryDisciplines: ["physics"],
     gradeLevel: ["High School (9-12)", "AP / IB STEM", "Undergraduate"],
     standards: ["CCSS.MATH.HSN.VM.B.4", "CCSS.MATH.HSN.VM.C.7", "CCSS.MATH.HSN.VM.C.8", "CCSS.MATH.HSN.VM.C.9", "NGSS SEP-5"],
     description: "An interactive 3D WebGL vector geometry and multivariable calculus laboratory that makes the geometric intuition behind the scalar triple product tangible. Manipulate the 3D components of vectors a, b, and c using dynamic sliders or explore curated presets (Unit Cube, Sheared Prism, Coplanar Degenerate, Oblique Box). Observe the highlighted base parallelogram formed by b and c, the normal cross product vector N = b × c, solid face transparencies, wireframe edges, coplanar zero-volume alerts, and side-by-side dual mathematical breakdowns comparing the scalar triple product against 3×3 matrix determinant expansion.",
@@ -230,7 +496,6 @@ export const STEM_SIMULATIONS: SimulationItem[] = [
     title: "Similarity & Scaling Explorer: Linear (k), Area (k²), and Volume (k³) Ratios",
     tagline: "Interactive 2D & 3D geometric similarity laboratory: explore linear scale factors (k), quadratic area expansion (k²), and cubic volumetric growth (k³) across polygons, 3D solids, and real-world applied models",
     discipline: "mathematics",
-    secondaryDisciplines: ["physics"],
     gradeLevel: ["Middle School (6-8)", "High School (9-12)", "AP / IB STEM"],
     standards: ["CCSS.MATH.HSG.SRT.A.1", "CCSS.MATH.HSG.SRT.A.2", "CCSS.MATH.HSG.MG.A.1", "CCSS.MATH.7.G.A.1", "NGSS SEP-5"],
     description: "An interactive STEM geometry and scaling laboratory exploring how linear scale factor k governs area (k²) and volume (k³). Compare original Shape A with scaled Shape B in real-time across 2D polygons (rectangles, right triangles, circles) and 3D solids (cubes, rectangular prisms, cylinders, spheres) using WebGL Three.js rendering. Features interactive wireframe overlays showing unit tiling, dynamic parameter sliders, real-world water tank scaling capacity problems, real-time mathematical breakdown cards, and a randomized self-check mastery quiz.",
@@ -328,7 +593,6 @@ export const STEM_SIMULATIONS: SimulationItem[] = [
     title: "3D Solar & Lunar System Virtual Lab",
     tagline: "Real-time 3D Earth and Moon revolution engine with stationary Sun heliocentric geometry, 5.14° lunar orbital inclination, Umbra shadow cone dynamics, and Blood Moon eclipse totality",
     discipline: "physics",
-    secondaryDisciplines: ["mathematics"],
     gradeLevel: ["Middle School (6-8)", "High School (9-12)", "AP / IB STEM", "Undergraduate"],
     standards: ["MS-ESS1-1", "MS-ESS1-2", "HS-ESS1-4", "NGSS SEP-2", "NGSS SEP-5"],
     description: "An interactive 3D WebGL celestial mechanics simulation featuring a stationary Sun anchored at the world coordinate origin (0,0,0), Earth revolving along its orbital plane with continuous 24-hour axial rotation, and an inclined lunar orbit at 5.14°. Features interactive orbit scrubbing timeline, multiple camera perspectives (Solar System Orbit vs. Top-Down Sun Heliocentric), live orbital telemetry (Earth angle, Moon angle, Umbra shadow penetration percentage, orbital tilt), quick-jump lunar phase markers (New Moon, First Quarter, Total Lunar Eclipse, Third Quarter, Full Year), umbra cone projection, and Rayleigh scattering blood moon color rendering.",
@@ -420,7 +684,6 @@ export const STEM_SIMULATIONS: SimulationItem[] = [
     title: "Linear Programming Interactive Lab & Feasible Region Simulator",
     tagline: "Interactive 2D graphical linear programming simulator: dynamic constraint boundary lines, corner point theorem vertices, shaded feasible regions, and real-time profit maximization / cost minimization optimization",
     discipline: "mathematics",
-    secondaryDisciplines: ["physics"],
     gradeLevel: ["High School (9-12)", "AP / IB STEM", "Undergraduate"],
     standards: ["CCSS.MATH.HSA.CED.A.3", "CCSS.MATH.HSA.REI.D.12", "CCSS.MATH.HSA.REI.C.6", "NGSS SEP-5", "AP Calculus / Stats Applied Math"],
     description: "A comprehensive mathematical and operational research laboratory for graphical linear programming. Generate random or preset business scenarios spanning Profit Maximization (Artisan Furniture, Organic Bakery, Tech Hardware, Farm Crop Allocation) and Cost Minimization (Livestock Feed, Ad Campaigns, Chemical Processing). Manipulate objective function coefficients (c, d) and resource capacities or minimum targets (C1, C2, C3) in real-time, inspect dynamic boundary intersections, visualize shaded feasible polygons, evaluate corner points, and slide the iso-profit/iso-cost line to locate optimal solutions.",
@@ -523,9 +786,8 @@ export const STEM_SIMULATIONS: SimulationItem[] = [
     title: "SatCom-Sim 3D: Satellite Communications & Orbital Link Budget",
     tagline: "Real-time 3D Earth, Spacecraft Bus & Orbital RF Link Engine with dynamic Free Space Path Loss (FSPL), rain attenuation, Doppler shift, and link margins across LEO, MEO, GEO, and HEO regimes",
     discipline: "physics",
-    secondaryDisciplines: ["mathematics"],
     gradeLevel: ["High School (9-12)", "AP / IB STEM", "Undergraduate"],
-    standards: ["NGSS HS-PS4-1", "NGSS HS-PS4-2", "NGSS HS-PS2-4", "AP-PHYS-1-U2", "CCSS.MATH.CONTENT.HSF.TF.B.5"],
+    standards: ["NGSS HS-PS4-1", "NGSS HS-PS4-2", "NGSS HS-PS2-4", "AP-PHYS-1-U2"],
     description: "An advanced 3D orbital dynamics, multi-satellite constellation, and radio frequency (RF) link budget simulator. Explore orbital mechanics across LEO (Starlink 550 km), MEO (O3b 8,063 km), GEO (35,786 km), and HEO (Molniya) orbits with a 4-satellite constellation (Sat Alpha, Beta, Gamma, Delta) featuring custom MLI bus foils and solar arrays, real-time voice speech narration, multi-ring ground station terminals in London, New York, Tokyo, and Sydney, and per-satellite RF link budget telemetry (FSPL, Doppler, latency, C/N, rain attenuation).",
     learningObjectives: [
       "Analyze orbital periods, velocities, and constellation geometries across LEO, MEO, GEO, and Molniya HEO regimes",
@@ -615,7 +877,6 @@ export const STEM_SIMULATIONS: SimulationItem[] = [
     title: "Elastic Properties of Materials & Stress-Strain Dynamics",
     tagline: "Horizontal Material Stress-Strain & Dynamic Curve Simulator: real-time stretching behavior, crystal lattice deformation, Hooke's law limits, and progressive curve tracing",
     discipline: "physics",
-    secondaryDisciplines: ["chemistry"],
     gradeLevel: ["High School (9-12)", "AP / IB STEM", "Undergraduate"],
     standards: ["NGSS HS-PS2-6", "NGSS HS-PS1-3", "AP Physics 1 Unit 2", "AP-PHYS-1-U2", "CCSS.ELA-LITERACY.RST.11-12.3"],
     description: "An interactive material science and solid mechanics virtual laboratory exploring the elastic properties of materials. Observe real-time horizontal stretching behavior, crystal structure deformation, proportionality limits (Hooke's Law), elastic vs plastic limits, yield point flow, localized necking, and catastrophic ductile/brittle fracture across Ductile Metals, Brittle Ceramics, and Elastomers alongside interactive historical case studies.",
