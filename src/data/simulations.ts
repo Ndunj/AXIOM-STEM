@@ -4,6 +4,299 @@ import { SimulationItem, CurriculumStandard } from "../types";
 // The creator-authored STEM Simulation Apps
 export const STEM_SIMULATIONS: SimulationItem[] = [
   {
+    id: "sim-similarity-and-scaling-ratios",
+    title: "Similarity & Scaling Explorer: Linear (k), Area (k²), and Volume (k³) Ratios",
+    tagline: "Interactive 2D & 3D geometric similarity laboratory: explore linear scale factors (k), quadratic area expansion (k²), and cubic volumetric growth (k³) across polygons, 3D solids, and real-world applied models",
+    discipline: "mathematics",
+    secondaryDisciplines: ["physics"],
+    gradeLevel: ["Middle School (6-8)", "High School (9-12)", "AP / IB STEM"],
+    standards: ["CCSS.MATH.HSG.SRT.A.1", "CCSS.MATH.HSG.SRT.A.2", "CCSS.MATH.HSG.MG.A.1", "CCSS.MATH.7.G.A.1", "NGSS SEP-5"],
+    description: "An interactive STEM geometry and scaling laboratory exploring how linear scale factor k governs area (k²) and volume (k³). Compare original Shape A with scaled Shape B in real-time across 2D polygons (rectangles, right triangles, circles) and 3D solids (cubes, rectangular prisms, cylinders, spheres) using WebGL Three.js rendering. Features interactive wireframe overlays showing unit tiling, dynamic parameter sliders, real-world water tank scaling capacity problems, real-time mathematical breakdown cards, and a randomized self-check mastery quiz.",
+    learningObjectives: [
+      "Understand the relationship between linear scale factor k, surface area scale factor k², and volume scale factor k³",
+      "Visualize how multiplying 1D dimensions by k tiles areas by k² and volumes by k³",
+      "Apply scaling principles to solve real-world problems such as capacity scaling in scaled industrial tanks",
+      "Calculate perimeters, areas, total surface areas, and volumes for similar 2D shapes and 3D solids"
+    ],
+    thumbnailGradient: "from-blue-600 via-indigo-700 to-purple-600",
+    badgeColor: "bg-blue-500/10 text-blue-300 border-blue-500/20",
+    iconName: "Shapes",
+    rating: 5.0,
+    reviewCount: 46,
+    teacherCount: 195,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 180,
+      districtUnlimited: 390
+    },
+    features: [
+      "2D Canvas Polygon Viewport with unit grid wireframe tiling and dynamic dimension labeling",
+      "3D WebGL Three.js Interactive Solids Viewport with orbit controls, rotation, and zoom",
+      "Multi-geometry selection: Rectangles, Right Triangles, Circles, Cubes, Prisms, Cylinders, Spheres",
+      "Real-time Linear (k), Area (k²), and Volume (k³) mathematical calculation cards",
+      "Applied Real-World Water Tank Capacity Model solver with dynamic volume scaling",
+      "Interactive Self-Check Mastery Quiz generator with instant evaluation and feedback"
+    ],
+    parameterDefaults: {
+      k: 2.0,
+      dim1: 4.0,
+      dim2: 3.0
+    },
+    parameterControls: [
+      {
+        key: "k",
+        label: "Linear Scale Factor (k)",
+        min: 0.5,
+        max: 3.0,
+        step: 0.1,
+        unit: "x",
+        description: "Linear multiplier applied to all 1D dimensions"
+      },
+      {
+        key: "dim1",
+        label: "Base Dimension (a)",
+        min: 2,
+        max: 6,
+        step: 0.5,
+        unit: "units",
+        description: "Width, side length, or radius of Shape A"
+      },
+      {
+        key: "dim2",
+        label: "Height Dimension (b)",
+        min: 2,
+        max: 6,
+        step: 0.5,
+        unit: "units",
+        description: "Height dimension of Shape A"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-scale-1",
+        title: "Quadruple the Area",
+        instruction: "Set the linear scale factor k so that the area of Shape B becomes exactly 4 times the area of Shape A.",
+        targetMetric: "Area Ratio k²",
+        targetValue: 4,
+        tolerance: 0.05,
+        currentValueKey: "area_ratio",
+        rewardBadge: "Area Architect"
+      },
+      {
+        id: "ch-scale-2",
+        title: "Scale Solid Volume by 8x",
+        instruction: "Switch to 3D mode with a cube or cylinder and set the scale factor to achieve an 8x volume expansion.",
+        targetMetric: "Volume Ratio k³",
+        targetValue: 8,
+        tolerance: 0.1,
+        currentValueKey: "vol_ratio",
+        rewardBadge: "Volumetric Master"
+      }
+    ],
+    previewFacts: [
+      "If you double all linear dimensions of an object (k = 2), its surface area increases by 2² = 4, but its volume and mass increase by 2³ = 8.",
+      "The square-cube law explains why giant biological organisms require disproportionately thick limbs to support their massive weight."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/similarity-and-scaling-ratios.html"
+  },
+  {
+    id: "sim-solar-lunar-revolution-lab",
+    title: "3D Solar & Lunar System Virtual Lab",
+    tagline: "Real-time 3D Earth and Moon revolution engine with stationary Sun heliocentric geometry, 5.14° lunar orbital inclination, Umbra shadow cone dynamics, and Blood Moon eclipse totality",
+    discipline: "physics",
+    secondaryDisciplines: ["mathematics"],
+    gradeLevel: ["Middle School (6-8)", "High School (9-12)", "AP / IB STEM", "Undergraduate"],
+    standards: ["MS-ESS1-1", "MS-ESS1-2", "HS-ESS1-4", "NGSS SEP-2", "NGSS SEP-5"],
+    description: "An interactive 3D WebGL celestial mechanics simulation featuring a stationary Sun anchored at the world coordinate origin (0,0,0), Earth revolving along its orbital plane with continuous 24-hour axial rotation, and an inclined lunar orbit at 5.14°. Features interactive orbit scrubbing timeline, multiple camera perspectives (Solar System Orbit vs. Top-Down Sun Heliocentric), live orbital telemetry (Earth angle, Moon angle, Umbra shadow penetration percentage, orbital tilt), quick-jump lunar phase markers (New Moon, First Quarter, Total Lunar Eclipse, Third Quarter, Full Year), umbra cone projection, and Rayleigh scattering blood moon color rendering.",
+    learningObjectives: [
+      "Understand the heliocentric reference frame where Earth revolves around the stationary Sun while spinning on its axis",
+      "Analyze why lunar and solar eclipses do not occur every month due to the 5.14° lunar orbital inclination relative to the ecliptic plane",
+      "Investigate Earth's Umbra shadow cone geometry and calculate umbral penetration percentages during lunar alignment",
+      "Observe Rayleigh atmospheric scattering that turns the Moon deep red during total lunar eclipse totality (Blood Moon)"
+    ],
+    thumbnailGradient: "from-amber-500 via-sky-600 to-rose-700",
+    badgeColor: "bg-amber-500/10 text-amber-300 border-amber-500/20",
+    iconName: "Sun",
+    rating: 5.0,
+    reviewCount: 54,
+    teacherCount: 235,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 180,
+      districtUnlimited: 390
+    },
+    features: [
+      "Absolute Heliocentric World Frame with fixed Sun at (0,0,0) and dual orbital rings",
+      "Procedural High-Resolution Spherical Textures for Earth continents/clouds and Moon craters",
+      "Tilted 5.14° Lunar Orbital Plane simulating realistic ecliptic node crossings",
+      "Earth Umbra Shadow Cone Visualization with real-time geometric intersection calculations",
+      "Smooth Rayleigh Blood Moon Color Interpolation based on percentage of umbra penetration",
+      "Interactive Orbit Scrubbing Timeline with variable speed playback (0.25x, 1x, 5x, 20x)",
+      "Instant Phase Navigation: New Moon, First Quarter, Total Lunar Eclipse, Third Quarter, Full Year",
+      "Dual Camera Presets (Free Solar System View and Top-Down Heliocentric Perspective)",
+      "Floating Screen-Space Celestial Labels for Sun, Earth, and Moon with dynamic depth culling"
+    ],
+    parameterDefaults: {
+      speed: 1.0,
+      inclination: 5.14,
+      orbitProgress: 0.5
+    },
+    parameterControls: [
+      {
+        key: "orbitProgress",
+        label: "Orbital Timeline Progress",
+        min: 0,
+        max: 1,
+        step: 0.01,
+        unit: "cycle",
+        description: "Scrub Earth revolution around Sun and lunar revolution around Earth"
+      },
+      {
+        key: "speed",
+        label: "Simulation Speed",
+        min: 0.25,
+        max: 20,
+        step: 0.25,
+        unit: "x",
+        description: "Time progression multiplier"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-eclipse-1",
+        title: "Achieve Lunar Eclipse Totality",
+        instruction: "Scrub the timeline to find the exact alignment where the Moon passes completely into Earth's umbral shadow cone.",
+        targetMetric: "Umbra Penetration",
+        targetValue: 95,
+        tolerance: 5,
+        currentValueKey: "umbra_pct",
+        rewardBadge: "Eclipse Observer"
+      },
+      {
+        id: "ch-eclipse-2",
+        title: "Inspect Heliocentric View",
+        instruction: "Switch to the Top-Down Sun perspective and observe the complete annual Earth revolution cycle.",
+        targetMetric: "Annual Cycle Complete",
+        targetValue: 1,
+        tolerance: 0,
+        currentValueKey: "year_complete",
+        rewardBadge: "Heliocentric Navigator"
+      }
+    ],
+    previewFacts: [
+      "During a total lunar eclipse, Rayleigh scattering in Earth's atmosphere filters out blue wavelengths and refracts red sunlight into the shadow cone, producing a 'Blood Moon'.",
+      "The Moon's orbital plane is tilted 5.14° relative to the ecliptic, which is why eclipses only occur when the Moon is near an orbital node."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/solar-lunar-revolution-lab.html"
+  },
+  {
+    id: "sim-linear-programming-interactive-lab",
+    title: "Linear Programming Interactive Lab & Feasible Region Simulator",
+    tagline: "Interactive 2D graphical linear programming simulator: dynamic constraint boundary lines, corner point theorem vertices, shaded feasible regions, and real-time profit maximization / cost minimization optimization",
+    discipline: "mathematics",
+    secondaryDisciplines: ["physics"],
+    gradeLevel: ["High School (9-12)", "AP / IB STEM", "Undergraduate"],
+    standards: ["CCSS.MATH.HSA.CED.A.3", "CCSS.MATH.HSA.REI.D.12", "CCSS.MATH.HSA.REI.C.6", "NGSS SEP-5", "AP Calculus / Stats Applied Math"],
+    description: "A comprehensive mathematical and operational research laboratory for graphical linear programming. Generate random or preset business scenarios spanning Profit Maximization (Artisan Furniture, Organic Bakery, Tech Hardware, Farm Crop Allocation) and Cost Minimization (Livestock Feed, Ad Campaigns, Chemical Processing). Manipulate objective function coefficients (c, d) and resource capacities or minimum targets (C1, C2, C3) in real-time, inspect dynamic boundary intersections, visualize shaded feasible polygons, evaluate corner points, and slide the iso-profit/iso-cost line to locate optimal solutions.",
+    learningObjectives: [
+      "Formulate mathematical models from real-world resource constraints, requirement targets, and objective functions",
+      "Graph systems of linear inequalities to delineate bounded and unbounded feasible solution spaces",
+      "Apply the Fundamental Theorem of Linear Programming (Corner Point Theorem) to evaluate candidate vertices",
+      "Differentiate between profit maximization (capacity limits <=) and cost minimization (requirement limits >=)",
+      "Analyze the slope and movement of the iso-profit / iso-cost line as it sweeps through the feasible space"
+    ],
+    thumbnailGradient: "from-blue-600 via-indigo-700 to-emerald-600",
+    badgeColor: "bg-blue-500/10 text-blue-300 border-blue-500/20",
+    iconName: "TrendingUp",
+    rating: 5.0,
+    reviewCount: 48,
+    teacherCount: 210,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 180,
+      districtUnlimited: 390
+    },
+    features: [
+      "Dynamic 2D Coordinate Grid Canvas with automatic axis scaling and coordinate ticks (0 to 20)",
+      "Dual Optimization Modes: Profit Maximization (Resource Limits <=) and Cost Minimization (Requirement Targets >=)",
+      "7 Pre-configured Real-World Scenarios across woodworking, agriculture, electronics, nutrition, and advertising",
+      "Instant Random LP Problem Generator producing solvable systems with integer coefficients",
+      "Real-Time Corner Point Intersection Engine with automated clockwise vertex sorting and polygon shading",
+      "Iso-Objective Dashed Line Visualizer displaying current optimal slope and solution trajectory",
+      "Corner Point Evaluation Table ranking all vertices by objective value Z to flag optimal solutions",
+      "Comprehensive In-Lab Instructional Concept Guide explaining linear programming fundamentals"
+    ],
+    parameterDefaults: {
+      c: 50,
+      d: 30,
+      c1: 12,
+      c2: 10,
+      c3: 8
+    },
+    parameterControls: [
+      {
+        key: "c",
+        label: "x Coefficient (c)",
+        min: 5,
+        max: 100,
+        step: 5,
+        unit: "$",
+        description: "Unit profit or cost of variable x"
+      },
+      {
+        key: "d",
+        label: "y Coefficient (d)",
+        min: 5,
+        max: 100,
+        step: 5,
+        unit: "$",
+        description: "Unit profit or cost of variable y"
+      },
+      {
+        key: "c1",
+        label: "Constraint 1 Limit",
+        min: 4,
+        max: 25,
+        step: 1,
+        unit: "units",
+        description: "First resource capacity or requirement"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-lp-1",
+        title: "Maximize Artisan Workshop Profit",
+        instruction: "Set Tables (x) profit to $60 and Deluxe Chairs (y) profit to $40. Adjust the assembly and finishing hours to identify the optimal product mix.",
+        targetMetric: "Max Z",
+        targetValue: 360,
+        tolerance: 20,
+        currentValueKey: "z",
+        rewardBadge: "Operations Researcher"
+      },
+      {
+        id: "ch-lp-2",
+        title: "Cost Minimization Blend",
+        instruction: "Generate a Cost Minimization scenario and locate the vertex that minimizes procurement expenditure while satisfying all minimum constraints.",
+        targetMetric: "Optimal Vertex Found",
+        targetValue: 1,
+        tolerance: 0,
+        currentValueKey: "optimal_found",
+        rewardBadge: "Efficiency Master"
+      }
+    ],
+    previewFacts: [
+      "The Corner Point Theorem guarantees that if an optimal solution exists for a linear program, it must occur at one of the vertices of the feasible region.",
+      "Linear programming was developed during World War II by George Dantzig and Leonid Kantorovich to optimize military logistics and resource allocation."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/linear-programming-simulator.html"
+  },
+  {
     id: "sim-satcom-sim-3d",
     title: "SatCom-Sim 3D: Satellite Communications & Orbital Link Budget",
     tagline: "Real-time 3D Earth, Spacecraft Bus & Orbital RF Link Engine with dynamic Free Space Path Loss (FSPL), rain attenuation, Doppler shift, and link margins across LEO, MEO, GEO, and HEO regimes",

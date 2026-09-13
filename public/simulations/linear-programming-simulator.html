@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Linear Programming Simulator</title>
+    <!-- Tailwind CSS CDN for Modern Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+        .card {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+        canvas {
+            background-color: #0f172a;
+            border-radius: 0.5rem;
+        }
+        /* Custom scrollbar for modal */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+
+    <div class="max-w-7xl mx-auto space-y-6">
+        
+        <!-- Header & Action Bar -->
+        <header class="card p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-extrabold text-blue-400">Linear Programming Interactive Lab</h1>
+                <p class="text-slate-400 text-sm mt-1">Generate unique LP problems (Profit Maximization & Cost Minimization), manipulate constraints, and visualize feasible regions in real-time.</p>
+            </div>
+            <div class="flex flex-wrap gap-3">
+                <button id="btn-concept" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-2 rounded-lg transition duration-200 shadow flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                    LP Concept Guide
+                </button>
+                <button id="btn-generate" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2 rounded-lg transition duration-200 shadow flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    Generate Random LP Problem
+                </button>
+            </div>
+        </header>
+
+        <!-- Narrative & Math Model -->
+        <section class="card p-6">
+            <div class="flex items-center justify-between gap-4 mb-2">
+                <h2 id="scenario-title" class="text-xl font-bold text-emerald-400">Scenario Title</h2>
+                <span id="badge-type" class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">MAXIMIZATION</span>
+            </div>
+            <p id="scenario-desc" class="text-slate-300 text-sm leading-relaxed mb-4">Scenario description goes here...</p>
+            
+            <div class="bg-slate-900/80 p-4 rounded-lg border border-slate-700">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Mathematical Formulation</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm font-mono">
+                    <div>
+                        <span class="text-purple-400 font-semibold">Objective:</span>
+                        <div id="math-obj" class="text-slate-200 text-base mt-1">Maximize Z = c*x + d*y</div>
+                    </div>
+                    <div>
+                        <span class="text-amber-400 font-semibold">Constraints:</span>
+                        <ul id="math-constraints" class="text-slate-300 list-disc list-inside space-y-1 mt-1">
+                            <!-- Populated dynamically -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Grid: Controls & Graphic Plot -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Controls Sidebar (4 cols) -->
+            <div class="card p-6 lg:col-span-4 space-y-5">
+                <h3 class="text-lg font-bold text-slate-200 border-b border-slate-700 pb-2">Dynamic Control Sliders</h3>
+
+                <!-- Objective Coefficients -->
+                <div class="space-y-3">
+                    <span id="header-obj-type" class="text-xs font-semibold text-purple-400 uppercase tracking-wider">Profit Coefficients</span>
+                    <div>
+                        <label class="flex justify-between text-xs text-slate-300 mb-1">
+                            <span id="label-param-c">x Coefficient (c):</span>
+                            <span id="val-c" class="font-bold text-purple-400">0</span>
+                        </label>
+                        <input type="range" id="param-c" min="5" max="100" step="5" class="w-full accent-purple-500 bg-slate-700 h-2 rounded-lg cursor-pointer">
+                    </div>
+                    <div>
+                        <label class="flex justify-between text-xs text-slate-300 mb-1">
+                            <span id="label-param-d">y Coefficient (d):</span>
+                            <span id="val-d" class="font-bold text-purple-400">0</span>
+                        </label>
+                        <input type="range" id="param-d" min="5" max="100" step="5" class="w-full accent-purple-500 bg-slate-700 h-2 rounded-lg cursor-pointer">
+                    </div>
+                </div>
+
+                <hr class="border-slate-700">
+
+                <!-- Constraints Sliders -->
+                <div class="space-y-4">
+                    <span id="header-constraint-type" class="text-xs font-semibold text-amber-400 uppercase tracking-wider">Resource Constraint Limits</span>
+                    
+                    <div>
+                        <label class="flex justify-between text-xs text-slate-300 mb-1">
+                            <span id="label-c1" class="text-red-400">Constraint 1 Limit:</span>
+                            <span id="val-c1" class="font-bold text-red-400">0</span>
+                        </label>
+                        <input type="range" id="param-c1" min="4" max="25" step="1" class="w-full accent-red-500 bg-slate-700 h-2 rounded-lg cursor-pointer">
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-xs text-slate-300 mb-1">
+                            <span id="label-c2" class="text-blue-400">Constraint 2 Limit:</span>
+                            <span id="val-c2" class="font-bold text-blue-400">0</span>
+                        </label>
+                        <input type="range" id="param-c2" min="4" max="25" step="1" class="w-full accent-blue-500 bg-slate-700 h-2 rounded-lg cursor-pointer">
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-xs text-slate-300 mb-1">
+                            <span id="label-c3" class="text-amber-500">Constraint 3 Limit:</span>
+                            <span id="val-c3" class="font-bold text-amber-500">0</span>
+                        </label>
+                        <input type="range" id="param-c3" min="4" max="25" step="1" class="w-full accent-amber-500 bg-slate-700 h-2 rounded-lg cursor-pointer">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visualizer Plot Canvas (8 cols) -->
+            <div class="card p-6 lg:col-span-8 flex flex-col justify-between">
+                <div class="relative w-full overflow-hidden flex justify-center items-center">
+                    <canvas id="lpCanvas" width="650" height="500" class="w-full h-auto border border-slate-700"></canvas>
+                </div>
+                
+                <!-- Legend -->
+                <div class="flex flex-wrap items-center justify-around gap-3 mt-4 text-xs text-slate-300 bg-slate-900/60 p-3 rounded-lg border border-slate-800">
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-emerald-500/30 border border-emerald-500"></span> Feasible Region</div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-red-500"></span> <span id="leg-c1">Constraint 1</span></div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-blue-500"></span> <span id="leg-c2">Constraint 2</span></div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-amber-500"></span> <span id="leg-c3">Constraint 3</span></div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-purple-500"></span> Iso-Objective Line</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Corner Point Solution Table -->
+        <section class="card p-6">
+            <h3 class="text-lg font-bold text-slate-200 mb-3">Corner Point Evaluation Table</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-900 text-slate-400 uppercase text-xs">
+                        <tr>
+                            <th class="p-3 rounded-l-lg">Corner Point (x, y)</th>
+                            <th class="p-3">Objective Function Calculation</th>
+                            <th class="p-3">Result Value</th>
+                            <th class="p-3 rounded-r-lg">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body" class="divide-y divide-slate-800 text-slate-300">
+                        <!-- Dynamically filled -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <!-- EXPLANATORY CONCEPT MODAL -->
+    <div id="modal-concept" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="card max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 md:p-8 space-y-6 relative border-slate-700">
+            <button id="btn-close-modal" class="absolute top-4 right-4 text-slate-400 hover:text-white text-2xl font-bold">&times;</button>
+            
+            <div class="border-b border-slate-700 pb-3">
+                <h2 class="text-2xl font-extrabold text-indigo-400">Linear Programming: Instructional Guide</h2>
+                <p class="text-xs text-slate-400 mt-1">Core Concepts for Students and Educators</p>
+            </div>
+
+            <div class="space-y-4 text-sm text-slate-300 leading-relaxed">
+                <div>
+                    <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-indigo-500"></span> What is Linear Programming?
+                    </h3>
+                    <p class="mt-1 pl-4">Linear Programming (LP) is a mathematical technique used to find the best possible outcome (such as maximum profit or minimum cost) in a given mathematical model whose requirements are represented by linear relationships.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-cyan-500"></span> Maximization vs. Minimization
+                    </h3>
+                    <p class="mt-1 pl-4">
+                        <strong>Profit Maximization:</strong> Constraints are typically resource capacities (&le;), bounding the feasible region near the origin. We look for the highest vertex value.<br>
+                        <strong>Cost Minimization:</strong> Constraints are typically minimum requirements (&ge;), forming an unbounded region pushing outward from the origin. We look for the lowest vertex value.
+                    </p>
+                </div>
+
+                <div>
+                    <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span> The Feasible Region
+                    </h3>
+                    <p class="mt-1 pl-4">The shaded region on the plot represents the <strong>Feasible Region</strong>. Every point (x, y) inside or along the boundary of this area satisfies all given resource or requirement constraints simultaneously as well as non-negativity (x &ge; 0, y &ge; 0).</p>
+                </div>
+
+                <div>
+                    <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-amber-500"></span> The Corner Point Theorem (Fundamental Theorem of LP)
+                    </h3>
+                    <p class="mt-1 pl-4">If an optimal solution exists for a linear program, it will always occur at one of the <strong>vertices (corner points)</strong> of the feasible region. This allows us to evaluate the objective function Z only at the vertices rather than testing infinite interior points.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-purple-500"></span> The Iso-Profit / Iso-Cost Line
+                    </h3>
+                    <p class="mt-1 pl-4">The dotted line on the graph represents the objective function Z. Sliding this line outwards (for profit) or inward towards the origin (for cost) until it leaves the feasible region reveals the optimal corner point.</p>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-700 text-right">
+                <button id="btn-modal-ok" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-2 rounded-lg">Got it!</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // Scenario Template Preset Bank (Including Maximization and Minimization)
+    const scenarios = [
+        // --- PROFIT MAXIMIZATION CASES ---
+        {
+            type: "max",
+            title: "Artisan Furniture Workshop",
+            desc: "A custom woodworking shop manufactures Handcrafted Tables (x) and Deluxe Chairs (y). Optimize production to maximize profit based on available assembly, finishing, and storage limits.",
+            varX: "Tables (x)",
+            varY: "Chairs (y)",
+            c1Name: "Assembly Hours",
+            c2Name: "Finishing Hours",
+            c3Name: "Storage Units",
+            c1Coeff: [2, 1],
+            c2Coeff: [1, 2],
+            c3Coeff: [1, 1],
+            defaultObj: [50, 30],
+            defaultLimits: [12, 10, 8]
+        },
+        {
+            type: "max",
+            title: "Organic Bakery Production",
+            desc: "A local bakery produces Specialty Cakes (x) and Artisan Pastry Trays (y). Optimize daily output under restrictions on available flour, sugar, and oven time.",
+            varX: "Cakes (x)",
+            varY: "Pastry Trays (y)",
+            c1Name: "Flour (lbs)",
+            c2Name: "Sugar (lbs)",
+            c3Name: "Oven Time (hrs)",
+            c1Coeff: [3, 1],
+            c2Coeff: [1, 2],
+            c3Coeff: [2, 2],
+            defaultObj: [40, 35],
+            defaultLimits: [15, 12, 14]
+        },
+        {
+            type: "max",
+            title: "Tech Startup Device Manufacturing",
+            desc: "A hardware startup produces Smart Watches (x) and Fitness Bands (y). Find the combination that maximizes profit under limitations on microcontrollers, battery units, and assembly lines.",
+            varX: "Smart Watches (x)",
+            varY: "Fitness Bands (y)",
+            c1Name: "Microcontrollers",
+            c2Name: "Battery Units",
+            c3Name: "Testing Hours",
+            c1Coeff: [2, 2],
+            c2Coeff: [3, 1],
+            c3Coeff: [1, 3],
+            defaultObj: [60, 40],
+            defaultLimits: [16, 18, 15]
+        },
+        {
+            type: "max",
+            title: "Farm Crop Allocation",
+            desc: "A farmer allocates acreage between Corn (x) and Soybeans (y) to maximize crop profit subject to land, fertilizer, and irrigation constraints.",
+            varX: "Corn Acres (x)",
+            varY: "Soybean Acres (y)",
+            c1Name: "Total Acreage",
+            c2Name: "Fertilizer Tons",
+            c3Name: "Irrigation (k-gal)",
+            c1Coeff: [1, 1],
+            c2Coeff: [2, 1],
+            c3Coeff: [1, 2],
+            defaultObj: [70, 50],
+            defaultLimits: [10, 14, 12]
+        },
+
+        // --- COST MINIMIZATION CASES ---
+        {
+            type: "min",
+            title: "Livestock Feed Mix Optimization",
+            desc: "A farmer mixes Feed Brand A (x) and Feed Brand B (y) to minimize total daily feed cost while meeting minimum daily requirements for Protein, Calcium, and Vitamins.",
+            varX: "Feed A (bags)",
+            varY: "Feed B (bags)",
+            c1Name: "Min Protein (g)",
+            c2Name: "Min Calcium (g)",
+            c3Name: "Min Vitamins (g)",
+            c1Coeff: [3, 1],
+            c2Coeff: [1, 3],
+            c3Coeff: [2, 2],
+            defaultObj: [25, 20],
+            defaultLimits: [9, 9, 10]
+        },
+        {
+            type: "min",
+            title: "Digital Ad Campaign Budgeting",
+            desc: "A marketing team purchases Search Ads (x) and Social Media Ads (y) to minimize campaign expenditures while achieving minimum targets for Clicks, Conversions, and Impressions.",
+            varX: "Search Ads (units)",
+            varY: "Social Ads (units)",
+            c1Name: "Min Clicks (k)",
+            c2Name: "Min Conversions",
+            c3Name: "Min Impressions (k)",
+            c1Coeff: [4, 2],
+            c2Coeff: [1, 3],
+            c3Coeff: [2, 2],
+            defaultObj: [50, 40],
+            defaultLimits: [12, 9, 10]
+        },
+        {
+            type: "min",
+            title: "Chemical Processing Blend",
+            desc: "A chemical plant blends Chemical Solution X (x) and Solution Y (y) to minimize procurement cost while meeting minimum chemical purity requirements.",
+            varX: "Solution X (L)",
+            varY: "Solution Y (L)",
+            c1Name: "Min Active Reactant",
+            c2Name: "Min Catalyst Compound",
+            c3Name: "Min Stabilizer Base",
+            c1Coeff: [2, 1],
+            c2Coeff: [1, 2],
+            c3Coeff: [2, 3],
+            defaultObj: [30, 45],
+            defaultLimits: [6, 6, 12]
+        }
+    ];
+
+    let currentScenario = scenarios[0];
+
+    // DOM References
+    const dom = {
+        scenarioTitle: document.getElementById('scenario-title'),
+        scenarioDesc: document.getElementById('scenario-desc'),
+        badgeType: document.getElementById('badge-type'),
+        headerObjType: document.getElementById('header-obj-type'),
+        headerConstraintType: document.getElementById('header-constraint-type'),
+        mathObj: document.getElementById('math-obj'),
+        mathConstraints: document.getElementById('math-constraints'),
+        labelParamC: document.getElementById('label-param-c'),
+        labelParamD: document.getElementById('label-param-d'),
+        labelC1: document.getElementById('label-c1'),
+        labelC2: document.getElementById('label-c2'),
+        labelC3: document.getElementById('label-c3'),
+        legC1: document.getElementById('leg-c1'),
+        legC2: document.getElementById('leg-c2'),
+        legC3: document.getElementById('leg-c3'),
+        valC: document.getElementById('val-c'),
+        valD: document.getElementById('val-d'),
+        valC1: document.getElementById('val-c1'),
+        valC2: document.getElementById('val-c2'),
+        valC3: document.getElementById('val-c3'),
+        paramC: document.getElementById('param-c'),
+        paramD: document.getElementById('param-d'),
+        paramC1: document.getElementById('param-c1'),
+        paramC2: document.getElementById('param-c2'),
+        paramC3: document.getElementById('param-c3'),
+        tableBody: document.getElementById('table-body'),
+        btnGenerate: document.getElementById('btn-generate'),
+        btnConcept: document.getElementById('btn-concept'),
+        btnCloseModal: document.getElementById('btn-close-modal'),
+        btnModalOk: document.getElementById('btn-modal-ok'),
+        modalConcept: document.getElementById('modal-concept')
+    };
+
+    const canvas = document.getElementById('lpCanvas');
+    const ctx = canvas.getContext('2d');
+    const margin = 45;
+    const maxCoord = 20;
+
+    function toCanvasX(x) {
+        return margin + (x / maxCoord) * (canvas.width - 2 * margin);
+    }
+
+    function toCanvasY(y) {
+        return canvas.height - margin - (y / maxCoord) * (canvas.height - 2 * margin);
+    }
+
+    function intersect(a1, b1, c1, a2, b2, c2) {
+        const det = a1 * b2 - a2 * b1;
+        if (Math.abs(det) < 1e-9) return null;
+        return {
+            x: (c1 * b2 - c2 * b1) / det,
+            y: (a1 * c2 - a2 * c1) / det
+        };
+    }
+
+    function isFeasible(p, C1, C2, C3) {
+        const eps = 1e-5;
+        const [a1, b1] = currentScenario.c1Coeff;
+        const [a2, b2] = currentScenario.c2Coeff;
+        const [a3, b3] = currentScenario.c3Coeff;
+        const isMin = currentScenario.type === "min";
+
+        if (p.x < -eps || p.y < -eps) return false;
+
+        if (isMin) {
+            return (a1 * p.x + b1 * p.y) >= C1 - eps &&
+                   (a2 * p.x + b2 * p.y) >= C2 - eps &&
+                   (a3 * p.x + b3 * p.y) >= C3 - eps;
+        } else {
+            return (a1 * p.x + b1 * p.y) <= C1 + eps &&
+                   (a2 * p.x + b2 * p.y) <= C2 + eps &&
+                   (a3 * p.x + b3 * p.y) <= C3 + eps;
+        }
+    }
+
+    function loadScenario(scen) {
+        currentScenario = scen;
+        const isMin = scen.type === "min";
+
+        dom.scenarioTitle.textContent = scen.title;
+        dom.scenarioDesc.textContent = scen.desc;
+
+        if (isMin) {
+            dom.badgeType.textContent = "COST MINIMIZATION";
+            dom.badgeType.className = "px-3 py-1 rounded-full text-xs font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30";
+            dom.headerObjType.textContent = "Cost Coefficients";
+            dom.headerConstraintType.textContent = "Minimum Requirement Targets";
+            dom.labelParamC.textContent = `${scen.varX} Cost (c):`;
+            dom.labelParamD.textContent = `${scen.varY} Cost (d):`;
+            dom.labelC1.textContent = `${scen.c1Name} Target (C1):`;
+            dom.labelC2.textContent = `${scen.c2Name} Target (C2):`;
+            dom.labelC3.textContent = `${scen.c3Name} Target (C3):`;
+        } else {
+            dom.badgeType.textContent = "PROFIT MAXIMIZATION";
+            dom.badgeType.className = "px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+            dom.headerObjType.textContent = "Profit Coefficients";
+            dom.headerConstraintType.textContent = "Resource Capacity Limits";
+            dom.labelParamC.textContent = `${scen.varX} Profit (c):`;
+            dom.labelParamD.textContent = `${scen.varY} Profit (d):`;
+            dom.labelC1.textContent = `${scen.c1Name} Limit (C1):`;
+            dom.labelC2.textContent = `${scen.c2Name} Limit (C2):`;
+            dom.labelC3.textContent = `${scen.c3Name} Limit (C3):`;
+        }
+
+        dom.legC1.textContent = scen.c1Name;
+        dom.legC2.textContent = scen.c2Name;
+        dom.legC3.textContent = scen.c3Name;
+
+        dom.paramC.value = scen.defaultObj[0];
+        dom.paramD.value = scen.defaultObj[1];
+        dom.paramC1.value = scen.defaultLimits[0];
+        dom.paramC2.value = scen.defaultLimits[1];
+        dom.paramC3.value = scen.defaultLimits[2];
+
+        update();
+    }
+
+    function generateRandomProblem() {
+        const randomScenIndex = Math.floor(Math.random() * scenarios.length);
+        const base = scenarios[randomScenIndex];
+
+        const randObjC = Math.floor(Math.random() * 12 + 2) * 5; 
+        const randObjD = Math.floor(Math.random() * 12 + 2) * 5; 
+
+        const randC1 = Math.floor(Math.random() * 12 + 6); 
+        const randC2 = Math.floor(Math.random() * 12 + 6);
+        const randC3 = Math.floor(Math.random() * 12 + 6);
+
+        const newScen = {
+            ...base,
+            defaultObj: [randObjC, randObjD],
+            defaultLimits: [randC1, randC2, randC3]
+        };
+
+        loadScenario(newScen);
+    }
+
+    function update() {
+        const c = parseFloat(dom.paramC.value);
+        const d = parseFloat(dom.paramD.value);
+        const C1 = parseFloat(dom.paramC1.value);
+        const C2 = parseFloat(dom.paramC2.value);
+        const C3 = parseFloat(dom.paramC3.value);
+        const isMin = currentScenario.type === "min";
+        const opSymbol = isMin ? "&ge;" : "&le;";
+
+        dom.valC.textContent = c;
+        dom.valD.textContent = d;
+        dom.valC1.textContent = C1;
+        dom.valC2.textContent = C2;
+        dom.valC3.textContent = C3;
+
+        const [a1, b1] = currentScenario.c1Coeff;
+        const [a2, b2] = currentScenario.c2Coeff;
+        const [a3, b3] = currentScenario.c3Coeff;
+
+        // Render Math Model Text
+        dom.mathObj.textContent = `${isMin ? 'Minimize' : 'Maximize'} Z = ${c}x + ${d}y`;
+        dom.mathConstraints.innerHTML = `
+            <li>${currentScenario.c1Name}: ${a1}x + ${b1}y ${opSymbol} ${C1}</li>
+            <li>${currentScenario.c2Name}: ${a2}x + ${b2}y ${opSymbol} ${C2}</li>
+            <li>${currentScenario.c3Name}: ${a3}x + ${b3}y ${opSymbol} ${C3}</li>
+            <li>Non-negativity: x &ge; 0, y &ge; 0</li>
+        `;
+
+        // Define bounding lines including chart maximum boundaries for minimization regions
+        let lines = [
+            { a: 1, b: 0, c: 0 },
+            { a: 0, b: 1, c: 0 },
+            { a: a1, b: b1, c: C1 },
+            { a: a2, b: b2, c: C2 },
+            { a: a3, b: b3, c: C3 }
+        ];
+
+        if (isMin) {
+            lines.push({ a: 1, b: 0, c: maxCoord });
+            lines.push({ a: 0, b: 1, c: maxCoord });
+        }
+
+        let candidates = [];
+        for (let i = 0; i < lines.length; i++) {
+            for (let j = i + 1; j < lines.length; j++) {
+                const pt = intersect(lines[i].a, lines[i].b, lines[i].c, lines[j].a, lines[j].b, lines[j].c);
+                if (pt) candidates.push(pt);
+            }
+        }
+
+        let cornerPoints = candidates.filter(pt => isFeasible(pt, C1, C2, C3));
+
+        // Deduplicate
+        let uniquePoints = [];
+        cornerPoints.forEach(p => {
+            if (!uniquePoints.some(u => Math.abs(u.x - p.x) < 1e-3 && Math.abs(u.y - p.y) < 1e-3)) {
+                uniquePoints.push({
+                    x: Math.abs(p.x) < 1e-5 ? 0 : parseFloat(p.x.toFixed(2)),
+                    y: Math.abs(p.y) < 1e-5 ? 0 : parseFloat(p.y.toFixed(2))
+                });
+            }
+        });
+
+        // Sort polygon points clockwise
+        if (uniquePoints.length > 0) {
+            const center = uniquePoints.reduce((acc, p) => ({ x: acc.x + p.x / uniquePoints.length, y: acc.y + p.y / uniquePoints.length }), { x: 0, y: 0 });
+            uniquePoints.sort((a, b) => Math.atan2(a.y - center.y, a.x - center.x) - Math.atan2(b.y - center.y, b.x - center.x));
+        }
+
+        // Calculate Z for each vertex and find optimal
+        let targetZ = isMin ? Infinity : -Infinity;
+        let optimalPoint = null;
+
+        uniquePoints.forEach(p => {
+            p.z = c * p.x + d * p.y;
+            // Exclude artificial boundary points from optimal consideration in minimization
+            const isBoundaryPt = isMin && (Math.abs(p.x - maxCoord) < 1e-3 || Math.abs(p.y - maxCoord) < 1e-3);
+            
+            if (!isBoundaryPt) {
+                if (isMin ? (p.z < targetZ) : (p.z > targetZ)) {
+                    targetZ = p.z;
+                    optimalPoint = p;
+                }
+            }
+        });
+
+        // --- GRAPHICS RENDERING ---
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Grid Lines
+        ctx.strokeStyle = "#1e293b";
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= maxCoord; i++) {
+            ctx.beginPath();
+            ctx.moveTo(toCanvasX(i), toCanvasY(0));
+            ctx.lineTo(toCanvasX(i), toCanvasY(maxCoord));
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(toCanvasX(0), toCanvasY(i));
+            ctx.lineTo(toCanvasX(maxCoord), toCanvasY(i));
+            ctx.stroke();
+        }
+
+        // Axes
+        ctx.strokeStyle = "#64748b";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(toCanvasX(0), toCanvasY(0));
+        ctx.lineTo(toCanvasX(maxCoord), toCanvasY(0));
+        ctx.moveTo(toCanvasX(0), toCanvasY(0));
+        ctx.lineTo(toCanvasX(0), toCanvasY(maxCoord));
+        ctx.stroke();
+
+        // Axis Numbers
+        ctx.fillStyle = "#94a3b8";
+        ctx.font = "11px sans-serif";
+        for (let i = 2; i <= maxCoord; i += 2) {
+            ctx.fillText(i, toCanvasX(i) - 4, toCanvasY(0) + 16);
+            ctx.fillText(i, toCanvasX(0) - 22, toCanvasY(i) + 4);
+        }
+
+        // Fill Feasible Area Polygon
+        if (uniquePoints.length > 0) {
+            ctx.fillStyle = isMin ? "rgba(6, 182, 212, 0.25)" : "rgba(16, 185, 129, 0.25)";
+            ctx.beginPath();
+            ctx.moveTo(toCanvasX(uniquePoints[0].x), toCanvasY(uniquePoints[0].y));
+            for (let i = 1; i < uniquePoints.length; i++) {
+                ctx.lineTo(toCanvasX(uniquePoints[i].x), toCanvasY(uniquePoints[i].y));
+            }
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // Draw Line Helper
+        function drawLine(a, b, cap, color) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            let p1, p2;
+            if (b !== 0) {
+                p1 = { x: 0, y: cap / b };
+                p2 = { x: maxCoord, y: (cap - a * maxCoord) / b };
+            } else {
+                p1 = { x: cap / a, y: 0 };
+                p2 = { x: cap / a, y: maxCoord };
+            }
+            ctx.moveTo(toCanvasX(p1.x), toCanvasY(p1.y));
+            ctx.lineTo(toCanvasX(p2.x), toCanvasY(p2.y));
+            ctx.stroke();
+        }
+
+        drawLine(a1, b1, C1, "#ef4444"); // Red
+        drawLine(a2, b2, C2, "#3b82f6"); // Blue
+        drawLine(a3, b3, C3, "#f59e0b"); // Amber
+
+        // Iso-Objective Line
+        if (optimalPoint && targetZ > 0 && isFinite(targetZ)) {
+            ctx.strokeStyle = "#a855f7"; // Purple
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6, 6]);
+            ctx.beginPath();
+            let zP1 = { x: 0, y: targetZ / d };
+            let zP2 = { x: targetZ / c, y: 0 };
+            ctx.moveTo(toCanvasX(zP1.x), toCanvasY(zP1.y));
+            ctx.lineTo(toCanvasX(zP2.x), toCanvasY(zP2.y));
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        // Vertices / Corner Points
+        uniquePoints.forEach(p => {
+            const isOpt = (p === optimalPoint);
+            ctx.fillStyle = isOpt ? (isMin ? "#06b6d4" : "#10b981") : "#cbd5e1";
+            ctx.beginPath();
+            ctx.arc(toCanvasX(p.x), toCanvasY(p.y), isOpt ? 7 : 4, 0, 2 * Math.PI);
+            ctx.fill();
+
+            if (isOpt) {
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = isOpt ? (isMin ? "#22d3ee" : "#34d399") : "#94a3b8";
+            ctx.font = isOpt ? "bold 13px sans-serif" : "11px sans-serif";
+            ctx.fillText(`(${p.x}, ${p.y})`, toCanvasX(p.x) + 8, toCanvasY(p.y) - 8);
+        });
+
+        // --- RENDER TABLE ---
+        dom.tableBody.innerHTML = '';
+        uniquePoints.forEach(p => {
+            const isOpt = (p === optimalPoint);
+            const tr = document.createElement('tr');
+            if (isOpt) {
+                tr.className = isMin ? 'bg-cyan-950/40 text-cyan-300 font-bold' : 'bg-emerald-950/40 text-emerald-300 font-bold';
+            }
+
+            tr.innerHTML = `
+                <td class="p-3">(${p.x}, ${p.y})</td>
+                <td class="p-3">${c}(${p.x}) + ${d}(${p.y})</td>
+                <td class="p-3">${p.z.toFixed(2)}</td>
+                <td class="p-3">
+                    <span class="px-2 py-1 rounded-full text-xs font-semibold ${isOpt ? (isMin ? 'bg-cyan-500 text-slate-950' : 'bg-emerald-500 text-slate-950') : 'bg-slate-700 text-slate-300'}">
+                        ${isOpt ? 'OPTIMAL SOLUTION' : 'Feasible Vertex'}
+                    </span>
+                </td>
+            `;
+            dom.tableBody.appendChild(tr);
+        });
+    }
+
+    // Event Listeners
+    [dom.paramC, dom.paramD, dom.paramC1, dom.paramC2, dom.paramC3].forEach(elem => {
+        elem.addEventListener('input', update);
+    });
+
+    dom.btnGenerate.addEventListener('click', generateRandomProblem);
+
+    // Modal toggles
+    dom.btnConcept.addEventListener('click', () => dom.modalConcept.classList.remove('hidden'));
+    dom.btnCloseModal.addEventListener('click', () => dom.modalConcept.classList.add('hidden'));
+    dom.btnModalOk.addEventListener('click', () => dom.modalConcept.classList.add('hidden'));
+
+    // Initialize with default scenario
+    loadScenario(scenarios[0]);
+</script>
+
+</body>
+</html>

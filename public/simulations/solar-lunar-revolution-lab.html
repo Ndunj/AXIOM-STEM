@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Solar & Lunar System Virtual Lab</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            slate: {
+              850: '#111827',
+              900: '#0f172a',
+              950: '#020617',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Three.js and OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <style>
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(51, 65, 85, 0.8);
+      border-radius: 3px;
+    }
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .glass-card {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    canvas {
+      outline: none;
+    }
+
+    /* Minimalist Unboxed Floating Celestial Labels */
+    .celestial-label {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform: translate(-50%, -100%);
+      pointer-events: none;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      user-select: none;
+      z-index: 5;
+      transition: opacity 0.15s ease-out;
+    }
+    .label-sun {
+      color: #fbbf24;
+      font-size: 14px;
+      text-shadow: 0 0 10px rgba(251, 191, 36, 0.8), 0 0 20px rgba(245, 158, 11, 0.6);
+    }
+    .label-earth {
+      color: #38bdf8;
+      font-size: 13px;
+      text-shadow: 0 0 10px rgba(56, 189, 248, 0.8), 0 0 18px rgba(14, 165, 233, 0.6);
+    }
+    .label-moon {
+      color: #e2e8f0;
+      font-size: 11px;
+      text-shadow: 0 0 8px rgba(226, 232, 240, 0.8), 0 0 14px rgba(148, 163, 184, 0.6);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans overflow-hidden h-screen w-screen select-none">
+
+  <!-- 3D Canvas Viewport -->
+  <div id="canvas-container" class="absolute inset-0 z-0"></div>
+
+  <!-- Dynamic Screen-Space Text Labels -->
+  <div id="label-sun" class="celestial-label label-sun">☉ SUN</div>
+  <div id="label-earth" class="celestial-label label-earth">🜨 EARTH</div>
+  <div id="label-moon" class="celestial-label label-moon">☾ MOON</div>
+
+  <!-- Top Navigation / Title Header -->
+  <header class="absolute top-4 left-4 right-4 z-10 flex flex-wrap justify-between items-center gap-4 pointer-events-none">
+    <div class="glass-panel rounded-2xl px-5 py-3 pointer-events-auto flex items-center gap-3 shadow-2xl border border-slate-700/50">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-400 to-amber-600 flex items-center justify-center shadow-lg">
+        <i class="fa-solid fa-sun text-white text-lg"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold tracking-wide text-white leading-tight">3D Earth & Moon Revolution Lab</h1>
+        <p class="text-xs text-slate-400 font-medium">Stationary Sun & Absolute World Geometry System</p>
+      </div>
+    </div>
+
+    <!-- Action Buttons & Telemetry Summary Pill -->
+    <div class="flex items-center gap-3 pointer-events-auto">
+      <!-- Toggle Telemetry Panel Button -->
+      <button id="toggle-telemetry-btn" class="glass-panel hover:bg-slate-800/80 rounded-2xl px-4 py-2.5 flex items-center gap-2 shadow-2xl border border-slate-700/50 text-xs font-semibold text-cyan-400 transition">
+        <i class="fa-solid fa-chart-line"></i>
+        <span>Show Telemetry</span>
+      </button>
+
+      <!-- Explanatory Notes Modal Button -->
+      <button id="open-notes-btn" class="glass-panel hover:bg-slate-800/80 rounded-2xl px-4 py-2.5 flex items-center gap-2 shadow-2xl border border-slate-700/50 text-xs font-semibold text-amber-400 transition">
+        <i class="fa-solid fa-circle-info"></i>
+        <span>Explanatory Notes</span>
+      </button>
+
+      <!-- Status Pill -->
+      <div class="glass-panel rounded-2xl px-5 py-2.5 flex items-center gap-6 shadow-2xl border border-slate-700/50">
+        <div class="text-center">
+          <span class="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Lunar Phase</span>
+          <span id="header-phase" class="text-sm font-bold text-red-400">Total Eclipse</span>
+        </div>
+        <div class="h-6 w-[1px] bg-slate-700"></div>
+        <div class="text-center">
+          <span class="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Earth Solar Angle</span>
+          <span id="header-earth-angle" class="text-sm font-bold text-amber-400">0.0°</span>
+        </div>
+        <div class="h-6 w-[1px] bg-slate-700"></div>
+        <div class="text-center">
+          <span class="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Moon Orbit Angle</span>
+          <span id="header-angle" class="text-sm font-bold text-cyan-400">180.0°</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Left Sidebar Controls & Telemetry -->
+  <aside class="absolute top-24 left-4 z-10 w-80 max-h-[calc(100vh-180px)] overflow-y-auto pointer-events-auto flex flex-col gap-4">
+    
+    <!-- Real-time HUD Telemetry Panel (Hidden by Default) -->
+    <div id="telemetry-panel" class="hidden glass-panel rounded-2xl p-4 shadow-2xl flex-col gap-3">
+      <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+          <i class="fa-solid fa-chart-line text-cyan-400"></i> Orbital Telemetry
+        </h2>
+        <div class="flex items-center gap-2">
+          <span id="hud-status-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-950 text-red-400 border border-red-800/50">
+            Totality
+          </span>
+          <button id="close-telemetry-btn" class="text-slate-400 hover:text-white text-xs px-1">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <div class="glass-card rounded-xl p-2.5">
+          <span class="text-[10px] text-slate-400 block">Earth Revolution</span>
+          <span id="hud-earth-deg" class="text-sm font-bold text-amber-400">0.0°</span>
+        </div>
+        <div class="glass-card rounded-xl p-2.5">
+          <span class="text-[10px] text-slate-400 block">Moon Revolution</span>
+          <span id="hud-orbit-deg" class="text-sm font-bold text-cyan-400">180.0°</span>
+        </div>
+        <div class="glass-card rounded-xl p-2.5">
+          <span class="text-[10px] text-slate-400 block">Umbra Penetration</span>
+          <span id="hud-umbra-penetration" class="text-sm font-bold text-red-400">95.2%</span>
+        </div>
+        <div class="glass-card rounded-xl p-2.5">
+          <span class="text-[10px] text-slate-400 block">Orbital Tilt</span>
+          <span class="text-sm font-bold text-slate-200">5.14°</span>
+        </div>
+      </div>
+
+      <div class="glass-card rounded-xl p-3 border-l-2 border-amber-500 text-xs">
+        <div class="flex items-center gap-1.5 font-bold text-amber-400 mb-1">
+          <i class="fa-solid fa-sun"></i> Absolute World Reference Frame
+        </div>
+        <p class="text-[11px] text-slate-300 leading-relaxed">
+          The Sun and Earth's orbit ring are permanently fixed at (0,0,0) in the global space frame while Earth continuously rotates on its axis.
+        </p>
+      </div>
+    </div>
+
+    <!-- Visual Helpers Toggle Panel -->
+    <div class="glass-panel rounded-2xl p-4 shadow-2xl flex flex-col gap-3">
+      <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300 border-b border-slate-700/60 pb-2 flex items-center gap-2">
+        <i class="fa-solid fa-layer-group text-amber-400"></i> Display Overlays
+      </h2>
+      <div class="space-y-2.5 text-xs">
+        <label class="flex items-center justify-between cursor-pointer group">
+          <span class="text-slate-300 group-hover:text-white transition">Show Body Labels</span>
+          <input type="checkbox" id="toggle-labels" checked class="accent-amber-500 w-4 h-4 rounded cursor-pointer">
+        </label>
+        <label class="flex items-center justify-between cursor-pointer group">
+          <span class="text-slate-300 group-hover:text-white transition">Earth Orbit Path (Sun)</span>
+          <input type="checkbox" id="toggle-earth-orbit" checked class="accent-amber-500 w-4 h-4 rounded cursor-pointer">
+        </label>
+        <label class="flex items-center justify-between cursor-pointer group">
+          <span class="text-slate-300 group-hover:text-white transition">Moon Orbit Path (Earth)</span>
+          <input type="checkbox" id="toggle-orbit" checked class="accent-cyan-500 w-4 h-4 rounded cursor-pointer">
+        </label>
+        <label class="flex items-center justify-between cursor-pointer group">
+          <span class="text-slate-300 group-hover:text-white transition">Show Umbra Cone</span>
+          <input type="checkbox" id="toggle-umbra" checked class="accent-red-500 w-4 h-4 rounded cursor-pointer">
+        </label>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- Right Sidebar - Camera View Presets -->
+  <aside class="absolute top-24 right-4 z-10 pointer-events-auto flex flex-col gap-2">
+    <div class="glass-panel rounded-2xl p-2 shadow-2xl flex flex-col gap-1.5 w-44">
+      <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2 py-1">Camera Views</span>
+      <button id="cam-free" class="cam-btn px-3 py-2 rounded-xl text-xs font-semibold text-left transition flex items-center gap-2 bg-slate-800/80 text-cyan-400 border border-cyan-500/30">
+        <i class="fa-solid fa-camera-rotate w-4 text-center"></i> Solar System
+      </button>
+      <button id="cam-heliocentric" class="cam-btn px-3 py-2 rounded-xl text-xs font-semibold text-left transition flex items-center gap-2 text-slate-300 hover:bg-slate-800/50">
+        <i class="fa-solid fa-sun w-4 text-center"></i> Top-Down Sun
+      </button>
+    </div>
+  </aside>
+
+  <!-- Explanatory Notes Modal -->
+  <div id="notes-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm pointer-events-auto">
+    <div class="glass-panel border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative text-slate-300 space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-700/60 pb-3">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-book-open text-amber-400"></i> Explanatory Notes & Concepts
+        </h3>
+        <button id="close-notes-btn" class="text-slate-400 hover:text-white text-lg font-bold">&times;</button>
+      </div>
+      
+      <div class="space-y-3 text-xs leading-relaxed text-slate-300 max-h-[60vh] overflow-y-auto pr-2">
+        <div class="glass-card p-3 rounded-xl">
+          <strong class="text-amber-400 block mb-1">1. Absolute Heliocentric Reference Frame</strong>
+          The Sun remains anchored at the coordinate origin $(0,0,0)$. The Earth revolves around the Sun in a 365-day elliptical path while maintaining its continuous 24-hour axial rotation.
+        </div>
+        <div class="glass-card p-3 rounded-xl">
+          <strong class="text-cyan-400 block mb-1">2. Orbital Inclination ($5.14^\circ$)</strong>
+          The Moon's orbital plane is tilted at $5.14^\circ$ relative to the ecliptic plane (Earth's orbital plane around the Sun). Because of this tilt, lunar and solar eclipses do not occur every single month, but only when the Moon crosses the ecliptic nodes during full or new moon alignment.
+        </div>
+        <div class="glass-card p-3 rounded-xl">
+          <strong class="text-red-400 block mb-1">3. Umbra Shadow & Blood Moon Dynamics</strong>
+          The Umbra is the dark central cone of Earth's shadow. When the Moon passes completely inside this cone ($100\%$ penetration), Earth blocks direct sunlight. Rayleigh scattering through Earth's atmosphere filters blue light and refracts deep red wavelengths onto the lunar surface, causing the characteristic "Blood Moon" appearance.
+        </div>
+      </div>
+
+      <div class="pt-2 border-t border-slate-700/60 text-right">
+        <button id="close-notes-modal-btn" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-xl border border-slate-700 transition">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Interactive Timeline Control Bar -->
+  <footer class="absolute bottom-4 left-4 right-4 z-10 pointer-events-auto flex justify-center">
+    <div class="glass-panel rounded-2xl p-4 shadow-2xl w-full max-w-4xl flex flex-col gap-3 border border-slate-700/60">
+      
+      <!-- Quick-Jump Lunar Orbit Markers -->
+      <div class="flex items-center justify-between text-[11px] font-semibold gap-1 overflow-x-auto pb-1">
+        <button id="phase-new-moon" class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 transition whitespace-nowrap">
+          New Moon
+        </button>
+        <i class="fa-solid fa-angle-right text-slate-600"></i>
+        <button id="phase-first-quarter" class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 transition whitespace-nowrap">
+          First Quarter
+        </button>
+        <i class="fa-solid fa-angle-right text-slate-600"></i>
+        <button id="phase-totality" class="px-3 py-1.5 rounded-lg bg-red-950/80 border border-red-700/60 text-red-300 transition whitespace-nowrap shadow-lg shadow-red-950/50">
+          Total Lunar Eclipse
+        </button>
+        <i class="fa-solid fa-angle-right text-slate-600"></i>
+        <button id="phase-third-quarter" class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 transition whitespace-nowrap">
+          Third Quarter
+        </button>
+        <i class="fa-solid fa-angle-right text-slate-600"></i>
+        <button id="phase-full-cycle" class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-cyan-300 transition whitespace-nowrap">
+          Full Year Orbit
+        </button>
+      </div>
+
+      <!-- Scrubbing Timeline Slider -->
+      <div class="flex items-center gap-4">
+        <button id="play-btn" class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white flex items-center justify-center shadow-lg transition transform active:scale-95">
+          <i class="fa-solid fa-play text-sm"></i>
+        </button>
+        
+        <div class="flex-1 flex flex-col gap-1">
+          <div class="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            <span>Earth & Moon Orbit Scrubbing Timeline</span>
+            <span id="time-display">Earth: 0.0° | Moon: 180.0°</span>
+          </div>
+          <input type="range" id="timeline-slider" min="0" max="1" step="0.0002" value="0" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400">
+        </div>
+
+        <!-- Speed Selectors -->
+        <div class="flex items-center bg-slate-800/80 rounded-xl p-1 border border-slate-700/50 text-xs">
+          <button data-speed="0.25" class="speed-btn px-2 py-1 rounded-lg font-bold text-slate-400 hover:text-white transition">0.25x</button>
+          <button data-speed="1" class="speed-btn px-2 py-1 rounded-lg font-bold bg-cyan-500 text-slate-950 transition">1x</button>
+          <button data-speed="5" class="speed-btn px-2 py-1 rounded-lg font-bold text-slate-400 hover:text-white transition">5x</button>
+          <button data-speed="20" class="speed-btn px-2 py-1 rounded-lg font-bold text-slate-400 hover:text-white transition">20x</button>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- Simulation Application Script -->
+  <script>
+    function createEarthTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 2048;
+      canvas.height = 1024;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = '#0b1d3a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = '#1e3a1e';
+      for (let i = 0; i < 1200; i++) {
+        const x = Math.random() * canvas.width;
+        const y = (Math.random() * 0.7 + 0.15) * canvas.height;
+        const r = Math.random() * 80 + 20;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = '#3a3d20';
+      for (let i = 0; i < 400; i++) {
+        const x = Math.random() * canvas.width;
+        const y = (Math.random() * 0.5 + 0.25) * canvas.height;
+        const r = Math.random() * 40 + 10;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillRect(0, 0, canvas.width, 90);
+      ctx.fillRect(0, canvas.height - 90, canvas.width, 90);
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+      for (let i = 0; i < 800; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        const r = Math.random() * 60 + 10;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      return new THREE.CanvasTexture(canvas);
+    }
+
+    function createMoonTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = '#888888';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = '#555555';
+      for (let i = 0; i < 15; i++) {
+        const x = Math.random() * canvas.width;
+        const y = (Math.random() * 0.6 + 0.2) * canvas.height;
+        const rx = Math.random() * 120 + 40;
+        const ry = Math.random() * 80 + 30;
+        ctx.beginPath();
+        ctx.ellipse(x, y, rx, ry, Math.random() * Math.PI, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      for (let i = 0; i < 1500; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        const r = Math.random() * 12 + 1;
+
+        ctx.strokeStyle = '#aaaaaa';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.fillStyle = '#666666';
+        ctx.beginPath();
+        ctx.arc(x + r * 0.2, y + r * 0.2, r * 0.7, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      return new THREE.CanvasTexture(canvas);
+    }
+
+    function createSunGlowTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+
+      const centerX = 256;
+      const centerY = 256;
+      const innerRadius = 140;
+      const outerRadius = 250;
+
+      const gradient = ctx.createRadialGradient(
+        centerX, centerY, innerRadius,
+        centerX, centerY, outerRadius
+      );
+
+      gradient.addColorStop(0.0, 'rgba(255, 250, 200, 0.95)');
+      gradient.addColorStop(0.2, 'rgba(255, 220, 110, 0.70)');
+      gradient.addColorStop(0.6, 'rgba(255, 170, 40, 0.30)');
+      gradient.addColorStop(1.0, 'rgba(255, 140, 0, 0.00)');
+
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, outerRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      return new THREE.CanvasTexture(canvas);
+    }
+
+    class LunarEclipseSim {
+      constructor() {
+        this.container = document.getElementById('canvas-container');
+        this.progress = 0;
+        this.isPlaying = false;
+        this.speed = 1.0;
+        this.earthOrbitRadius = 120;
+        this.moonOrbitRadius = 30;
+        this.inclinationDeg = 5.14;
+        this.cameraMode = 'free';
+        this.showLabels = true;
+
+        this.initScene();
+        this.initCelestialBodies();
+        this.initShadowCone();
+        this.initHelpers();
+        this.initUI();
+        this.onWindowResize();
+
+        window.addEventListener('resize', () => this.onWindowResize());
+        
+        this.lastTime = performance.now();
+        this.animate();
+      }
+
+      initScene() {
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(0x020617);
+
+        this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
+        this.camera.position.set(0, 140, 260);
+
+        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.container.appendChild(this.renderer.domElement);
+
+        this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+        this.controls.enableDamping = true;
+        this.controls.dampingFactor = 0.05;
+        this.controls.maxDistance = 600;
+        this.controls.minDistance = 5;
+
+        // Starfield
+        const starsGeo = new THREE.BufferGeometry();
+        const starsCount = 5000;
+        const starPos = new Float32Array(starsCount * 3);
+        for (let i = 0; i < starsCount * 3; i += 3) {
+          starPos[i] = (Math.random() - 0.5) * 1200;
+          starPos[i + 1] = (Math.random() - 0.5) * 1200;
+          starPos[i + 2] = (Math.random() - 0.5) * 1200;
+        }
+        starsGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+        const starsMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.8, transparent: true, opacity: 0.8 });
+        this.starfield = new THREE.Points(starsGeo, starsMat);
+        this.scene.add(this.starfield);
+
+        this.ambientLight = new THREE.AmbientLight(0x111625, 0.2);
+        this.scene.add(this.ambientLight);
+
+        // Point light fixed at Sun center (0,0,0)
+        this.sunLight = new THREE.PointLight(0xfff8e7, 2.8, 1000, 0.2);
+        this.sunLight.position.set(0, 0, 0);
+        this.sunLight.castShadow = true;
+        this.sunLight.shadow.mapSize.width = 2048;
+        this.sunLight.shadow.mapSize.height = 2048;
+        this.scene.add(this.sunLight);
+      }
+
+      initCelestialBodies() {
+        // 1. SUN AT ORIGIN (0,0,0)
+        this.sunGroup = new THREE.Group();
+        this.sunGroup.position.set(0, 0, 0);
+        this.scene.add(this.sunGroup);
+
+        this.sunRadius = 22;
+        
+        const sunGeo = new THREE.SphereGeometry(this.sunRadius, 64, 64);
+        const sunMat = new THREE.MeshBasicMaterial({
+          color: 0xfff7aa
+        });
+        this.sunMesh = new THREE.Mesh(sunGeo, sunMat);
+        this.sunGroup.add(this.sunMesh);
+
+        const glowTex = createSunGlowTexture();
+        const spriteMat = new THREE.SpriteMaterial({
+          map: glowTex,
+          color: 0xffffff,
+          transparent: true,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        });
+        
+        this.sunGlowSprite = new THREE.Sprite(spriteMat);
+        this.sunGlowSprite.scale.set(this.sunRadius * 3.6, this.sunRadius * 3.6, 1.0);
+        this.sunGroup.add(this.sunGlowSprite);
+
+        // 2. EARTH GROUP & MESH
+        this.earthGroup = new THREE.Group();
+        this.scene.add(this.earthGroup);
+
+        this.earthRadius = 6.5;
+        const earthGeo = new THREE.SphereGeometry(this.earthRadius, 64, 64);
+        const earthTex = createEarthTexture();
+        this.earthMat = new THREE.MeshStandardMaterial({
+          map: earthTex,
+          roughness: 0.6,
+          metalness: 0.1
+        });
+        this.earthMesh = new THREE.Mesh(earthGeo, this.earthMat);
+        this.earthMesh.castShadow = true;
+        this.earthMesh.receiveShadow = true;
+        this.earthGroup.add(this.earthMesh);
+
+        // Earth Atmosphere Glow
+        const atmosphereGeo = new THREE.SphereGeometry(this.earthRadius * 1.12, 64, 64);
+        const atmosphereMat = new THREE.ShaderMaterial({
+          vertexShader: `
+            varying vec3 vNormal;
+            void main() {
+              vNormal = normalize(normalMatrix * normal);
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+          `,
+          fragmentShader: `
+            varying vec3 vNormal;
+            void main() {
+              float intensity = pow(0.6 - dot(vNormal, vec3(0, 0, 1.0)), 2.0);
+              gl_FragColor = vec4(0.3, 0.6, 1.0, 1.0) * intensity;
+            }
+          `,
+          blending: THREE.AdditiveBlending,
+          side: THREE.BackSide,
+          transparent: true
+        });
+        this.earthMesh.add(new THREE.Mesh(atmosphereGeo, atmosphereMat));
+
+        // 3. MOON MESH
+        this.moonRadius = 2.2;
+        const moonGeo = new THREE.SphereGeometry(this.moonRadius, 64, 64);
+        this.moonTex = createMoonTexture();
+
+        this.moonMat = new THREE.MeshStandardMaterial({
+          map: this.moonTex,
+          roughness: 0.8,
+          metalness: 0.0,
+          color: new THREE.Color(0xffffff)
+        });
+
+        this.moonMesh = new THREE.Mesh(moonGeo, this.moonMat);
+        this.moonMesh.castShadow = true;
+        this.moonMesh.receiveShadow = true;
+        this.scene.add(this.moonMesh);
+
+        // HTML Label Elements References
+        this.sunLabelEl = document.getElementById('label-sun');
+        this.earthLabelEl = document.getElementById('label-earth');
+        this.moonLabelEl = document.getElementById('label-moon');
+      }
+
+      initShadowCone() {
+        this.shadowGroup = new THREE.Group();
+        this.scene.add(this.shadowGroup);
+
+        const umbraLength = 65;
+        const umbraGeo = new THREE.ConeGeometry(6.0, umbraLength, 64, 1, true);
+        umbraGeo.rotateZ(-Math.PI / 2);
+        umbraGeo.translate(umbraLength / 2, 0, 0);
+
+        const umbraMat = new THREE.MeshBasicMaterial({
+          color: 0x220005,
+          transparent: true,
+          opacity: 0.45,
+          depthWrite: false,
+          side: THREE.DoubleSide
+        });
+        this.umbraCone = new THREE.Mesh(umbraGeo, umbraMat);
+        this.shadowGroup.add(this.umbraCone);
+      }
+
+      initHelpers() {
+        // EARTH ORBIT LINE AT ORIGIN (0,0,0)
+        this.helpersGroup = new THREE.Group();
+        this.scene.add(this.helpersGroup);
+
+        const earthOrbitPoints = [];
+        const earthSegments = 256;
+        for (let i = 0; i <= earthSegments; i++) {
+          const theta = (i / earthSegments) * Math.PI * 2;
+          earthOrbitPoints.push(new THREE.Vector3(
+            Math.cos(theta) * this.earthOrbitRadius,
+            0,
+            Math.sin(theta) * this.earthOrbitRadius
+          ));
+        }
+        const earthOrbitGeo = new THREE.BufferGeometry().setFromPoints(earthOrbitPoints);
+        const earthOrbitMat = new THREE.LineBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.4 });
+        this.earthOrbitLine = new THREE.Line(earthOrbitGeo, earthOrbitMat);
+        this.helpersGroup.add(this.earthOrbitLine);
+
+        // Moon's Orbit Path Ring around Earth
+        this.moonOrbitGroup = new THREE.Group();
+        this.scene.add(this.moonOrbitGroup);
+
+        const moonOrbitPoints = [];
+        const moonSegments = 128;
+        const tiltRad = (this.inclinationDeg * Math.PI) / 180;
+
+        for (let i = 0; i <= moonSegments; i++) {
+          const theta = (i / moonSegments) * Math.PI * 2;
+          const x = Math.cos(theta) * this.moonOrbitRadius;
+          const z = Math.sin(theta) * this.moonOrbitRadius;
+          const y = z * Math.sin(tiltRad);
+          const zTilted = z * Math.cos(tiltRad);
+          moonOrbitPoints.push(new THREE.Vector3(x, y, zTilted));
+        }
+
+        const moonOrbitGeo = new THREE.BufferGeometry().setFromPoints(moonOrbitPoints);
+        const moonOrbitMat = new THREE.LineBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.6 });
+        this.moonOrbitLine = new THREE.Line(moonOrbitGeo, moonOrbitMat);
+        this.moonOrbitGroup.add(this.moonOrbitLine);
+      }
+
+      initUI() {
+        this.slider = document.getElementById('timeline-slider');
+        this.playBtn = document.getElementById('play-btn');
+        this.timeDisplay = document.getElementById('time-display');
+
+        this.slider.addEventListener('input', (e) => {
+          this.progress = parseFloat(e.target.value);
+          this.isPlaying = false;
+          this.updatePlayBtnIcon();
+          this.updatePositions();
+        });
+
+        this.playBtn.addEventListener('click', () => {
+          this.isPlaying = !this.isPlaying;
+          this.updatePlayBtnIcon();
+        });
+
+        document.querySelectorAll('.speed-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.speed-btn').forEach(b => {
+              b.classList.remove('bg-cyan-500', 'text-slate-950');
+              b.classList.add('text-slate-400');
+            });
+            e.target.classList.add('bg-cyan-500', 'text-slate-950');
+            e.target.classList.remove('text-slate-400');
+            this.speed = parseFloat(e.target.getAttribute('data-speed'));
+          });
+        });
+
+        // Telemetry Toggle Button Logic
+        const telemetryPanel = document.getElementById('telemetry-panel');
+        const toggleTelemetryBtn = document.getElementById('toggle-telemetry-btn');
+        const closeTelemetryBtn = document.getElementById('close-telemetry-btn');
+
+        const toggleTelemetry = () => {
+          const isHidden = telemetryPanel.classList.contains('hidden');
+          if (isHidden) {
+            telemetryPanel.classList.remove('hidden');
+            telemetryPanel.classList.add('flex');
+            toggleTelemetryBtn.querySelector('span').textContent = 'Hide Telemetry';
+            toggleTelemetryBtn.classList.add('bg-slate-800', 'border-cyan-500/50');
+          } else {
+            telemetryPanel.classList.add('hidden');
+            telemetryPanel.classList.remove('flex');
+            toggleTelemetryBtn.querySelector('span').textContent = 'Show Telemetry';
+            toggleTelemetryBtn.classList.remove('bg-slate-800', 'border-cyan-500/50');
+          }
+        };
+
+        toggleTelemetryBtn.addEventListener('click', toggleTelemetry);
+        closeTelemetryBtn.addEventListener('click', toggleTelemetry);
+
+        // Explanatory Notes Modal Toggle Logic
+        const notesModal = document.getElementById('notes-modal');
+        const openNotesBtn = document.getElementById('open-notes-btn');
+        const closeNotesBtn = document.getElementById('close-notes-btn');
+        const closeNotesModalBtn = document.getElementById('close-notes-modal-btn');
+
+        const toggleNotesModal = () => {
+          notesModal.classList.toggle('hidden');
+        };
+
+        openNotesBtn.addEventListener('click', toggleNotesModal);
+        closeNotesBtn.addEventListener('click', toggleNotesModal);
+        closeNotesModalBtn.addEventListener('click', toggleNotesModal);
+
+        notesModal.addEventListener('click', (e) => {
+          if (e.target === notesModal) toggleNotesModal();
+        });
+
+        // Jump buttons
+        document.getElementById('phase-new-moon').addEventListener('click', () => this.jumpToMoonPhase(0));
+        document.getElementById('phase-first-quarter').addEventListener('click', () => this.jumpToMoonPhase(0.25));
+        document.getElementById('phase-totality').addEventListener('click', () => this.jumpToMoonPhase(0.50));
+        document.getElementById('phase-third-quarter').addEventListener('click', () => this.jumpToMoonPhase(0.75));
+        document.getElementById('phase-full-cycle').addEventListener('click', () => this.jumpTo(1.0));
+
+        document.getElementById('toggle-labels').addEventListener('change', (e) => {
+          this.showLabels = e.target.checked;
+        });
+        document.getElementById('toggle-earth-orbit').addEventListener('change', (e) => {
+          this.earthOrbitLine.visible = e.target.checked;
+        });
+        document.getElementById('toggle-orbit').addEventListener('change', (e) => {
+          this.moonOrbitLine.visible = e.target.checked;
+        });
+        document.getElementById('toggle-umbra').addEventListener('change', (e) => {
+          this.umbraCone.visible = e.target.checked;
+        });
+
+        document.getElementById('cam-free').addEventListener('click', (e) => this.setCameraPreset('free', e.currentTarget));
+        document.getElementById('cam-heliocentric').addEventListener('click', (e) => this.setCameraPreset('heliocentric', e.currentTarget));
+
+        this.updatePositions();
+      }
+
+      jumpTo(val) {
+        this.progress = val;
+        this.slider.value = val;
+        this.isPlaying = false;
+        this.updatePlayBtnIcon();
+        this.updatePositions();
+      }
+
+      jumpToMoonPhase(moonRatio) {
+        const currentYearCycles = Math.floor(this.progress * 12);
+        this.progress = (currentYearCycles + moonRatio) / 12;
+        this.slider.value = this.progress;
+        this.isPlaying = false;
+        this.updatePlayBtnIcon();
+        this.updatePositions();
+      }
+
+      updatePlayBtnIcon() {
+        this.playBtn.innerHTML = this.isPlaying 
+          ? '<i class="fa-solid fa-pause text-sm"></i>' 
+          : '<i class="fa-solid fa-play text-sm"></i>';
+      }
+
+      setCameraPreset(type, btn) {
+        this.cameraMode = type;
+        document.querySelectorAll('.cam-btn').forEach(b => {
+          b.classList.remove('bg-slate-800/80', 'text-cyan-400', 'border', 'border-cyan-500/30');
+          b.classList.add('text-slate-300');
+        });
+        btn.classList.add('bg-slate-800/80', 'text-cyan-400', 'border', 'border-cyan-500/30');
+
+        if (type === 'free') {
+          this.camera.position.set(0, 140, 260);
+          this.controls.target.set(0, 0, 0);
+        } else if (type === 'heliocentric') {
+          this.camera.position.set(0, 280, 0.1);
+          this.controls.target.set(0, 0, 0);
+        }
+        this.updatePositions();
+      }
+
+      updatePositions() {
+        // 1. Earth Orbiting Stationary Sun (0,0,0)
+        const earthTheta = this.progress * Math.PI * 2;
+        const earthX = Math.cos(earthTheta) * this.earthOrbitRadius;
+        const earthZ = Math.sin(earthTheta) * this.earthOrbitRadius;
+
+        this.earthGroup.position.set(earthX, 0, earthZ);
+
+        // Continuous Earth Self-Rotation on its Y-axis
+        const timeSec = performance.now() * 0.001;
+        this.earthMesh.rotation.y = timeSec * 0.8 + (this.progress * Math.PI * 24);
+
+        // 2. Align Shadow Cone directly away from Stationary Sun (0,0,0)
+        this.shadowGroup.position.set(earthX, 0, earthZ);
+        this.shadowGroup.rotation.y = -earthTheta;
+
+        // 3. Moon Orbiting Earth
+        const moonTheta = (this.progress * 12) * Math.PI * 2;
+        const tiltRad = (this.inclinationDeg * Math.PI) / 180;
+
+        const relMoonX = -Math.cos(moonTheta) * this.moonOrbitRadius;
+        const relMoonZ = Math.sin(moonTheta) * this.moonOrbitRadius;
+        const relMoonY = relMoonZ * Math.sin(tiltRad);
+        const relMoonZTilted = relMoonZ * Math.cos(tiltRad);
+
+        const moonVec = new THREE.Vector3(relMoonX, relMoonY, relMoonZTilted);
+        moonVec.applyAxisAngle(new THREE.Vector3(0, 1, 0), earthTheta);
+
+        this.moonMesh.position.set(
+          earthX + moonVec.x,
+          moonVec.y,
+          earthZ + moonVec.z
+        );
+        this.moonMesh.lookAt(this.earthGroup.position);
+
+        // Update Moon Orbit Ring around Earth
+        this.moonOrbitGroup.position.set(earthX, 0, earthZ);
+        this.moonOrbitGroup.rotation.y = earthTheta;
+
+        // Dynamic Eclipse Calculation
+        let umbraPenetration = 0;
+        
+        const sunToEarth = new THREE.Vector3(earthX, 0, earthZ).normalize();
+        const earthToMoon = new THREE.Vector3().subVectors(this.moonMesh.position, this.earthGroup.position);
+        const alignmentDot = sunToEarth.dot(earthToMoon.clone().normalize());
+
+        if (alignmentDot > 0.9) {
+          const projDist = earthToMoon.dot(sunToEarth);
+          const perpVec = new THREE.Vector3().subVectors(earthToMoon, sunToEarth.clone().multiplyScalar(projDist));
+          const perpDist = perpVec.length();
+
+          const umbraRadiusAtMoon = 4.2;
+          if (perpDist < umbraRadiusAtMoon + this.moonRadius) {
+            const depth = (umbraRadiusAtMoon + this.moonRadius) - perpDist;
+            umbraPenetration = Math.min(100, Math.max(0, (depth / (this.moonRadius * 2)) * 100));
+          }
+        }
+
+        // Color transition based on Umbral penetration
+        const umbralRatio = Math.min(1.0, umbraPenetration / 100);
+        const normalMoonColor = new THREE.Color(0xffffff);
+        const bloodMoonColor = new THREE.Color(0xcc2222);
+
+        const currentMoonColor = normalMoonColor.clone().lerp(bloodMoonColor, umbralRatio);
+        this.moonMat.color.copy(currentMoonColor);
+
+        this.updateHUD(earthTheta, moonTheta, umbraPenetration);
+      }
+
+      updateLabels() {
+        if (!this.showLabels) {
+          this.sunLabelEl.style.opacity = '0';
+          this.earthLabelEl.style.opacity = '0';
+          this.moonLabelEl.style.opacity = '0';
+          return;
+        }
+
+        this.positionLabel(this.sunLabelEl, new THREE.Vector3(0, this.sunRadius + 3.0, 0));
+        this.positionLabel(this.earthLabelEl, new THREE.Vector3().copy(this.earthGroup.position).add(new THREE.Vector3(0, this.earthRadius + 2.5, 0)));
+        this.positionLabel(this.moonLabelEl, new THREE.Vector3().copy(this.moonMesh.position).add(new THREE.Vector3(0, this.moonRadius + 1.8, 0)));
+      }
+
+      positionLabel(element, worldPos) {
+        const projectedPos = worldPos.clone().project(this.camera);
+
+        if (projectedPos.z > 1.0) {
+          element.style.opacity = '0';
+          return;
+        }
+
+        const x = (projectedPos.x * 0.5 + 0.5) * window.innerWidth;
+        const y = (-projectedPos.y * 0.5 + 0.5) * window.innerHeight;
+
+        element.style.transform = `translate(-50%, -100%) translate(${x}px, ${y}px)`;
+        element.style.opacity = '1';
+      }
+
+      updateHUD(earthTheta, moonTheta, umbra) {
+        const earthDeg = ((earthTheta * (180 / Math.PI)) % 360).toFixed(1);
+        const moonDeg = (((moonTheta * (180 / Math.PI)) % 360)).toFixed(1);
+
+        this.timeDisplay.textContent = `Earth: ${earthDeg}° | Moon: ${moonDeg}°`;
+
+        document.getElementById('hud-earth-deg').textContent = `${earthDeg}°`;
+        document.getElementById('hud-orbit-deg').textContent = `${moonDeg}°`;
+        document.getElementById('hud-umbra-penetration').textContent = `${umbra.toFixed(1)}%`;
+        document.getElementById('header-earth-angle').textContent = `${earthDeg}°`;
+        document.getElementById('header-angle').textContent = `${moonDeg}°`;
+
+        let phaseText = "Full Moon";
+        let badgeStyle = "bg-slate-800 text-slate-300 border-slate-700";
+
+        if (umbra > 85) {
+          phaseText = "Total Lunar Eclipse";
+          badgeStyle = "bg-red-950 text-red-400 border-red-800/60";
+        } else if (umbra > 0) {
+          phaseText = "Partial Lunar Eclipse";
+          badgeStyle = "bg-orange-950 text-orange-400 border-orange-800/60";
+        } else {
+          const degNum = parseFloat(moonDeg);
+          if (degNum < 22.5 || degNum >= 337.5) phaseText = "New Moon";
+          else if (degNum < 67.5) phaseText = "Waxing Crescent";
+          else if (degNum < 112.5) phaseText = "First Quarter";
+          else if (degNum < 157.5) phaseText = "Waxing Gibbous";
+          else if (degNum < 202.5) phaseText = "Full Moon";
+          else if (degNum < 247.5) phaseText = "Waning Gibbous";
+          else if (degNum < 292.5) phaseText = "Third Quarter";
+          else phaseText = "Waning Crescent";
+        }
+
+        document.getElementById('header-phase').textContent = phaseText;
+        const hudBadge = document.getElementById('hud-status-badge');
+        hudBadge.textContent = phaseText;
+        hudBadge.className = `px-2 py-0.5 rounded-full text-[10px] font-bold border ${badgeStyle}`;
+      }
+
+      onWindowResize() {
+        this.camera.aspect = window.innerWidth / window.innerHeight;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+
+      animate() {
+        requestAnimationFrame(() => this.animate());
+
+        const now = performance.now();
+        const delta = (now - this.lastTime) / 1000;
+        this.lastTime = now;
+
+        if (this.isPlaying) {
+          this.progress += delta * 0.015 * this.speed;
+          if (this.progress > 1.0) this.progress = 0;
+          this.slider.value = this.progress;
+        }
+
+        this.updatePositions();
+        this.controls.update();
+        this.updateLabels();
+        this.renderer.render(this.scene, this.camera);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      new LunarEclipseSim();
+    });
+  </script>
+</body>
+</html>

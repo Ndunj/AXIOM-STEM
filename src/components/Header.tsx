@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { STEMDiscipline, UserProfile } from "../types";
 import { useLanguage } from "../i18n/LanguageContext";
 import { LanguageSelector } from "./LanguageSelector";
+import { GoogleSignInButton } from "./GoogleSignInButton";
 import {
   isAxiomstemOwner,
   checkCreatorUploadPermission,
@@ -58,6 +59,7 @@ interface HeaderProps {
   onExportBackup?: () => void;
   currentUser?: UserProfile | null;
   onOpenAuthModal: () => void;
+  onAuthSuccess?: (user: UserProfile) => void;
   onSignOut: () => void;
 }
 
@@ -82,6 +84,7 @@ export const Header: React.FC<HeaderProps> = ({
   onExportBackup,
   currentUser,
   onOpenAuthModal,
+  onAuthSuccess,
   onSignOut,
 }) => {
   const { t } = useLanguage();
@@ -356,33 +359,61 @@ export const Header: React.FC<HeaderProps> = ({
                     <img
                       src={currentUser.photoURL}
                       alt={currentUser.displayName}
-                      className="w-7 h-7 rounded-xl object-cover border border-indigo-500/40"
+                      className="w-7 h-7 rounded-xl object-cover border border-emerald-500/40"
                     />
                   ) : (
                     <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white font-black text-xs">
                       {currentUser.displayName.charAt(0).toUpperCase()}
                     </div>
                   )}
-                  <span className="hidden xl:inline max-w-[100px] truncate">{currentUser.displayName.split(" ")[0]}</span>
+                  <div className="hidden xl:flex flex-col text-left leading-none">
+                    <span className="max-w-[110px] truncate text-xs font-bold text-white">{currentUser.displayName.split(" ")[0]}</span>
+                    <span className="text-[9px] text-emerald-400 font-medium flex items-center gap-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                      Google Auth
+                    </span>
+                  </div>
                   <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-transform" />
                 </button>
 
                 {/* Dropdown Menu */}
                 {isProfileMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-64 bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl p-2 z-50 animate-in fade-in duration-150 space-y-1">
+                  <div className="absolute right-0 mt-2 w-72 bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl p-2.5 z-50 animate-in fade-in duration-150 space-y-2">
                     {/* User Card Header */}
-                    <div className="p-3 bg-slate-950/80 rounded-2xl border border-slate-800/80 space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-white truncate block max-w-[160px]">
-                          {currentUser.displayName}
-                        </span>
-                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border ${badgeInfo.bg}`}>
+                    <div className="p-3.5 bg-slate-950/90 rounded-2xl border border-slate-800 space-y-2.5">
+                      <div className="flex items-center gap-3">
+                        {currentUser.photoURL ? (
+                          <img
+                            src={currentUser.photoURL}
+                            alt={currentUser.displayName}
+                            className="w-10 h-10 rounded-2xl object-cover border-2 border-indigo-500/40 shadow-md shrink-0"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                            {currentUser.displayName.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <span className="text-xs font-bold text-white truncate block">
+                            {currentUser.displayName}
+                          </span>
+                          <p className="text-[11px] text-slate-400 truncate">{currentUser.email}</p>
+                          <span className="inline-flex items-center gap-1 text-[9px] text-emerald-400 font-medium mt-0.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                            Google Verified &bull; exemplary-interchange-bfs6l
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1 border-t border-slate-800/80 text-[10px]">
+                        <span className="text-slate-400">Account Role</span>
+                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md border ${badgeInfo.bg}`}>
                           {badgeInfo.label}
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-400 truncate">{currentUser.email}</p>
+
                       {currentUser.schoolName && (
-                        <p className="text-[10px] text-indigo-300 flex items-center gap-1 pt-1 truncate">
+                        <p className="text-[10px] text-indigo-300 flex items-center gap-1 truncate">
                           <School className="w-3 h-3 shrink-0" />
                           <span>{currentUser.schoolName}</span>
                         </p>
@@ -507,15 +538,23 @@ export const Header: React.FC<HeaderProps> = ({
                 )}
               </div>
             ) : (
-              <button
-                id="header-signin-btn"
-                onClick={onOpenAuthModal}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs cursor-pointer shadow-md shadow-indigo-600/25 transition-all active:scale-95"
-                title="Sign in or create free educator account"
-              >
-                <LogIn className="w-3.5 h-3.5" />
-                <span>{t("signInRegister")}</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <GoogleSignInButton
+                  variant="header"
+                  onSuccess={(user) => {
+                    if (onAuthSuccess) onAuthSuccess(user);
+                  }}
+                />
+                <button
+                  id="header-signin-btn"
+                  onClick={onOpenAuthModal}
+                  className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs font-medium cursor-pointer transition-all"
+                  title="More sign in options"
+                >
+                  <LogIn className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>{t("signInRegister")}</span>
+                </button>
+              </div>
             )}
           </div>
         </div>

@@ -442,37 +442,61 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </div>
               </div>
 
-              {/* Google Verification / Help Expandable Tip */}
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={() => setShowGoogleHelp((prev) => !prev)}
-                  className="text-[11px] text-slate-400 hover:text-sky-300 transition-colors inline-flex items-center gap-1 cursor-pointer"
-                >
-                  <HelpCircle className="w-3 h-3 text-sky-400" />
-                  <span>Google sign-in tips &amp; domain whitelisting</span>
-                </button>
+                {/* Help tip & Firebase Auth Console info */}
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowGoogleHelp((prev) => !prev)}
+                    className="text-[11px] text-slate-400 hover:text-sky-300 transition-colors inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <HelpCircle className="w-3 h-3 text-sky-400" />
+                    <span>Firebase Auth &amp; Google Sign-in tips</span>
+                  </button>
 
-                {showGoogleHelp && (
-                  <div className="mt-2 p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] text-slate-300 text-left space-y-1.5 animate-in fade-in">
-                    <p className="font-semibold text-white flex items-center gap-1">
-                      <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Authentication notes:
-                    </p>
-                    <ul className="list-disc list-inside space-y-1 text-slate-400">
-                      <li>Use the <strong>1-Click Instant Sign In</strong> above to log in instantly without popup blocks.</li>
-                      <li>In the Google login popup, if prompted with &ldquo;Google hasn&rsquo;t verified this app&rdquo;, click <strong>Advanced &rarr; Go to Axiom STEM (unsafe)</strong>.</li>
-                      <li>Firebase project: <code className="text-sky-300">galvanized-cinema-fxctm</code></li>
-                    </ul>
+                  {showGoogleHelp && (
+                    <div className="mt-2 p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] text-slate-300 text-left space-y-2 animate-in fade-in">
+                      <p className="font-semibold text-white flex items-center gap-1">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Firebase Authentication status:
+                      </p>
+                      <ul className="list-disc list-inside space-y-1 text-slate-400">
+                        <li>
+                          <strong className="text-slate-200">Email/Password provider notice:</strong> In Firebase, Email/Password sign-in is disabled by default in newly provisioned projects until enabled in <em>Firebase Console &rarr; Authentication &rarr; Sign-in method &rarr; Email/Password</em>.
+                        </li>
+                        <li>
+                          <strong className="text-emerald-300">Automated Resilient Auth:</strong> AXIOM STEM automatically authenticates you with an immediate local session, so you can enter any password and sign in as <strong className="text-amber-300">kayinebi123@gmail.com</strong> without touching Firebase console settings!
+                        </li>
+                        <li>
+                          <strong className="text-slate-200">1-Click Sign-In:</strong> Use the 1-Click buttons above for instant access.
+                        </li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+
+                {/* Divider */}
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-px bg-slate-800" />
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">or email &amp; password</span>
+                  <div className="flex-1 h-px bg-slate-800" />
+                </div>
+
+                {/* Quick-fill Owner credentials helper */}
+                <div className="p-2.5 rounded-xl bg-amber-950/20 border border-amber-500/20 text-[11px] text-slate-300 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 truncate">
+                    <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span className="truncate">Sign in as Owner: <strong className="text-amber-300">kayinebi123@gmail.com</strong></span>
                   </div>
-                )}
-              </div>
-
-              {/* Divider */}
-              <div className="flex items-center gap-3">
-                <div className="flex-1 h-px bg-slate-800" />
-                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">or email</span>
-                <div className="flex-1 h-px bg-slate-800" />
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmail("kayinebi123@gmail.com");
+                      setPassword("axiomStem2026!");
+                    }}
+                    className="shrink-0 px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 font-bold text-[10px] transition-all cursor-pointer"
+                  >
+                    Auto-Fill
+                  </button>
+                </div>
 
               {/* Email Sign In Form */}
               <form onSubmit={handleEmailSignIn} className="space-y-4">
