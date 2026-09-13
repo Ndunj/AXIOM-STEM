@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-900 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Linear Algebra & Matrix Transformation Lab</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Three.js & OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <!-- MathJax for rendering LaTeX -->
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+      svg: { scale: 0.95 }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    
+    .canvas-container { position: relative; width: 100%; height: 100%; min-height: 400px; }
+    .canvas-container canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    
+    .matrix-input {
+      @apply w-full bg-slate-950 border border-slate-700 rounded text-center text-emerald-400 font-mono text-sm py-1.5 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors;
+    }
+  </style>
+</head>
+
+<body class="h-full flex flex-col font-sans overflow-hidden antialiased">
+
+  <!-- HEADER BAR -->
+  <header class="bg-slate-950 border-b border-slate-800 px-4 py-3 flex flex-wrap items-center justify-between gap-4 shrink-0 shadow-lg z-10">
+    <div class="flex items-center gap-3">
+      <div class="p-2 bg-emerald-500/10 rounded-lg border border-emerald-500/20 text-emerald-400">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold tracking-wide text-slate-100 flex items-center gap-2">
+          Linear Algebra Transformation Lab
+          <span class="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30 font-normal">Interactive Studio</span>
+        </h1>
+        <p class="text-xs text-slate-400">Higher-Education Pedagogy & Visual Geometry Engine</p>
+      </div>
+    </div>
+
+    <!-- Mode Controls & Actions -->
+    <div class="flex items-center gap-3">
+      <!-- Mode Toggle -->
+      <div class="bg-slate-900 p-1 rounded-lg border border-slate-800 flex text-xs font-medium">
+        <button id="btn-mode-2d" onclick="setDimensionMode('2d')" class="px-3 py-1.5 rounded-md transition-all bg-emerald-600 text-white shadow-sm">2D ($2 \times 2$)</button>
+        <button id="btn-mode-3d" onclick="setDimensionMode('3d')" class="px-3 py-1.5 rounded-md transition-all text-slate-400 hover:text-slate-200">3D ($3 \times 3$)</button>
+      </div>
+
+      <!-- Preset Selector -->
+      <select id="preset-selector" onchange="applyPreset(this.value)" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
+        <option value="" disabled selected>Select Transformation Preset...</option>
+        <option value="identity">Identity Matrix (I)</option>
+        <option value="scale">Uniform Scale (2x)</option>
+        <option value="shear">Horizontal Shear</option>
+        <option value="rotation">45° Rotation</option>
+        <option value="reflection">Reflection (Y-axis)</option>
+        <option value="singular">Singular / Projection (det = 0)</option>
+      </select>
+
+      <button onclick="toggleModal(true)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition flex items-center gap-1.5">
+        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Theory Notes
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN THREE-COLUMN WORKSPACE -->
+  <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
+    
+    <!-- LEFT PANEL: Controls & Inputs -->
+    <div class="lg:col-span-3 bg-slate-950 border-r border-slate-800 p-4 overflow-y-auto flex flex-col gap-5">
+      
+      <!-- Matrix Inputs -->
+      <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 shadow-sm">
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Transformation Matrix $A$</h2>
+          <button onclick="resetMatrix()" class="text-xs text-emerald-400 hover:text-emerald-300 underline">Reset</button>
+        </div>
+        
+        <!-- 2D Input Grid -->
+        <div id="grid-inputs-2d" class="grid grid-cols-2 gap-2 max-w-[200px] mx-auto">
+          <input type="number" step="0.1" id="m00" class="matrix-input" value="1.0" oninput="onMatrixInputChange()">
+          <input type="number" step="0.1" id="m01" class="matrix-input" value="0.5" oninput="onMatrixInputChange()">
+          <input type="number" step="0.1" id="m10" class="matrix-input" value="0.0" oninput="onMatrixInputChange()">
+          <input type="number" step="0.1" id="m11" class="matrix-input" value="1.0" oninput="onMatrixInputChange()">
+        </div>
+
+        <!-- 3D Input Grid -->
+        <div id="grid-inputs-3d" class="grid grid-cols-3 gap-2 hidden">
+          <input type="number" step="0.1" id="m3_00" class="matrix-input" value="1.0" oninput="onMatrixInputChange()">
+          <input type="number" step="0.1" id="m3_01" class="matrix-input" value="0.0" oninput="onMatrixInputChange()">
+          <input type="number" step="0.1" id="m3_02" class="matrix-input" value="0.0" oninput="onMatrixInputChange()">
+          <input type="number" step="0.1" id="m3_10" class="matrix-input" value="0.0" oninput="onMatrixInputChange()">
+          <input type="number" step="0.1" id="m3_11" class="matrix-input" value="1.0" oninput="onMatrixInputChange()">
+          <input type="number" step="0.1" id="m3_12" class="matrix-input" value="0.0" oninput="onMatrixInputChange()">
+          <input type="number" step="0.1" id="m3_20" class="matrix-input" value="0.0" oninput="onMatrixInputChange()">
+          <input type="number" step="0.1" id="m3_21" class="matrix-input" value="0.0" oninput="onMatrixInputChange()">
+          <input type="number" step="0.1" id="m3_22" class="matrix-input" value="1.0" oninput="onMatrixInputChange()">
+        </div>
+      </div>
+
+      <!-- Quick Parametric Generators -->
+      <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 shadow-sm space-y-3">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Parametric Synthesis</h2>
+        
+        <div>
+          <div class="flex justify-between text-xs text-slate-300 mb-1">
+            <span>Rotation Angle ($\theta$)</span>
+            <span id="val-rot" class="font-mono text-emerald-400">0°</span>
+          </div>
+          <input type="range" id="slider-rot" min="-180" max="180" value="0" class="w-full accent-emerald-500 bg-slate-800 rounded h-1.5" oninput="applyRotationSlider(this.value)">
+        </div>
+
+        <div>
+          <div class="flex justify-between text-xs text-slate-300 mb-1">
+            <span>Scale X / Y</span>
+            <span id="val-scale" class="font-mono text-emerald-400">1.0</span>
+          </div>
+          <input type="range" id="slider-scale" min="0.1" max="3" step="0.1" value="1.0" class="w-full accent-emerald-500 bg-slate-800 rounded h-1.5" oninput="applyScaleSlider(this.value)">
+        </div>
+      </div>
+
+      <!-- Vector B (Linear System AX = B) -->
+      <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 shadow-sm space-y-3">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Target Vector $\mathbf{B}$ ($A\mathbf{X} = \mathbf{B}$)</h2>
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="text-[10px] text-slate-400">B_x</label>
+            <input type="number" step="0.5" id="bx" class="matrix-input" value="2.0" oninput="onVectorBChange()">
+          </div>
+          <div>
+            <label class="text-[10px] text-slate-400">B_y</label>
+            <input type="number" step="0.5" id="by" class="matrix-input" value="1.0" oninput="onVectorBChange()">
+          </div>
+          <div id="bz-container" class="hidden">
+            <label class="text-[10px] text-slate-400">B_z</label>
+            <input type="number" step="0.5" id="bz" class="matrix-input" value="1.0" oninput="onVectorBChange()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Display Toggles -->
+      <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 shadow-sm space-y-2">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Visual Overlay Toggles</h2>
+        
+        <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+          <input type="checkbox" id="toggle-grid" checked onchange="render()" class="accent-emerald-500 rounded">
+          <span>Show Deformed Grid Mesh</span>
+        </label>
+        
+        <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+          <input type="checkbox" id="toggle-area" checked onchange="render()" class="accent-emerald-500 rounded">
+          <span>Highlight Unit Area / Volume</span>
+        </label>
+
+        <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+          <input type="checkbox" id="toggle-eigen" checked onchange="render()" class="accent-emerald-500 rounded">
+          <span>Show Invariant Eigen-Lines</span>
+        </label>
+
+        <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+          <input type="checkbox" id="toggle-vectorb" checked onchange="render()" class="accent-emerald-500 rounded">
+          <span>Show Linear System Vector $\mathbf{B}$</span>
+        </label>
+
+        <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+          <input type="checkbox" id="toggle-labels" checked onchange="render()" class="accent-emerald-500 rounded">
+          <span>Show Vertex & Face Labels</span>
+        </label>
+      </div>
+
+    </div>
+
+    <!-- CENTER PANEL: Interactive Canvas / 3D Scene -->
+    <div class="lg:col-span-6 bg-slate-900 flex flex-col relative border-r border-slate-800">
+      
+      <!-- Singularity Alert Banner -->
+      <div id="singularity-banner" class="hidden absolute top-4 left-4 right-4 z-20 bg-rose-500/90 text-white p-3 rounded-lg backdrop-blur shadow-xl border border-rose-400 flex items-center justify-between">
+        <div class="flex items-center gap-2 text-xs font-bold">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          <span>SINGULAR MATRIX ($\det(A) = 0$): Dimensional Collapse Detected!</span>
+        </div>
+        <span class="text-[10px] bg-black/20 px-2 py-1 rounded">Non-Invertible</span>
+      </div>
+
+      <!-- Viewport Canvas Container -->
+      <div id="canvas-container" class="canvas-container flex-1">
+        <!-- 2D Canvas -->
+        <canvas id="canvas2d"></canvas>
+        <!-- 3D Canvas (Three.js will inject here) -->
+        <div id="canvas3d" class="w-full h-full hidden"></div>
+      </div>
+
+      <!-- Canvas Footer / HUD -->
+      <div class="bg-slate-950/90 border-t border-slate-800 px-4 py-2 flex items-center justify-between text-xs font-mono text-slate-400 z-10">
+        <div class="flex gap-4">
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span> Vector $\mathbf{i}$ (1,0,0)</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> Vector $\mathbf{j}$ (0,1,0)</span>
+          <span id="hud-k-label" class="hidden items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-sky-500 inline-block"></span> Vector $\mathbf{k}$ (0,0,1)</span>
+        </div>
+        <div id="orientation-indicator" class="text-emerald-400 font-semibold">Orientation: Preserved (+1)</div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: Step-by-Step Computational Math Engine -->
+    <div class="lg:col-span-3 bg-slate-950 p-4 overflow-y-auto flex flex-col gap-4 text-xs">
+      
+      <!-- Determinant Panel -->
+      <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 shadow-sm space-y-2">
+        <div class="flex justify-between items-center">
+          <h3 class="font-bold text-slate-300 uppercase tracking-wider text-[11px]">Determinant Calculation</h3>
+          <span id="det-value" class="font-mono text-emerald-400 font-bold text-sm">det(A) = 1.00</span>
+        </div>
+        <div id="math-det-expansion" class="bg-slate-950 p-2.5 rounded border border-slate-800/80 font-mono text-slate-300 overflow-x-auto text-[11px]">
+          <!-- MathJax Math injected here -->
+        </div>
+        <p id="det-geo-meaning" class="text-[11px] text-slate-400 italic">Area scale factor = 1.00x original area.</p>
+      </div>
+
+      <!-- Eigenvalues & Eigenvectors Panel -->
+      <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 shadow-sm space-y-2">
+        <h3 class="font-bold text-slate-300 uppercase tracking-wider text-[11px]">Eigenspace Analysis</h3>
+        <div id="math-eigen-breakdown" class="bg-slate-950 p-2.5 rounded border border-slate-800/80 font-mono text-slate-300 overflow-x-auto text-[11px]">
+          <!-- Eigen calculations injected here -->
+        </div>
+      </div>
+
+      <!-- Inverse Matrix & Trace -->
+      <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 shadow-sm space-y-2">
+        <h3 class="font-bold text-slate-300 uppercase tracking-wider text-[11px]">Matrix Inversion ($A^{-1}$) & Trace</h3>
+        <div id="math-inverse-breakdown" class="bg-slate-950 p-2.5 rounded border border-slate-800/80 font-mono text-slate-300 overflow-x-auto text-[11px]">
+          <!-- Inverse Matrix injected here -->
+        </div>
+      </div>
+
+      <!-- Linear Systems (AX = B) / Cramer's Rule -->
+      <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 shadow-sm space-y-2">
+        <h3 class="font-bold text-slate-300 uppercase tracking-wider text-[11px]">System Solution ($A\mathbf{X}=\mathbf{B}$) & Cramer's Rule</h3>
+        <div id="math-cramer-breakdown" class="bg-slate-950 p-2.5 rounded border border-slate-800/80 font-mono text-slate-300 overflow-x-auto text-[11px]">
+          <!-- Cramer's rule steps injected here -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- THEORY PEDAGOGY MODAL POPUP -->
+  <div id="theory-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-700 rounded-xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
+        <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
+          <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+          Pedagogical Guide: Matrix Geometry & Determinants
+        </h2>
+        <button onclick="toggleModal(false)" class="text-slate-400 hover:text-white text-lg">&times;</button>
+      </div>
+      <div class="p-6 overflow-y-auto space-y-4 text-xs text-slate-300 leading-relaxed">
+        
+        <div>
+          <h3 class="text-sm font-bold text-emerald-400 mb-1">1. The Matrix as a Space Transformation</h3>
+          <p>A matrix does not merely hold numbers; it defines a continuous linear transformation of space. The columns of matrix $A$ represent where the standard unit basis vectors $\mathbf{i}=(1,0)$ and $\mathbf{j}=(0,1)$ land after transformation.</p>
+        </div>
+
+        <div>
+          <h3 class="text-sm font-bold text-emerald-400 mb-1">2. Geometric Meaning of the Determinant</h3>
+          <p>The determinant $\det(A)$ measures the scaling factor of areas (in 2D) or volumes (in 3D) caused by the transformation.</p>
+          <ul class="list-disc pl-5 space-y-1 mt-1">
+            <li><strong>$\det(A) > 0$:</strong> Preserves spatial orientation. Unit square area scales by $\det(A)$.</li>
+            <li><strong>$\det(A) < 0$:</strong> Reverses spatial orientation (flips space like a reflection).</li>
+            <li><strong>$\det(A) = 0$:</strong> Dimensional collapse! Space collapses into a line or a single point. Matrix is non-invertible.</li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="text-sm font-bold text-emerald-400 mb-1">3. Eigenvalues & Invariant Axes</h3>
+          <p>Eigenvectors are directions in space that do <em>not</em> change direction during matrix transformation—they are only stretched or shrunk by a factor equal to their corresponding eigenvalue $\lambda$.</p>
+          <p class="font-mono mt-1 text-slate-200">$A\mathbf{v} = \lambda\mathbf{v}$</p>
+        </div>
+
+        <div>
+          <h3 class="text-sm font-bold text-emerald-400 mb-1">4. Cramer's Rule Geometry</h3>
+          <p>Cramer's Rule solves $A\mathbf{X} = \mathbf{B}$ by taking area ratios. $x$ is the ratio of the determinant of $A$ with column 1 replaced by $\mathbf{B}$, over $\det(A)$.</p>
+        </div>
+
+      </div>
+      <div class="p-3 bg-slate-950 border-t border-slate-800 flex justify-end">
+        <button onclick="toggleModal(false)" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-semibold">Got it!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC ENGINE -->
+  <script>
+    // Global Application State
+    let currentMode = '2d'; // '2d' or '3d'
+    let matrix2D = [[1, 0.5], [0, 1]];
+    let matrix3D = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+    let vectorB = [2, 1, 1];
+
+    // 2D Canvas Contexts & World Bounds
+    const canvas2D = document.getElementById('canvas2d');
+    const ctx2D = canvas2D.getContext('2d');
+    const gridBounds = 8; // Coordinate bounds [-8, 8]
+
+    // 3D Three.js Global Objects
+    let scene3D, camera3D, renderer3D, controls3D;
+    let gridHelper3D, transformGroup3D;
+
+    // --- INITIALIZATION ---
+    window.addEventListener('DOMContentLoaded', () => {
+      init2DCanvas();
+      init3DScene();
+      resizeCanvases();
+      window.addEventListener('resize', resizeCanvases);
+      updateApp();
+    });
+
+    function setDimensionMode(mode) {
+      currentMode = mode;
+      document.getElementById('btn-mode-2d').className = mode === '2d' 
+        ? 'px-3 py-1.5 rounded-md transition-all bg-emerald-600 text-white shadow-sm'
+        : 'px-3 py-1.5 rounded-md transition-all text-slate-400 hover:text-slate-200';
+      document.getElementById('btn-mode-3d').className = mode === '3d' 
+        ? 'px-3 py-1.5 rounded-md transition-all bg-emerald-600 text-white shadow-sm'
+        : 'px-3 py-1.5 rounded-md transition-all text-slate-400 hover:text-slate-200';
+
+      document.getElementById('grid-inputs-2d').classList.toggle('hidden', mode !== '2d');
+      document.getElementById('grid-inputs-3d').classList.toggle('hidden', mode !== '3d');
+      document.getElementById('canvas2d').classList.toggle('hidden', mode !== '2d');
+      document.getElementById('canvas3d').classList.toggle('hidden', mode !== '3d');
+      document.getElementById('bz-container').classList.toggle('hidden', mode !== '3d');
+      document.getElementById('hud-k-label').classList.toggle('hidden', mode !== '3d');
+      document.getElementById('hud-k-label').classList.toggle('flex', mode === '3d');
+
+      syncMatrixInputs3D();
+      updateApp();
+    }
+
+    // --- 2D CANVAS INITIALIZATION & RENDER ---
+    function init2DCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas2D.getBoundingClientRect();
+      canvas2D.width = rect.width * dpr;
+      canvas2D.height = rect.height * dpr;
+      ctx2D.scale(dpr, dpr);
+    }
+
+    function resizeCanvases() {
+      const container = document.getElementById('canvas-container');
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+
+      const dpr = window.devicePixelRatio || 1;
+      canvas2D.width = w * dpr;
+      canvas2D.height = h * dpr;
+      ctx2D.resetTransform();
+      ctx2D.scale(dpr, dpr);
+
+      if (renderer3D && camera3D) {
+        camera3D.aspect = w / h;
+        camera3D.updateProjectionMatrix();
+        renderer3D.setSize(w, h);
+      }
+
+      render();
+    }
+
+    function worldToScreen2D(x, y, width, height) {
+      const scale = Math.min(width, height) / (gridBounds * 2);
+      const cx = width / 2;
+      const cy = height / 2;
+      return {
+        x: cx + x * scale,
+        y: cy - y * scale
+      };
+    }
+
+    function render2D() {
+      const width = canvas2D.clientWidth;
+      const height = canvas2D.clientHeight;
+      ctx2D.clearRect(0, 0, width, height);
+
+      const m = matrix2D;
+
+      // Background Cartesian Grid
+      ctx2D.strokeStyle = '#1e293b';
+      ctx2D.lineWidth = 1;
+      for (let i = -gridBounds; i <= gridBounds; i++) {
+        let p1 = worldToScreen2D(i, -gridBounds, width, height);
+        let p2 = worldToScreen2D(i, gridBounds, width, height);
+        ctx2D.beginPath(); ctx2D.moveTo(p1.x, p1.y); ctx2D.lineTo(p2.x, p2.y); ctx2D.stroke();
+
+        p1 = worldToScreen2D(-gridBounds, i, width, height);
+        p2 = worldToScreen2D(gridBounds, i, width, height);
+        ctx2D.beginPath(); ctx2D.moveTo(p1.x, p1.y); ctx2D.lineTo(p2.x, p2.y); ctx2D.stroke();
+      }
+
+      // Transformed Grid Mesh
+      if (document.getElementById('toggle-grid').checked) {
+        ctx2D.strokeStyle = 'rgba(51, 65, 85, 0.6)';
+        ctx2D.lineWidth = 1;
+        for (let i = -gridBounds; i <= gridBounds; i++) {
+          let vStart = transformVector2D([i, -gridBounds], m);
+          let vEnd = transformVector2D([i, gridBounds], m);
+          let p1 = worldToScreen2D(vStart[0], vStart[1], width, height);
+          let p2 = worldToScreen2D(vEnd[0], vEnd[1], width, height);
+          ctx2D.beginPath(); ctx2D.moveTo(p1.x, p1.y); ctx2D.lineTo(p2.x, p2.y); ctx2D.stroke();
+
+          let hStart = transformVector2D([-gridBounds, i], m);
+          let hEnd = transformVector2D([gridBounds, i], m);
+          p1 = worldToScreen2D(hStart[0], hStart[1], width, height);
+          p2 = worldToScreen2D(hEnd[0], hEnd[1], width, height);
+          ctx2D.beginPath(); ctx2D.moveTo(p1.x, p1.y); ctx2D.lineTo(p2.x, p2.y); ctx2D.stroke();
+        }
+      }
+
+      // Highlighted Unit Polygon
+      if (document.getElementById('toggle-area').checked) {
+        const origin = worldToScreen2D(0, 0, width, height);
+        const iTrans = worldToScreen2D(m[0][0], m[1][0], width, height);
+        const jTrans = worldToScreen2D(m[0][1], m[1][1], width, height);
+        const corner = worldToScreen2D(m[0][0] + m[0][1], m[1][0] + m[1][1], width, height);
+
+        const detVal = computeDet2D(m);
+        ctx2D.fillStyle = detVal < 0 ? 'rgba(244, 63, 94, 0.25)' : 'rgba(16, 185, 129, 0.25)';
+        ctx2D.beginPath();
+        ctx2D.moveTo(origin.x, origin.y);
+        ctx2D.lineTo(iTrans.x, iTrans.y);
+        ctx2D.lineTo(corner.x, corner.y);
+        ctx2D.lineTo(jTrans.x, jTrans.y);
+        ctx2D.closePath();
+        ctx2D.fill();
+        ctx2D.strokeStyle = detVal < 0 ? '#f43f5e' : '#10b981';
+        ctx2D.lineWidth = 1.5;
+        ctx2D.stroke();
+      }
+
+      // Main Axes
+      const origin = worldToScreen2D(0, 0, width, height);
+      ctx2D.strokeStyle = '#64748b';
+      ctx2D.lineWidth = 2;
+      ctx2D.beginPath();
+      ctx2D.moveTo(0, origin.y); ctx2D.lineTo(width, origin.y);
+      ctx2D.moveTo(origin.x, 0); ctx2D.lineTo(origin.x, height);
+      ctx2D.stroke();
+
+      // Transformed Basis Vectors
+      const iVec = worldToScreen2D(m[0][0], m[1][0], width, height);
+      drawVector2D(ctx2D, origin, iVec, '#ef4444', 'i\'');
+
+      const jVec = worldToScreen2D(m[0][1], m[1][1], width, height);
+      drawVector2D(ctx2D, origin, jVec, '#10b981', 'j\'');
+
+      if (document.getElementById('toggle-eigen').checked) {
+        drawEigenlines2D(ctx2D, width, height);
+      }
+
+      if (document.getElementById('toggle-vectorb').checked) {
+        const bVec = worldToScreen2D(vectorB[0], vectorB[1], width, height);
+        drawVector2D(ctx2D, origin, bVec, '#f59e0b', 'B');
+      }
+    }
+
+    function drawVector2D(ctx, from, to, color, label) {
+      const headlen = 10;
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const angle = Math.atan2(dy, dx);
+
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 3;
+
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(to.x, to.y);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(to.x, to.y);
+      ctx.lineTo(to.x - headlen * Math.cos(angle - Math.PI / 6), to.y - headlen * Math.sin(angle - Math.PI / 6));
+      ctx.lineTo(to.x - headlen * Math.cos(angle + Math.PI / 6), to.y - headlen * Math.sin(angle + Math.PI / 6));
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.font = 'bold 12px monospace';
+      ctx.fillText(label, to.x + 8, to.y - 8);
+    }
+
+    function drawEigenlines2D(ctx, width, height) {
+      const eigens = computeEigen2D(matrix2D);
+      if (!eigens.hasReal) return;
+
+      eigens.vectors.forEach((v, idx) => {
+        if (v[0] === 0 && v[1] === 0) return;
+        
+        const p1 = worldToScreen2D(v[0] * 10, v[1] * 10, width, height);
+        const p2 = worldToScreen2D(-v[0] * 10, -v[1] * 10, width, height);
+
+        ctx.strokeStyle = idx === 0 ? 'rgba(168, 85, 247, 0.8)' : 'rgba(6, 182, 212, 0.8)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      });
+    }
+
+    // --- 3D THREE.JS SCENE INITIALIZATION & RENDER ---
+    function init3DScene() {
+      const container = document.getElementById('canvas3d');
+      scene3D = new THREE.Scene();
+      scene3D.background = new THREE.Color(0x0f172a);
+
+      camera3D = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+      camera3D.position.set(5, 4, 7);
+
+      renderer3D = new THREE.WebGLRenderer({ antialias: true });
+      renderer3D.setSize(container.clientWidth, container.clientHeight);
+      renderer3D.setPixelRatio(window.devicePixelRatio);
+      container.appendChild(renderer3D.domElement);
+
+      controls3D = new THREE.OrbitControls(camera3D, renderer3D.domElement);
+      controls3D.enableDamping = true;
+      controls3D.dampingFactor = 0.05;
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+      scene3D.add(ambientLight);
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      dirLight.position.set(10, 20, 15);
+      scene3D.add(dirLight);
+
+      gridHelper3D = new THREE.GridHelper(10, 10, 0x334155, 0x1e293b);
+      scene3D.add(gridHelper3D);
+
+      transformGroup3D = new THREE.Group();
+      scene3D.add(transformGroup3D);
+
+      animate3D();
+    }
+
+    function animate3D() {
+      requestAnimationFrame(animate3D);
+      if (currentMode === '3d') {
+        controls3D.update();
+        renderer3D.render(scene3D, camera3D);
+      }
+    }
+
+    // Helper: Create Text Sprite Labels in 3D Space
+    function createTextSprite(text, colorStr = '#ffffff', fontSize = 28) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = colorStr;
+      ctx.font = `Bold ${fontSize}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, 128, 64);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
+      const sprite = new THREE.Sprite(spriteMaterial);
+      sprite.scale.set(1.5, 0.75, 1);
+      return sprite;
+    }
+
+    function render3D() {
+      if (!transformGroup3D) return;
+      
+      while (transformGroup3D.children.length > 0) {
+        const obj = transformGroup3D.children[0];
+        transformGroup3D.remove(obj);
+      }
+
+      const m = matrix3D;
+
+      const mat4 = new THREE.Matrix4();
+      mat4.set(
+        m[0][0], m[0][1], m[0][2], 0,
+        m[1][0], m[1][1], m[1][2], 0,
+        m[2][0], m[2][1], m[2][2], 0,
+        0, 0, 0, 1
+      );
+
+      const detVal = computeDet3D(m);
+      const showLabels = document.getElementById('toggle-labels').checked;
+
+      if (document.getElementById('toggle-area').checked) {
+        const geom = new THREE.BoxGeometry(1, 1, 1);
+        geom.translate(0.5, 0.5, 0.5);
+        
+        const mat = new THREE.MeshPhongMaterial({
+          color: detVal < 0 ? 0xf43f5e : 0x10b981,
+          transparent: true,
+          opacity: 0.35,
+          wireframe: false,
+          side: THREE.DoubleSide
+        });
+        
+        const cube = new THREE.Mesh(geom, mat);
+        cube.applyMatrix4(mat4);
+        transformGroup3D.add(cube);
+
+        const edgesGeom = new THREE.EdgesGeometry(geom);
+        const edgesMat = new THREE.LineBasicMaterial({ color: detVal < 0 ? 0xf43f5e : 0x10b981, linewidth: 2 });
+        const wireframe = new THREE.LineSegments(edgesGeom, edgesMat);
+        wireframe.applyMatrix4(mat4);
+        transformGroup3D.add(wireframe);
+
+        // Center Parallelpiped Label
+        if (showLabels) {
+          const centerPos = new THREE.Vector3(0.5, 0.5, 0.5).applyMatrix4(mat4);
+          const volumeText = Math.abs(detVal).toFixed(2);
+          const pLabel = createTextSprite(`Parallelepiped (Vol = ${volumeText})`, '#38bdf8', 22);
+          pLabel.position.copy(centerPos);
+          transformGroup3D.add(pLabel);
+        }
+      }
+
+      // Transformed Basis Vectors
+      const origin3D = new THREE.Vector3(0, 0, 0);
+      const iEnd = new THREE.Vector3(m[0][0], m[1][0], m[2][0]);
+      const jEnd = new THREE.Vector3(m[0][1], m[1][1], m[2][1]);
+      const kEnd = new THREE.Vector3(m[0][2], m[1][2], m[2][2]);
+
+      if (iEnd.length() > 0.001) transformGroup3D.add(new THREE.ArrowHelper(iEnd.clone().normalize(), origin3D, iEnd.length(), 0xef4444, 0.2, 0.1));
+      if (jEnd.length() > 0.001) transformGroup3D.add(new THREE.ArrowHelper(jEnd.clone().normalize(), origin3D, jEnd.length(), 0x10b981, 0.2, 0.1));
+      if (kEnd.length() > 0.001) transformGroup3D.add(new THREE.ArrowHelper(kEnd.clone().normalize(), origin3D, kEnd.length(), 0x06b6d4, 0.2, 0.1));
+
+      // Vector Labels
+      if (showLabels) {
+        if (iEnd.length() > 0.001) {
+          const lblI = createTextSprite("i'", "#ef4444", 32);
+          lblI.position.copy(iEnd).add(new THREE.Vector3(0.1, 0.1, 0.1));
+          transformGroup3D.add(lblI);
+        }
+        if (jEnd.length() > 0.001) {
+          const lblJ = createTextSprite("j'", "#10b981", 32);
+          lblJ.position.copy(jEnd).add(new THREE.Vector3(0.1, 0.1, 0.1));
+          transformGroup3D.add(lblJ);
+        }
+        if (kEnd.length() > 0.001) {
+          const lblK = createTextSprite("k'", "#06b6d4", 32);
+          lblK.position.copy(kEnd).add(new THREE.Vector3(0.1, 0.1, 0.1));
+          transformGroup3D.add(lblK);
+        }
+      }
+
+      // Target Vector B
+      if (document.getElementById('toggle-vectorb').checked) {
+        const bVec = new THREE.Vector3(vectorB[0], vectorB[1], vectorB[2]);
+        if (bVec.length() > 0.001) {
+          transformGroup3D.add(new THREE.ArrowHelper(bVec.clone().normalize(), origin3D, bVec.length(), 0xf59e0b, 0.25, 0.12));
+          if (showLabels) {
+            const lblB = createTextSprite("B", "#f59e0b", 30);
+            lblB.position.copy(bVec).add(new THREE.Vector3(0.1, 0.1, 0.1));
+            transformGroup3D.add(lblB);
+          }
+        }
+      }
+    }
+
+    // --- LINEAR ALGEBRA COMPUTATIONAL ENGINE ---
+
+    function transformVector2D(v, m) {
+      return [
+        m[0][0] * v[0] + m[0][1] * v[1],
+        m[1][0] * v[0] + m[1][1] * v[1]
+      ];
+    }
+
+    function computeDet2D(m) {
+      return m[0][0] * m[1][1] - m[0][1] * m[1][0];
+    }
+
+    function computeDet3D(m) {
+      return m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
+           - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
+           + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+    }
+
+    function computeEigen2D(m) {
+      const a = m[0][0], b = m[0][1], c = m[1][0], d = m[1][1];
+      const trace = a + d;
+      const det = a * d - b * c;
+      const discriminant = trace * trace - 4 * det;
+
+      if (discriminant < 0) {
+        return { hasReal: false, values: [], vectors: [] };
+      }
+
+      const l1 = (trace + Math.sqrt(discriminant)) / 2;
+      const l2 = (trace - Math.sqrt(discriminant)) / 2;
+
+      const getVec = (l) => {
+        if (Math.abs(b) > 0.0001) return [l - d, b];
+        if (Math.abs(c) > 0.0001) return [c, l - a];
+        return [1, 0];
+      };
+
+      const v1 = getVec(l1);
+      const v2 = getVec(l2);
+
+      const norm1 = Math.hypot(v1[0], v1[1]) || 1;
+      const norm2 = Math.hypot(v2[0], v2[1]) || 1;
+
+      return {
+        hasReal: true,
+        values: [l1, l2],
+        vectors: [
+          [v1[0] / norm1, v1[1] / norm1],
+          [v2[0] / norm2, v2[1] / norm2]
+        ]
+      };
+    }
+
+    // --- UI EVENT HANDLERS & REAX ENGINE ---
+
+    function onMatrixInputChange() {
+      if (currentMode === '2d') {
+        matrix2D[0][0] = parseFloat(document.getElementById('m00').value) || 0;
+        matrix2D[0][1] = parseFloat(document.getElementById('m01').value) || 0;
+        matrix2D[1][0] = parseFloat(document.getElementById('m10').value) || 0;
+        matrix2D[1][1] = parseFloat(document.getElementById('m11').value) || 0;
+      } else {
+        matrix3D[0][0] = parseFloat(document.getElementById('m3_00').value) || 0;
+        matrix3D[0][1] = parseFloat(document.getElementById('m3_01').value) || 0;
+        matrix3D[0][2] = parseFloat(document.getElementById('m3_02').value) || 0;
+        matrix3D[1][0] = parseFloat(document.getElementById('m3_10').value) || 0;
+        matrix3D[1][1] = parseFloat(document.getElementById('m3_11').value) || 0;
+        matrix3D[1][2] = parseFloat(document.getElementById('m3_12').value) || 0;
+        matrix3D[2][0] = parseFloat(document.getElementById('m3_20').value) || 0;
+        matrix3D[2][1] = parseFloat(document.getElementById('m3_21').value) || 0;
+        matrix3D[2][2] = parseFloat(document.getElementById('m3_22').value) || 0;
+      }
+      updateApp();
+    }
+
+    function onVectorBChange() {
+      vectorB[0] = parseFloat(document.getElementById('bx').value) || 0;
+      vectorB[1] = parseFloat(document.getElementById('by').value) || 0;
+      vectorB[2] = parseFloat(document.getElementById('bz').value) || 0;
+      updateApp();
+    }
+
+    function applyRotationSlider(deg) {
+      document.getElementById('val-rot').innerText = `${deg}°`;
+      const rad = deg * (Math.PI / 180);
+      const cos = Math.cos(rad);
+      const sin = Math.sin(rad);
+
+      if (currentMode === '2d') {
+        matrix2D = [
+          [parseFloat(cos.toFixed(2)), parseFloat((-sin).toFixed(2))],
+          [parseFloat(sin.toFixed(2)), parseFloat(cos.toFixed(2))]
+        ];
+        syncMatrixInputs2D();
+      } else {
+        matrix3D = [
+          [parseFloat(cos.toFixed(2)), parseFloat((-sin).toFixed(2)), 0],
+          [parseFloat(sin.toFixed(2)), parseFloat(cos.toFixed(2)), 0],
+          [0, 0, 1]
+        ];
+        syncMatrixInputs3D();
+      }
+      updateApp();
+    }
+
+    function applyScaleSlider(val) {
+      const s = parseFloat(val);
+      document.getElementById('val-scale').innerText = s.toFixed(1);
+      if (currentMode === '2d') {
+        matrix2D[0][0] = s;
+        matrix2D[1][1] = s;
+        syncMatrixInputs2D();
+      } else {
+        matrix3D[0][0] = s;
+        matrix3D[1][1] = s;
+        matrix3D[2][2] = s;
+        syncMatrixInputs3D();
+      }
+      updateApp();
+    }
+
+    function syncMatrixInputs2D() {
+      document.getElementById('m00').value = matrix2D[0][0];
+      document.getElementById('m01').value = matrix2D[0][1];
+      document.getElementById('m10').value = matrix2D[1][0];
+      document.getElementById('m11').value = matrix2D[1][1];
+    }
+
+    function syncMatrixInputs3D() {
+      document.getElementById('m3_00').value = matrix3D[0][0];
+      document.getElementById('m3_01').value = matrix3D[0][1];
+      document.getElementById('m3_02').value = matrix3D[0][2];
+      document.getElementById('m3_10').value = matrix3D[1][0];
+      document.getElementById('m3_11').value = matrix3D[1][1];
+      document.getElementById('m3_12').value = matrix3D[1][2];
+      document.getElementById('m3_20').value = matrix3D[2][0];
+      document.getElementById('m3_21').value = matrix3D[2][1];
+      document.getElementById('m3_22').value = matrix3D[2][2];
+    }
+
+    function applyPreset(presetKey) {
+      if (currentMode === '2d') {
+        switch (presetKey) {
+          case 'identity': matrix2D = [[1, 0], [0, 1]]; break;
+          case 'scale': matrix2D = [[2, 0], [0, 2]]; break;
+          case 'shear': matrix2D = [[1, 1], [0, 1]]; break;
+          case 'rotation': matrix2D = [[0.71, -0.71], [0.71, 0.71]]; break;
+          case 'reflection': matrix2D = [[-1, 0], [0, 1]]; break;
+          case 'singular': matrix2D = [[1, 2], [2, 4]]; break;
+        }
+        syncMatrixInputs2D();
+      } else {
+        switch (presetKey) {
+          case 'identity': matrix3D = [[1,0,0],[0,1,0],[0,0,1]]; break;
+          case 'scale': matrix3D = [[2,0,0],[0,2,0],[0,0,2]]; break;
+          case 'shear': matrix3D = [[1,1,0],[0,1,0],[0,0,1]]; break;
+          case 'rotation': matrix3D = [[0.71,-0.71,0],[0.71,0.71,0],[0,0,1]]; break;
+          case 'reflection': matrix3D = [[-1,0,0],[0,1,0],[0,0,1]]; break;
+          case 'singular': matrix3D = [[1,0,0],[0,1,0],[0,0,0]]; break;
+        }
+        syncMatrixInputs3D();
+      }
+      updateApp();
+    }
+
+    function resetMatrix() {
+      if (currentMode === '2d') {
+        matrix2D = [[1, 0], [0, 1]];
+        syncMatrixInputs2D();
+      } else {
+        matrix3D = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+        syncMatrixInputs3D();
+      }
+      updateApp();
+    }
+
+    // --- APP UPDATE ENGINE (MATH + RENDERING SYNCHRONIZATION) ---
+    function updateApp() {
+      render();
+      updateMathBreakdown();
+    }
+
+    function render() {
+      if (currentMode === '2d') {
+        render2D();
+      } else {
+        render3D();
+      }
+    }
+
+    function updateMathBreakdown() {
+      const is2D = currentMode === '2d';
+      const det = is2D ? computeDet2D(matrix2D) : computeDet3D(matrix3D);
+      const isSingular = Math.abs(det) < 0.0001;
+
+      document.getElementById('singularity-banner').classList.toggle('hidden', !isSingular);
+
+      const orientEl = document.getElementById('orientation-indicator');
+      if (isSingular) {
+        orientEl.innerText = 'Orientation: Collapsed (0)';
+        orientEl.className = 'text-rose-400 font-semibold';
+      } else if (det < 0) {
+        orientEl.innerText = 'Orientation: Reversed / Inverted (-1)';
+        orientEl.className = 'text-rose-400 font-semibold';
+      } else {
+        orientEl.innerText = 'Orientation: Preserved (+1)';
+        orientEl.className = 'text-emerald-400 font-semibold';
+      }
+
+      // 1. Determinant Section
+      document.getElementById('det-value').innerText = `det(A) = ${det.toFixed(2)}`;
+      let detMathHTML = '';
+      if (is2D) {
+        const a = matrix2D[0][0], b = matrix2D[0][1], c = matrix2D[1][0], d = matrix2D[1][1];
+        detMathHTML = `$$\\det(A) = ad - bc = (${a})(${d}) - (${b})(${c}) = ${det.toFixed(2)}$$`;
+        document.getElementById('det-geo-meaning').innerText = isSingular 
+          ? 'Area collapsed to 0 (Line or Point).'
+          : `Area scaling factor = ${Math.abs(det).toFixed(2)}x standard square unit.`;
+      } else {
+        detMathHTML = `$$\\det(A) = ${det.toFixed(2)}$$`;
+        document.getElementById('det-geo-meaning').innerText = isSingular
+          ? 'Volume collapsed to 0 (2D plane or line).'
+          : `Volume scaling factor = ${Math.abs(det).toFixed(2)}x standard cubic unit.`;
+      }
+      document.getElementById('math-det-expansion').innerHTML = detMathHTML;
+
+      // 2. Eigenvalues Section
+      let eigenHTML = '';
+      if (is2D) {
+        const eigens = computeEigen2D(matrix2D);
+        const tr = matrix2D[0][0] + matrix2D[1][1];
+        if (!eigens.hasReal) {
+          eigenHTML = `$$\\text{Trace } Tr(A) = ${tr.toFixed(2)}$$<br>Complex Eigenvalues (Rotational transformation with no real invariant axes).`;
+        } else {
+          eigenHTML = `$$\\lambda_1 = ${eigens.values[0].toFixed(2)}, \\quad \\lambda_2 = ${eigens.values[1].toFixed(2)}$$<br>`;
+          eigenHTML += `$$\\mathbf{v}_1 = \\begin{pmatrix}${eigens.vectors[0][0].toFixed(2)}\\\\${eigens.vectors[0][1].toFixed(2)}\\end{pmatrix}, \\quad \\mathbf{v}_2 = \\begin{pmatrix}${eigens.vectors[1][0].toFixed(2)}\\\\${eigens.vectors[1][1].toFixed(2)}\\end{pmatrix}$$`;
+        }
+      } else {
+        const tr3 = matrix3D[0][0] + matrix3D[1][1] + matrix3D[2][2];
+        eigenHTML = `$$\\text{Trace } Tr(A) = ${tr3.toFixed(2)}$$<br>Characteristic Polynomial: $$\\det(A - \\lambda I) = 0$$`;
+      }
+      document.getElementById('math-eigen-breakdown').innerHTML = eigenHTML;
+
+      // 3. Matrix Inverse Section
+      let invHTML = '';
+      if (isSingular) {
+        invHTML = `<span class="text-rose-400 font-bold">Inverse $A^{-1}$ does not exist</span> because $\\det(A) = 0$.`;
+      } else {
+        if (is2D) {
+          const a = matrix2D[0][0], b = matrix2D[0][1], c = matrix2D[1][0], d = matrix2D[1][1];
+          const invA = (d / det).toFixed(2);
+          const invB = (-b / det).toFixed(2);
+          const invC = (-c / det).toFixed(2);
+          const invD = (a / det).toFixed(2);
+          invHTML = `$$A^{-1} = \\frac{1}{${det.toFixed(2)}}\\begin{pmatrix}${d}&${-b}\\\\${-c}&${a}\\end{pmatrix} = \\begin{pmatrix}${invA}&${invB}\\\\${invC}&${invD}\\end{pmatrix}$$`;
+        } else {
+          invHTML = `$$A^{-1} = \\frac{1}{\\det(A)} \\text{adj}(A)$$`;
+        }
+      }
+      document.getElementById('math-inverse-breakdown').innerHTML = invHTML;
+
+      // 4. Linear System (AX = B) & Cramer's Rule
+      let cramerHTML = '';
+      if (is2D) {
+        if (isSingular) {
+          cramerHTML = `System $A\\mathbf{X} = \\mathbf{B}$ has either 0 or infinite solutions.`;
+        } else {
+          const a = matrix2D[0][0], b = matrix2D[0][1], c = matrix2D[1][0], d = matrix2D[1][1];
+          const bx = vectorB[0], by = vectorB[1];
+          
+          const detAx = bx * d - b * by;
+          const detAy = a * by - bx * c;
+
+          const x = detAx / det;
+          const y = detAy / det;
+
+          cramerHTML = `$$x = \\frac{\\det(A_x)}{\\det(A)} = \\frac{${detAx.toFixed(2)}}{${det.toFixed(2)}} = ${x.toFixed(2)}$$`;
+          cramerHTML += `$$y = \\frac{\\det(A_y)}{\\det(A)} = \\frac{${detAy.toFixed(2)}}{${det.toFixed(2)}} = ${y.toFixed(2)}$$`;
+        }
+      } else {
+        cramerHTML = `Cramer's Rule for 3D system: $$x_i = \\frac{\\det(A_i)}{\\det(A)}$$`;
+      }
+      document.getElementById('math-cramer-breakdown').innerHTML = cramerHTML;
+
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        MathJax.typesetPromise();
+      }
+    }
+
+    function toggleModal(show) {
+      document.getElementById('theory-modal').classList.toggle('hidden', !show);
+    }
+  </script>
+</body>
+</html>

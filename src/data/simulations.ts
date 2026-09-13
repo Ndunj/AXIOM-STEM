@@ -4,6 +4,228 @@ import { SimulationItem, CurriculumStandard } from "../types";
 // The creator-authored STEM Simulation Apps
 export const STEM_SIMULATIONS: SimulationItem[] = [
   {
+    id: "sim-linear-algebra-matrix-transformation-lab",
+    title: "Linear Algebra & Matrix Transformation Lab (2D & 3D)",
+    tagline: "Higher-education visual geometry engine: explore 2D & 3D linear transformations, determinants, eigenvalues/eigenvectors, matrix inversion, and Cramer's rule in real time",
+    discipline: "mathematics",
+    secondaryDisciplines: ["physics"],
+    gradeLevel: ["High School (9-12)", "AP / IB STEM", "Undergraduate"],
+    standards: ["CCSS.MATH.HSN.VM.C.7", "CCSS.MATH.HSN.VM.C.8", "CCSS.MATH.HSN.VM.C.9", "CCSS.MATH.HSN.VM.C.12", "NGSS SEP-5"],
+    description: "An interactive university-grade linear algebra laboratory that visualizes matrices as geometric transformations of space. Toggle seamlessly between 2D (2×2) and 3D (3×3) modes. Directly edit transformation matrix coefficients, explore parametric rotation and scaling sliders, test curated presets (Identity, Uniform Scale, Shear, 45° Rotation, Reflection, Singular), and observe space deformation via transformed grid meshes, basis vectors (i, j, k), and unit area/volume parallelepipeds. Includes live step-by-step mathematical computations for determinants, area/volume scaling factors, real eigenvalues with invariant eigen-lines, trace, matrix inversion, and Cramer's rule solutions for AX = B.",
+    learningObjectives: [
+      "Interpret matrices geometrically as functions that transform basis vectors i, j, and k into column vectors",
+      "Connect the determinant det(A) to area (2D) and volume (3D) scaling factors and identify orientation reversal (negative determinant)",
+      "Understand singularity (det = 0) as dimensional collapse where space collapses into a line or point and the matrix becomes non-invertible",
+      "Visualize eigenvalues and invariant eigenspaces as directions that maintain their orientation under transformation",
+      "Solve linear systems AX = B using Cramer's rule and geometric area/volume ratios"
+    ],
+    thumbnailGradient: "from-emerald-600 via-teal-700 to-cyan-600",
+    badgeColor: "bg-emerald-500/10 text-emerald-300 border-emerald-500/20",
+    iconName: "Grid",
+    rating: 5.0,
+    reviewCount: 42,
+    teacherCount: 184,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 180,
+      districtUnlimited: 390
+    },
+    features: [
+      "Seamless 2D (HTML5 Canvas) and 3D (Three.js WebGL with OrbitControls) dual-viewport modes",
+      "Interactive 2x2 and 3x3 editable numeric matrix coefficient inputs with instant reactivity",
+      "Parametric rotation (-180° to 180°) and scaling (0.1x to 3x) synthesis sliders",
+      "Curated presets: Identity, Uniform Scale (2x), Horizontal Shear, 45° Rotation, Reflection (Y-axis), and Singular (det = 0)",
+      "Live singularity & dimensional collapse detection banner for det(A) = 0 non-invertible states",
+      "Invariant eigenspace calculator drawing dashed eigen-lines for real eigenvalues in 2D",
+      "Full step-by-step mathematical breakdown panel: Determinant expansion, Trace, Eigenspace analysis, Inverse matrix A⁻¹, and Cramer's rule for AX = B",
+      "Interactive pedagogical Theory Notes modal covering matrix geometry and determinants"
+    ],
+    parameterDefaults: {
+      m00: 1,
+      m01: 0.5,
+      m10: 0,
+      m11: 1,
+      bx: 2,
+      by: 1
+    },
+    parameterControls: [
+      {
+        key: "m00",
+        label: "Matrix A (Row 1, Col 1)",
+        min: -5,
+        max: 5,
+        step: 0.1,
+        unit: "",
+        description: "Entry a11 of matrix A"
+      },
+      {
+        key: "m01",
+        label: "Matrix A (Row 1, Col 2)",
+        min: -5,
+        max: 5,
+        step: 0.1,
+        unit: "",
+        description: "Entry a12 of matrix A"
+      },
+      {
+        key: "m10",
+        label: "Matrix A (Row 2, Col 1)",
+        min: -5,
+        max: 5,
+        step: 0.1,
+        unit: "",
+        description: "Entry a21 of matrix A"
+      },
+      {
+        key: "m11",
+        label: "Matrix A (Row 2, Col 2)",
+        min: -5,
+        max: 5,
+        step: 0.1,
+        unit: "",
+        description: "Entry a22 of matrix A"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-la-1",
+        title: "Create a Pure Shear Transformation",
+        instruction: "Set the diagonal to 1 and adjust off-diagonal terms so that the determinant remains exactly 1 while the grid shears horizontally.",
+        targetMetric: "Determinant",
+        targetValue: 1,
+        tolerance: 0.01,
+        currentValueKey: "det",
+        rewardBadge: "Shear Specialist"
+      },
+      {
+        id: "ch-la-2",
+        title: "Trigger a Dimensional Collapse",
+        instruction: "Adjust matrix components to create linearly dependent rows/columns so that det(A) = 0 and trigger the singularity alert.",
+        targetMetric: "Zero Determinant",
+        targetValue: 0,
+        tolerance: 0.001,
+        currentValueKey: "det",
+        rewardBadge: "Singularity Detective"
+      }
+    ],
+    previewFacts: [
+      "The columns of a matrix indicate exactly where the standard basis vectors (i, j, k) land after the linear transformation.",
+      "The determinant equals the factor by which area (in 2D) or volume (in 3D) expands or contracts under transformation; a negative determinant indicates orientation reversal."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/linear-algebra-matrix-transformation-lab.html"
+  },
+  {
+    id: "sim-parallelepiped-volume-explorer",
+    title: "Parallelepiped Volume Explorer: Scalar Triple Product & 3x3 Determinants",
+    tagline: "Interactive 3D vector geometry laboratory: visualize vectors a, b, c, cross product normal vectors N = b × c, base parallelogram areas, and compute volumes via scalar triple product a · (b × c) and 3×3 matrix determinants",
+    discipline: "mathematics",
+    secondaryDisciplines: ["physics"],
+    gradeLevel: ["High School (9-12)", "AP / IB STEM", "Undergraduate"],
+    standards: ["CCSS.MATH.HSN.VM.B.4", "CCSS.MATH.HSN.VM.C.7", "CCSS.MATH.HSN.VM.C.8", "CCSS.MATH.HSN.VM.C.9", "NGSS SEP-5"],
+    description: "An interactive 3D WebGL vector geometry and multivariable calculus laboratory that makes the geometric intuition behind the scalar triple product tangible. Manipulate the 3D components of vectors a, b, and c using dynamic sliders or explore curated presets (Unit Cube, Sheared Prism, Coplanar Degenerate, Oblique Box). Observe the highlighted base parallelogram formed by b and c, the normal cross product vector N = b × c, solid face transparencies, wireframe edges, coplanar zero-volume alerts, and side-by-side dual mathematical breakdowns comparing the scalar triple product against 3×3 matrix determinant expansion.",
+    learningObjectives: [
+      "Understand the geometric interpretation of the vector cross product b × c as the perpendicular normal vector whose magnitude equals the base area",
+      "Connect the scalar triple product a · (b × c) to the signed volume of the 3D parallelepiped spanned by vectors a, b, and c",
+      "Identify why coplanar vectors yield a determinant and volume of zero, indicating linear dependence",
+      "Relate the 3×3 determinant |det([a; b; c])| to the triple scalar product using expansion by minors"
+    ],
+    thumbnailGradient: "from-indigo-600 via-purple-700 to-pink-600",
+    badgeColor: "bg-indigo-500/10 text-indigo-300 border-indigo-500/20",
+    iconName: "Box",
+    rating: 5.0,
+    reviewCount: 38,
+    teacherCount: 172,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 180,
+      districtUnlimited: 390
+    },
+    features: [
+      "3D WebGL Vector Visualization with OrbitControls, custom lighting, and 3D coordinate axes",
+      "Color-coded vector arrows for Vector a (Blue), Vector b (Green), Vector c (Amber), and Normal N (Purple)",
+      "Full 8-vertex parallelepiped dynamic geometry generator with transparent faces and wireframe mesh",
+      "Base parallelogram area highlighter and normal vector toggle",
+      "Interactive dual-input controls: synchronized range sliders and precise numeric inputs for X, Y, Z components",
+      "Interactive Challenge Mode with randomized target volumes (12, 24, 36, 48, 60 unit³) and instant self-check validation",
+      "Perpendicular geometric height drop-line (h = |a · N| / |N|) visualized directly in 3D",
+      "Curated presets: Unit Cube, Sheared Prism, Coplanar (Vol = 0), and Right Prism",
+      "Interactive Explanatory Notes Modal covering geometric definitions, height derivations, base cross products, and linear dependence",
+      "Live coplanar degeneracy detection with visual ping banner",
+      "Dual mathematical proofs: Scalar Triple Product vs. 3×3 Matrix Determinant"
+    ],
+    parameterDefaults: {
+      ax: 3,
+      ay: 0,
+      az: 0,
+      bx: 1,
+      by: 3,
+      bz: 0,
+      cx: 0.5,
+      cy: 1,
+      cz: 3
+    },
+    parameterControls: [
+      {
+        key: "ax",
+        label: "Vector a - X Component",
+        min: -5,
+        max: 5,
+        step: 0.5,
+        unit: "",
+        description: "X coordinate of vector a"
+      },
+      {
+        key: "by",
+        label: "Vector b - Y Component",
+        min: -5,
+        max: 5,
+        step: 0.5,
+        unit: "",
+        description: "Y coordinate of vector b"
+      },
+      {
+        key: "cz",
+        label: "Vector c - Z Component",
+        min: -5,
+        max: 5,
+        step: 0.5,
+        unit: "",
+        description: "Z coordinate of vector c"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-para-1",
+        title: "Construct a Sheared Parallelepiped",
+        instruction: "Use the sheared preset or adjust vectors to build an oblique prism with a volume of exactly 27 cubic units.",
+        targetMetric: "Volume",
+        targetValue: 27,
+        tolerance: 0.1,
+        currentValueKey: "volume",
+        rewardBadge: "Geometry Master"
+      },
+      {
+        id: "ch-para-2",
+        title: "Discover Coplanar Vectors",
+        instruction: "Make all three vectors lie in the XY plane (az = bz = cz = 0) and observe the volume collapse to 0.",
+        targetMetric: "Zero Volume",
+        targetValue: 0,
+        tolerance: 0.001,
+        currentValueKey: "volume",
+        rewardBadge: "Linear Dependence Sleuth"
+      }
+    ],
+    previewFacts: [
+      "The scalar triple product a · (b × c) equals the determinant of the 3×3 matrix formed by the three vectors as row or column vectors.",
+      "If three vectors in 3D space are linearly dependent (coplanar), the volume of their spanned parallelepiped is strictly zero."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/parallelepiped-volume-explorer.html"
+  },
+  {
     id: "sim-similarity-and-scaling-ratios",
     title: "Similarity & Scaling Explorer: Linear (k), Area (k²), and Volume (k³) Ratios",
     tagline: "Interactive 2D & 3D geometric similarity laboratory: explore linear scale factors (k), quadratic area expansion (k²), and cubic volumetric growth (k³) across polygons, 3D solids, and real-world applied models",

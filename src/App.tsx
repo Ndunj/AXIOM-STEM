@@ -174,6 +174,10 @@ export default function App() {
   const [customSimulations, setCustomSimulations] = useState<SimulationItem[]>(() => {
     try {
       // Clear legacy cache keys that may contain outdated simulation catalogs
+      localStorage.removeItem("axiom_custom_simulations_v24");
+      localStorage.removeItem("axiom_custom_simulations_v23");
+      localStorage.removeItem("axiom_custom_simulations_v22");
+      localStorage.removeItem("axiom_custom_simulations_v21");
       localStorage.removeItem("axiom_custom_simulations_v20");
       localStorage.removeItem("axiom_custom_simulations_v19");
       localStorage.removeItem("axiom_custom_simulations_v18");
@@ -185,7 +189,7 @@ export default function App() {
       localStorage.removeItem("axiom_custom_simulations_v12");
       localStorage.removeItem("axiom_custom_simulations_v11");
       
-      const saved = localStorage.getItem("axiom_custom_simulations_v21");
+      const saved = localStorage.getItem("axiom_custom_simulations_v25");
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -207,7 +211,7 @@ export default function App() {
   // Save simulations to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem("axiom_custom_simulations_v21", JSON.stringify(customSimulations));
+      localStorage.setItem("axiom_custom_simulations_v25", JSON.stringify(customSimulations));
       localStorage.setItem("axiom_custom_simulations", JSON.stringify(customSimulations));
     } catch (e) {
       console.error("Failed to persist simulations:", e);
