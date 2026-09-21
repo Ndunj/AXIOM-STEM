@@ -547,7 +547,7 @@ export const PHYSICS_WORKSHEETS: Record<string, SimulationWorksheetData> = {
     }
   },
 
-  "sim-micrometer-screw-gauge": {
+  "sim-micrometer-screw-gauge-interactive": {
     drivingQuestion: "How does a micrometer screw gauge measure tiny thicknesses (like a sheet of paper or wire) with precision down to 0.01 millimeters?",
     hypothesisPrompt: "A micrometer has a main sleeve scale marked in 0.5 mm steps and a rotating thimble with 50 circular divisions. If one full turn of the thimble moves the spindle 0.50 mm, predict the thickness measured by each single mark on the thimble.",
     tableHeaders: ["Trial", "Object Measured", "Main Sleeve Scale (mm)", "Thimble Circular Reading", "Thimble Value (Marks × 0.01 mm)", "Total Reading (Main + Thimble)", "Zero Error Correction", "True Thickness"],

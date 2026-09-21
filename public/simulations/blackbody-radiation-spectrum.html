@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackbody Radiation Spectrum Visualizer</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        physics: {
+                            bg: '#0f172a',
+                            panel: '#1e293b',
+                            border: '#334155',
+                            accent: '#38bdf8'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #38bdf8;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+        }
+    </style>
+</head>
+<body id="app-body" class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col transition-colors duration-300">
+
+    <!-- Compact Header -->
+    <header class="border-b border-slate-800 bg-slate-950/60 backdrop-blur px-4 py-2 flex flex-wrap justify-between items-center gap-2 shrink-0">
+        <div class="flex items-center space-x-2.5">
+            <div id="emitter-preview" class="w-5 h-5 rounded-full border border-slate-700 shadow-md transition-all duration-300"></div>
+            <div>
+                <h1 class="text-base font-bold tracking-tight text-white flex items-center gap-2">
+                    Blackbody Radiation Spectrum 
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20">AetherLab Physics</span>
+                </h1>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2 text-xs">
+            <!-- Physics Explanatory Note Button -->
+            <button id="btn-physics-note" class="px-2.5 py-1 rounded bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 border border-sky-500/30 transition text-[11px] font-medium flex items-center gap-1.5 shadow-sm">
+                <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                Physics Note
+            </button>
+
+            <button id="btn-projector" class="px-2.5 py-1 rounded border border-slate-700 hover:bg-slate-800 text-slate-300 transition text-[11px] font-medium flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                Projector Mode
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Layout: Fixed Height Viewport for Holistic Screen View -->
+    <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden h-[calc(100vh-45px)]">
+        
+        <!-- Controls & Dashboard Sidebar -->
+        <aside class="lg:col-span-4 xl:col-span-3 border-r border-slate-800 bg-slate-900/90 p-4 overflow-y-auto space-y-4 flex flex-col justify-between h-full">
+            <div class="space-y-4">
+                
+                <!-- Real-time Readouts Card -->
+                <div class="bg-slate-800/60 border border-slate-700/60 rounded-lg p-3 space-y-2 shadow-sm">
+                    <h2 class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-700/50 pb-1">Real-Time Physical Values</h2>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <span class="text-[11px] text-slate-400 block">Temperature (T)</span>
+                            <span id="readout-temp" class="text-base font-mono font-bold text-sky-400">5800 K</span>
+                            <span id="readout-temp-c" class="text-[10px] text-slate-500 block">5526.85 °C</span>
+                        </div>
+                        <div>
+                            <span class="text-[11px] text-slate-400 block">Peak Wavelength (λ<sub>max</sub>)</span>
+                            <span id="readout-peak" class="text-base font-mono font-bold text-amber-400">499.6 nm</span>
+                            <span id="readout-region" class="text-[10px] text-emerald-400 block">Visible Spectrum</span>
+                        </div>
+                    </div>
+                    <div class="pt-1 border-t border-slate-700/40">
+                        <span class="text-[11px] text-slate-400 block">Total Power Intensity (P = σ × T⁴)</span>
+                        <span id="readout-power" class="text-xs font-mono font-bold text-purple-400">6.42 × 10⁷ W/m²</span>
+                    </div>
+                </div>
+
+                <!-- Temperature Slider -->
+                <div class="space-y-1.5">
+                    <div class="flex justify-between items-center">
+                        <label for="temp-slider" class="text-xs font-medium text-slate-200">Temperature Control</label>
+                        <div class="flex items-center space-x-1">
+                            <input type="number" id="temp-input" min="100" max="12000" value="5800" class="w-16 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-right text-xs font-mono text-sky-400 focus:outline-none focus:border-sky-500">
+                            <span class="text-xs text-slate-400">K</span>
+                        </div>
+                    </div>
+                    <input type="range" id="temp-slider" min="100" max="12000" step="10" value="5800" class="w-full h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer">
+                    <div class="flex justify-between text-[9px] text-slate-500 font-mono">
+                        <span>100 K</span>
+                        <span>3000 K</span>
+                        <span>6000 K</span>
+                        <span>9000 K</span>
+                        <span>12000 K</span>
+                    </div>
+                </div>
+
+                <!-- Preset Buttons -->
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Presets</label>
+                    <div class="grid grid-cols-1 gap-1">
+                        <button data-temp="2.7" class="preset-btn px-2.5 py-1 rounded bg-slate-800/80 hover:bg-slate-700 text-xs text-left text-slate-300 flex justify-between items-center border border-slate-700/50 transition">
+                            <span>Cosmic Microwave Background</span> <span class="font-mono text-slate-400 text-[11px]">2.7 K</span>
+                        </button>
+                        <button data-temp="310" class="preset-btn px-2.5 py-1 rounded bg-slate-800/80 hover:bg-slate-700 text-xs text-left text-slate-300 flex justify-between items-center border border-slate-700/50 transition">
+                            <span>Human Body</span> <span class="font-mono text-slate-400 text-[11px]">310 K</span>
+                        </button>
+                        <button data-temp="2800" class="preset-btn px-2.5 py-1 rounded bg-slate-800/80 hover:bg-slate-700 text-xs text-left text-slate-300 flex justify-between items-center border border-slate-700/50 transition">
+                            <span>Light Bulb Filament</span> <span class="font-mono text-slate-400 text-[11px]">2,800 K</span>
+                        </button>
+                        <button data-temp="5800" class="preset-btn px-2.5 py-1 rounded bg-slate-800/80 hover:bg-slate-700 text-xs text-left text-slate-300 flex justify-between items-center border border-slate-700/50 transition border-sky-500/40">
+                            <span>The Sun</span> <span class="font-mono text-sky-400 text-[11px]">5,800 K</span>
+                        </button>
+                        <button data-temp="10000" class="preset-btn px-2.5 py-1 rounded bg-slate-800/80 hover:bg-slate-700 text-xs text-left text-slate-300 flex justify-between items-center border border-slate-700/50 transition">
+                            <span>Rigel (Blue Star)</span> <span class="font-mono text-slate-400 text-[11px]">10,000 K</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Display Toggles -->
+                <div class="space-y-2 border-t border-slate-800 pt-3">
+                    <label class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Display Options</label>
+                    
+                    <label class="flex items-center justify-between text-xs text-slate-300 cursor-pointer">
+                        <span>Visible Spectrum Band</span>
+                        <input type="checkbox" id="toggle-visible-band" checked class="rounded bg-slate-950 border-slate-700 text-sky-500 focus:ring-0">
+                    </label>
+
+                    <label class="flex items-center justify-between text-xs text-slate-300 cursor-pointer">
+                        <span>Shaded Area Integral</span>
+                        <input type="checkbox" id="toggle-area" checked class="rounded bg-slate-950 border-slate-700 text-sky-500 focus:ring-0">
+                    </label>
+
+                    <label class="flex items-center justify-between text-xs text-slate-300 cursor-pointer">
+                        <span class="flex items-center gap-1">
+                            Rayleigh-Jeans Curve
+                            <span class="text-[9px] text-red-400 font-mono">(UV Catastrophe)</span>
+                        </span>
+                        <input type="checkbox" id="toggle-classical" class="rounded bg-slate-950 border-slate-700 text-sky-500 focus:ring-0">
+                    </label>
+
+                    <label class="flex items-center justify-between text-xs text-slate-300 cursor-pointer">
+                        <span>Dynamic Y-Axis Scaling</span>
+                        <input type="checkbox" id="toggle-autoscale" checked class="rounded bg-slate-950 border-slate-700 text-sky-500 focus:ring-0">
+                    </label>
+                </div>
+
+                <!-- Multi-curve Reference Control -->
+                <div class="border-t border-slate-800 pt-3 space-y-1.5">
+                    <button id="btn-freeze" class="w-full py-1.5 px-2.5 rounded-md bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 border border-slate-700 flex items-center justify-center gap-1.5 transition">
+                        <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                        Freeze Reference Curve
+                    </button>
+                    <div id="frozen-status" class="hidden text-[10px] text-slate-400 flex items-center justify-between bg-slate-950/50 px-2 py-1 rounded border border-slate-800">
+                        <span>Frozen: <strong id="frozen-temp-val" class="text-slate-200">5800 K</strong></span>
+                        <button id="btn-clear-frozen" class="text-red-400 hover:underline text-[10px]">Clear</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Formulas Reference Footer -->
+            <div class="border-t border-slate-800 pt-2 text-[10px] text-slate-500 space-y-0.5 font-mono">
+                <div>Planck: <span class="text-slate-400">I(λ, T) = (2 × h × c² / λ⁵) / (e<sup>(h × c / λ × k<sub>B</sub> × T)</sup> - 1)</span></div>
+                <div>Wien: <span class="text-slate-400">λ<sub>max</sub> = (2.8977 × 10⁻³) / T</span></div>
+            </div>
+        </aside>
+
+        <!-- Main Graphics Canvas Viewport -->
+        <main class="lg:col-span-8 xl:col-span-9 bg-slate-950 relative p-3 flex flex-col justify-between h-full overflow-hidden">
+            
+            <!-- Scaled Canvas Wrapper for Entire Diagram Visibility -->
+            <div class="relative w-full flex-1 rounded-lg bg-slate-900/40 border border-slate-800/80 overflow-hidden min-h-0">
+                <canvas id="simCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+                
+                <!-- Hover Tooltip -->
+                <div id="canvas-tooltip" class="pointer-events-none absolute hidden bg-slate-900/95 border border-slate-700 text-slate-200 text-xs px-2 py-1 rounded shadow-xl font-mono z-20"></div>
+            </div>
+
+            <!-- High-Contrast Darker Spectrum Legend Bar -->
+            <div class="mt-2 grid grid-cols-3 gap-2 text-center text-xs font-semibold shrink-0">
+                <div class="bg-indigo-950/80 border border-indigo-700/60 py-1.5 rounded text-indigo-200 shadow-sm">
+                    Ultraviolet (&lt; 380 nm)
+                </div>
+                <div class="bg-gradient-to-r from-violet-900 via-emerald-800 to-red-900 border border-slate-600/80 py-1.5 rounded text-white flex items-center justify-center gap-1.5 shadow-sm">
+                    <span class="inline-block w-2.5 h-2.5 rounded-full bg-gradient-to-r from-purple-400 via-yellow-400 to-red-500 border border-white/40"></span>
+                    Visible Band (380 - 750 nm)
+                </div>
+                <div class="bg-amber-950/80 border border-amber-700/60 py-1.5 rounded text-amber-200 shadow-sm">
+                    Infrared (&gt; 750 nm)
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Physics Explanatory Note Modal -->
+    <div id="physics-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            <div class="px-5 py-3.5 border-b border-slate-800 flex justify-between items-center bg-slate-950/50">
+                <div class="flex items-center gap-2">
+                    <span class="p-1 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                    </span>
+                    <h3 class="font-bold text-slate-100 text-sm">Physics Note: Blackbody Radiation Phenomenon</h3>
+                </div>
+                <button id="btn-close-modal" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-5 overflow-y-auto space-y-4 text-xs text-slate-300 leading-relaxed">
+                <div>
+                    <h4 class="font-semibold text-sky-400 mb-1 text-xs">1. What is a Blackbody?</h4>
+                    <p class="text-slate-400">An idealized physical body that absorbs all incident electromagnetic radiation, regardless of frequency or angle of incidence. When held at a uniform thermal equilibrium temperature, it emits radiation according to Planck's Law.</p>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-sky-400 mb-1 text-xs">2. Planck's Radiation Law</h4>
+                    <p class="text-slate-400 mb-1.5">Proposed by Max Planck in 1900, it accurately describes the spectral radiance emitted by a blackbody across all wavelengths by introducing quantized energy levels:</p>
+                    <div class="bg-slate-950 p-2.5 rounded border border-slate-800 font-mono text-[11px] text-sky-300">
+                        I(λ, T) = (2 × h × c²) / [ λ⁵ × (e<sup>(h × c / (λ × k<sub>B</sub> × T))</sup> - 1) ]
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-sky-400 mb-1 text-xs">3. Wien's Displacement Law</h4>
+                    <p class="text-slate-400 mb-1.5">States that the peak emission wavelength is inversely proportional to the absolute temperature. As temperature rises, the peak shifts toward shorter (bluer) wavelengths:</p>
+                    <div class="bg-slate-950 p-2 rounded border border-slate-800 font-mono text-[11px] text-amber-300">
+                        λ<sub>max</sub> = b / T  (where b ≈ 2.8977 × 10⁻³ m × K)
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-sky-400 mb-1 text-xs">4. Stefan-Boltzmann Law</h4>
+                    <p class="text-slate-400 mb-1.5">The total radiant energy per unit surface area integrated across all wavelengths is directly proportional to the fourth power of absolute temperature:</p>
+                    <div class="bg-slate-950 p-2 rounded border border-slate-800 font-mono text-[11px] text-purple-300">
+                        P / A = σ × T⁴  (where σ ≈ 5.670374 × 10⁻⁸ W / (m² × K⁴))
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-red-400 mb-1 text-xs">5. The Ultraviolet Catastrophe</h4>
+                    <p class="text-slate-400">Classical physics predicted via the Rayleigh-Jeans law that an ideal blackbody would emit infinite power at infinitely short wavelengths (ultraviolet range). Planck's energy quantization assumption resolved this paradox, launching modern Quantum Mechanics.</p>
+                </div>
+            </div>
+            <div class="px-5 py-2.5 border-t border-slate-800 bg-slate-950/50 flex justify-end">
+                <button id="btn-modal-ok" class="px-3 py-1 rounded bg-sky-600 hover:bg-sky-500 text-white font-medium transition text-xs">
+                    Got it
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SIMULATION LOGIC -->
+    <script>
+        // Physical Constants (SI Units)
+        const h = 6.62607015e-34;  
+        const c = 2.99792458e8;    
+        const kB = 1.380649e-23;   
+        const b = 2.8977719e-3;    
+        const sigma = 5.670374e-8; 
+
+        // Simulation State
+        const state = {
+            temperature: 5800,      
+            frozenTemperature: null,
+            minLambda: 10,          
+            maxLambda: 3000,        
+            showVisibleBand: true,
+            showArea: true,
+            showClassical: false,
+            autoScale: true,
+            projectorMode: false,
+            mousePos: null
+        };
+
+        // DOM Elements
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const tempSlider = document.getElementById('temp-slider');
+        const tempInput = document.getElementById('temp-input');
+        const readoutTemp = document.getElementById('readout-temp');
+        const readoutTempC = document.getElementById('readout-temp-c');
+        const readoutPeak = document.getElementById('readout-peak');
+        const readoutRegion = document.getElementById('readout-region');
+        const readoutPower = document.getElementById('readout-power');
+        const emitterPreview = document.getElementById('emitter-preview');
+        const canvasTooltip = document.getElementById('canvas-tooltip');
+        const frozenStatus = document.getElementById('frozen-status');
+        const frozenTempVal = document.getElementById('frozen-temp-val');
+        
+        const physicsModal = document.getElementById('physics-modal');
+        const btnPhysicsNote = document.getElementById('btn-physics-note');
+        const btnCloseModal = document.getElementById('btn-close-modal');
+        const btnModalOk = document.getElementById('btn-modal-ok');
+
+        function planckRadiance(lambdaNm, T) {
+            const lambda = lambdaNm * 1e-9;
+            const exponent = (h * c) / (lambda * kB * T);
+            if (exponent > 700) return 0; 
+            return (2 * h * Math.pow(c, 2)) / (Math.pow(lambda, 5) * (Math.exp(exponent) - 1));
+        }
+
+        function rayleighJeansRadiance(lambdaNm, T) {
+            const lambda = lambdaNm * 1e-9;
+            return (2 * c * kB * T) / Math.pow(lambda, 4);
+        }
+
+        function getPeakWavelength(T) {
+            return (b / T) * 1e9; 
+        }
+
+        function getTotalPower(T) {
+            return sigma * Math.pow(T, 4);
+        }
+
+        function kelvinToRGB(kelvin) {
+            let temp = kelvin / 100;
+            let red, green, blue;
+
+            if (temp <= 66) {
+                red = 255;
+                green = temp <= 19 ? 0 : 99.4708025861 * Math.log(temp) - 161.1195681661;
+                blue = temp <= 19 ? 0 : 138.5177312231 * Math.log(temp - 10) - 305.0447927307;
+            } else {
+                red = 329.698727446 * Math.pow(temp - 60, -0.1332047592);
+                green = 288.1221695283 * Math.pow(temp - 60, -0.0755148492);
+                blue = 255;
+            }
+
+            return {
+                r: Math.min(255, Math.max(0, Math.round(red))),
+                g: Math.min(255, Math.max(0, Math.round(green))),
+                b: Math.min(255, Math.max(0, Math.round(blue)))
+            };
+        }
+
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            draw();
+        }
+
+        function draw() {
+            const width = canvas.width / window.devicePixelRatio;
+            const height = canvas.height / window.devicePixelRatio;
+
+            const margin = { top: 25, right: 20, bottom: 40, left: 60 };
+            const plotWidth = width - margin.left - margin.right;
+            const plotHeight = height - margin.top - margin.bottom;
+
+            ctx.fillStyle = state.projectorMode ? '#ffffff' : '#0b1329';
+            ctx.fillRect(0, 0, width, height);
+
+            const lambdaToX = (l) => margin.left + ((l - state.minLambda) / (state.maxLambda - state.minLambda)) * plotWidth;
+            const xToLambda = (x) => state.minLambda + ((x - margin.left) / plotWidth) * (state.maxLambda - state.minLambda);
+
+            const peakLambda = getPeakWavelength(state.temperature);
+            const maxRadianceCurrent = planckRadiance(peakLambda, state.temperature);
+            
+            const referenceMaxRadiance = state.autoScale ? maxRadianceCurrent : planckRadiance(getPeakWavelength(5800), 5800);
+            const yMax = (referenceMaxRadiance > 0 ? referenceMaxRadiance : 1) * 1.15;
+
+            const radianceToY = (r) => margin.top + plotHeight - (r / yMax) * plotHeight;
+
+            // 1. Darker Spectrum Band Underlay
+            if (state.showVisibleBand) {
+                const x380 = Math.max(margin.left, lambdaToX(380));
+                const x750 = Math.min(margin.left + plotWidth, lambdaToX(750));
+                
+                const grad = ctx.createLinearGradient(x380, 0, x750, 0);
+                grad.addColorStop(0,    'rgba(126, 34, 206, 0.45)'); 
+                grad.addColorStop(0.18, 'rgba(29, 78, 216, 0.45)');  
+                grad.addColorStop(0.35, 'rgba(15, 118, 110, 0.45)'); 
+                grad.addColorStop(0.5,  'rgba(21, 128, 61, 0.45)');  
+                grad.addColorStop(0.68, 'rgba(180, 83, 9, 0.45)');   
+                grad.addColorStop(0.85, 'rgba(194, 65, 12, 0.45)');  
+                grad.addColorStop(1,    'rgba(185, 28, 28, 0.45)');  
+
+                ctx.fillStyle = grad;
+                ctx.fillRect(x380, margin.top, x750 - x380, plotHeight);
+
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(x380, margin.top);
+                ctx.lineTo(x380, margin.top + plotHeight);
+                ctx.moveTo(x750, margin.top);
+                ctx.lineTo(x750, margin.top + plotHeight);
+                ctx.stroke();
+            }
+
+            // 2. Gridlines & Axes
+            ctx.strokeStyle = state.projectorMode ? '#cbd5e1' : '#334155';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+
+            for (let l = 500; l <= state.maxLambda; l += 500) {
+                const x = lambdaToX(l);
+                ctx.moveTo(x, margin.top);
+                ctx.lineTo(x, margin.top + plotHeight);
+            }
+            for (let i = 0; i <= 4; i++) {
+                const y = margin.top + (plotHeight / 4) * i;
+                ctx.moveTo(margin.left, y);
+                ctx.lineTo(margin.left + plotWidth, y);
+            }
+            ctx.stroke();
+
+            // Axis Tick Labels
+            ctx.fillStyle = state.projectorMode ? '#1e293b' : '#94a3b8';
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+
+            for (let l = 0; l <= state.maxLambda; l += 500) {
+                if (l >= state.minLambda) {
+                    ctx.fillText(`${l} nm`, lambdaToX(l), margin.top + plotHeight + 6);
+                }
+            }
+
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            for (let i = 0; i <= 4; i++) {
+                const rVal = yMax * (1 - i / 4) / 1e12; 
+                ctx.fillText(rVal.toPrecision(2), margin.left - 6, margin.top + (plotHeight / 4) * i);
+            }
+
+            // Axis Title Labels
+            ctx.fillStyle = state.projectorMode ? '#0f172a' : '#cbd5e1';
+            ctx.font = '11px font-medium sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Wavelength λ (nm)', margin.left + plotWidth / 2, height - 10);
+
+            ctx.save();
+            ctx.translate(14, margin.top + plotHeight / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Spectral Radiance I(λ, T) [10¹² W/m³]', 0, 0);
+            ctx.restore();
+
+            const drawCurve = (T, color, isDashed = false, fillArea = false) => {
+                ctx.beginPath();
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2.5;
+                if (isDashed) ctx.setLineDash([5, 4]); else ctx.setLineDash([]);
+
+                const numPoints = 300;
+                let started = false;
+
+                for (let i = 0; i <= numPoints; i++) {
+                    const l = state.minLambda + (i / numPoints) * (state.maxLambda - state.minLambda);
+                    const r = planckRadiance(l, T);
+                    const x = lambdaToX(l);
+                    const y = radianceToY(r);
+
+                    if (!started) {
+                        ctx.moveTo(x, y);
+                        started = true;
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                ctx.stroke();
+
+                if (fillArea) {
+                    ctx.lineTo(lambdaToX(state.maxLambda), margin.top + plotHeight);
+                    ctx.lineTo(lambdaToX(state.minLambda), margin.top + plotHeight);
+                    ctx.closePath();
+                    
+                    const rgb = kelvinToRGB(T);
+                    ctx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.22)`;
+                    ctx.fill();
+                }
+            };
+
+            // 3. Frozen Reference Curve
+            if (state.frozenTemperature) {
+                drawCurve(state.frozenTemperature, '#cbd5e1', true, false);
+            }
+
+            // 4. Classical Rayleigh-Jeans Curve
+            if (state.showClassical) {
+                ctx.beginPath();
+                ctx.strokeStyle = '#f87171'; 
+                ctx.lineWidth = 2;
+                ctx.setLineDash([4, 4]);
+
+                let started = false;
+                for (let l = state.minLambda; l <= state.maxLambda; l += 5) {
+                    const r = rayleighJeansRadiance(l, state.temperature);
+                    const x = lambdaToX(l);
+                    const y = radianceToY(r);
+
+                    if (y >= margin.top - 10) { 
+                        if (!started) {
+                            ctx.moveTo(x, y);
+                            started = true;
+                        } else {
+                            ctx.lineTo(x, y);
+                        }
+                    }
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // 5. Active Planck Curve
+            const rgbPeak = kelvinToRGB(state.temperature);
+            const peakColorStr = `rgb(${rgbPeak.r}, ${rgbPeak.g}, ${rgbPeak.b})`;
+            drawCurve(state.temperature, peakColorStr, false, state.showArea);
+
+            // 6. Peak Indicator Line
+            if (peakLambda >= state.minLambda && peakLambda <= state.maxLambda) {
+                const xPeak = lambdaToX(peakLambda);
+                const yPeak = radianceToY(maxRadianceCurrent);
+
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([3, 3]);
+                ctx.beginPath();
+                ctx.moveTo(xPeak, margin.top + plotHeight);
+                ctx.lineTo(xPeak, yPeak);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                ctx.fillStyle = peakColorStr;
+                ctx.beginPath();
+                ctx.arc(xPeak, yPeak, 5, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+
+            // 7. Interactive Hover Cursor
+            if (state.mousePos &&
+                state.mousePos.x >= margin.left && state.mousePos.x <= margin.left + plotWidth &&
+                state.mousePos.y >= margin.top && state.mousePos.y <= margin.top + plotHeight) {
+
+                const hLambda = xToLambda(state.mousePos.x);
+                const hRadiance = planckRadiance(hLambda, state.temperature);
+                const hY = radianceToY(hRadiance);
+
+                ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+                ctx.beginPath();
+                ctx.moveTo(state.mousePos.x, margin.top);
+                ctx.lineTo(state.mousePos.x, margin.top + plotHeight);
+                ctx.stroke();
+
+                ctx.fillStyle = '#38bdf8';
+                ctx.beginPath();
+                ctx.arc(state.mousePos.x, hY, 4, 0, 2 * Math.PI);
+                ctx.fill();
+
+                canvasTooltip.style.left = `${state.mousePos.x + 10}px`;
+                canvasTooltip.style.top = `${state.mousePos.y - 10}px`;
+                canvasTooltip.classList.remove('hidden');
+                canvasTooltip.innerHTML = `
+                    <div>λ: ${hLambda.toFixed(1)} nm</div>
+                    <div>I(λ): ${(hRadiance / 1e12).toFixed(3)} MW/m²/nm</div>
+                `;
+            } else {
+                canvasTooltip.classList.add('hidden');
+            }
+        }
+
+        function updateUI() {
+            const T = state.temperature;
+            const peakLambda = getPeakWavelength(T);
+            const totalPower = getTotalPower(T);
+            const rgb = kelvinToRGB(T);
+
+            tempSlider.value = T;
+            tempInput.value = Math.round(T);
+            readoutTemp.innerText = `${Math.round(T)} K`;
+            readoutTempC.innerText = `${(T - 273.15).toFixed(2)} °C`;
+            readoutPeak.innerText = `${peakLambda.toFixed(1)} nm`;
+
+            if (peakLambda < 380) {
+                readoutRegion.innerText = "Ultraviolet Region";
+                readoutRegion.className = "text-[10px] text-indigo-400 block font-medium";
+            } else if (peakLambda <= 750) {
+                readoutRegion.innerText = "Visible Spectrum";
+                readoutRegion.className = "text-[10px] text-emerald-400 block font-medium";
+            } else {
+                readoutRegion.innerText = "Infrared Region";
+                readoutRegion.className = "text-[10px] text-amber-400 block font-medium";
+            }
+
+            // Formatted scientific notation using explicit times symbol
+            const powerExp = totalPower.toExponential(2).replace('e+', ' × 10¹⁰').replace('e', ' × 10');
+            readoutPower.innerHTML = `${totalPower.toExponential(2).replace(/e\+?(-?\d+)/, ' × 10<sup>$1</sup>')} W/m²`;
+
+            emitterPreview.style.backgroundColor = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+            emitterPreview.style.boxShadow = `0 0 10px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.8)`;
+
+            draw();
+        }
+
+        // Modal Handlers
+        const openModal = () => physicsModal.classList.remove('hidden');
+        const closeModal = () => physicsModal.classList.add('hidden');
+
+        btnPhysicsNote.addEventListener('click', openModal);
+        btnCloseModal.addEventListener('click', closeModal);
+        btnModalOk.addEventListener('click', closeModal);
+        physicsModal.addEventListener('click', (e) => {
+            if (e.target === physicsModal) closeModal();
+        });
+
+        // Event Listeners
+        tempSlider.addEventListener('input', (e) => {
+            state.temperature = parseFloat(e.target.value);
+            updateUI();
+        });
+
+        tempInput.addEventListener('change', (e) => {
+            let val = parseFloat(e.target.value);
+            if (isNaN(val)) val = 5800;
+            val = Math.max(100, Math.min(12000, val));
+            state.temperature = val;
+            updateUI();
+        });
+
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const targetBtn = e.currentTarget;
+                state.temperature = parseFloat(targetBtn.dataset.temp);
+                updateUI();
+            });
+        });
+
+        document.getElementById('toggle-visible-band').addEventListener('change', (e) => {
+            state.showVisibleBand = e.target.checked;
+            draw();
+        });
+
+        document.getElementById('toggle-area').addEventListener('change', (e) => {
+            state.showArea = e.target.checked;
+            draw();
+        });
+
+        document.getElementById('toggle-classical').addEventListener('change', (e) => {
+            state.showClassical = e.target.checked;
+            draw();
+        });
+
+        document.getElementById('toggle-autoscale').addEventListener('change', (e) => {
+            state.autoScale = e.target.checked;
+            draw();
+        });
+
+        document.getElementById('btn-freeze').addEventListener('click', () => {
+            state.frozenTemperature = state.temperature;
+            frozenTempVal.innerText = `${Math.round(state.temperature)} K`;
+            frozenStatus.classList.remove('hidden');
+            draw();
+        });
+
+        document.getElementById('btn-clear-frozen').addEventListener('click', () => {
+            state.frozenTemperature = null;
+            frozenStatus.classList.add('hidden');
+            draw();
+        });
+
+        document.getElementById('btn-projector').addEventListener('click', () => {
+            state.projectorMode = !state.projectorMode;
+            document.getElementById('app-body').classList.toggle('dark', !state.projectorMode);
+            draw();
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            state.mousePos = {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+            draw();
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            state.mousePos = null;
+            draw();
+        });
+
+        window.addEventListener('resize', resizeCanvas);
+
+        window.addEventListener('load', () => {
+            resizeCanvas();
+            updateUI();
+        });
+    </script>
+</body>
+</html>

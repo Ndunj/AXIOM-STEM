@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Vernier Caliper Simulation</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: #1e293b;
+            --accent-color: #0284c7;
+            --accent-hover: #0369a1;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            color: #38bdf8;
+            margin-bottom: 4px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 960px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .canvas-card {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            touch-action: none;
+            cursor: grab;
+        }
+
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .panel-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #38bdf8;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .range-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            accent-color: var(--accent-color);
+            height: 6px;
+            border-radius: 3px;
+            background: var(--border-color);
+        }
+
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        button {
+            background-color: var(--border-color);
+            color: var(--text-main);
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #475569;
+        }
+
+        button.active {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        button.primary {
+            background-color: var(--accent-color);
+        }
+
+        button.primary:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 22px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--border-color);
+            transition: .3s;
+            border-radius: 22px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent-color);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+
+        .readout-card {
+            background-color: rgba(15, 23, 42, 0.6);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-family: monospace;
+        }
+
+        .readout-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+
+        .readout-total {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #38bdf8;
+            border-top: 1px dashed var(--border-color);
+            padding-top: 6px;
+        }
+
+        .quiz-box {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .quiz-input-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        input[type="number"] {
+            flex: 1;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .feedback {
+            font-size: 0.85rem;
+            padding: 8px;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .feedback.correct {
+            display: block;
+            background-color: rgba(16, 185, 129, 0.2);
+            border: 1px solid var(--success);
+            color: #6ee7b7;
+        }
+
+        .feedback.incorrect {
+            display: block;
+            background-color: rgba(239, 68, 68, 0.2);
+            border: 1px solid var(--danger);
+            color: #fca5a5;
+        }
+
+        .explanation {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Interactive Vernier Caliper</h1>
+        <p>Drag the slider, inspect scale alignment, and practice outer or inner diameter measurements.</p>
+    </header>
+
+    <div class="main-container">
+        <!-- Canvas Visualizer Card -->
+        <div class="canvas-card">
+            <canvas id="caliperCanvas" width="920" height="420"></canvas>
+        </div>
+
+        <!-- Interactive Control Panels -->
+        <div class="controls-grid">
+            <!-- Left Panel: Controls & Inspector -->
+            <div class="panel">
+                <div class="panel-title">Simulation Controls</div>
+
+                <div class="control-group">
+                    <label>Measurement Mode</label>
+                    <div class="btn-group">
+                        <button id="modeOuter" class="active" onclick="setMeasurementType('outer')">Outer Diameter (Lower Jaws)</button>
+                        <button id="modeInner" onclick="setMeasurementType('inner')">Inner Diameter (Upper Jaws)</button>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label>Position / Diameter (Fine Adjust)</label>
+                    <div class="range-container">
+                        <input type="range" id="jawSlider" min="0" max="6.0" step="0.01" value="2.47">
+                        <span id="sliderVal" style="font-family: monospace; width: 50px;">2.47 cm</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Preset Object Sizes</label>
+                    <div class="btn-group">
+                        <button onclick="setObjectSize(1.25)">1.25 cm</button>
+                        <button onclick="setObjectSize(2.47)">2.47 cm</button>
+                        <button onclick="setObjectSize(3.80)">3.80 cm</button>
+                        <button onclick="setObjectSize(0.00)">0.00 cm</button>
+                    </div>
+                </div>
+
+                <div class="toggle-container">
+                    <label for="magToggle">Magnifier Inspector Window</label>
+                    <label class="switch">
+                        <input type="checkbox" id="magToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="control-group">
+                    <label>Zero Error Setup</label>
+                    <div class="btn-group">
+                        <button id="zeNone" class="active" onclick="setZeroError(0)">None (0.00)</button>
+                        <button id="zePos" onclick="setZeroError(0.03)">+0.03 cm</button>
+                        <button id="zeNeg" onclick="setZeroError(-0.02)">-0.02 cm</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Readouts & Quiz -->
+            <div class="panel">
+                <div class="panel-title">
+                    <span>Measurement Engine</span>
+                    <button id="modeToggleBtn" onclick="toggleQuizMode()">Switch to Practice Mode</button>
+                </div>
+
+                <!-- Mode A: Live Inspector Readout -->
+                <div id="readoutPanel" class="readout-card">
+                    <div class="readout-row">
+                        <span>Main Scale Reading (MSR):</span>
+                        <span id="msrVal" style="color: #38bdf8;">2.40 cm</span>
+                    </div>
+                    <div class="readout-row">
+                        <span>Vernier Scale Reading (VSR):</span>
+                        <span id="vsrVal" style="color: #f59e0b;">7 × 0.01 = 0.07 cm</span>
+                    </div>
+                    <div class="readout-row">
+                        <span>Zero Error Correction:</span>
+                        <span id="zeVal" style="color: var(--text-muted);">0.00 cm</span>
+                    </div>
+                    <div class="readout-row readout-total">
+                        <span>Observed Value:</span>
+                        <span id="totalVal">2.47 cm</span>
+                    </div>
+                </div>
+
+                <!-- Mode B: Practice Quiz (Hidden by Default) -->
+                <div id="quizPanel" class="quiz-box" style="display: none;">
+                    <label>Measure the hidden target object and submit your answer:</label>
+                    <div class="quiz-input-group">
+                        <input type="number" id="quizInput" step="0.01" placeholder="e.g. 2.47">
+                        <button class="primary" onclick="checkQuizAnswer()">Submit</button>
+                        <button onclick="generateRandomTarget()">New Target</button>
+                    </div>
+                    <div id="quizFeedback" class="feedback"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('caliperCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // --- State Variables ---
+        let jawPosition = 2.47; // in cm
+        let zeroError = 0.00;   // in cm
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartPos = 0;
+        let magnifierEnabled = true;
+        let quizMode = false;
+        let targetQuizWidth = 0;
+        let measurementType = 'outer'; // 'outer' or 'inner'
+
+        // Constants
+        const SCALE_FACTOR = 70; // 1 cm = 70 pixels
+        const ORIGIN_X = 140;    // Main scale 0 cm X-coordinate
+        const MAIN_Y = 140;      // Main beam Y top
+
+        // UI Elements
+        const jawSlider = document.getElementById('jawSlider');
+        const sliderVal = document.getElementById('sliderVal');
+        const magToggle = document.getElementById('magToggle');
+        const readoutPanel = document.getElementById('readoutPanel');
+        const quizPanel = document.getElementById('quizPanel');
+        const modeToggleBtn = document.getElementById('modeToggleBtn');
+        const quizInput = document.getElementById('quizInput');
+        const quizFeedback = document.getElementById('quizFeedback');
+
+        // Listeners
+        jawSlider.addEventListener('input', (e) => {
+            jawPosition = parseFloat(e.target.value);
+            updateUI();
+        });
+
+        magToggle.addEventListener('change', (e) => {
+            magnifierEnabled = e.target.checked;
+            requestAnimationFrame(draw);
+        });
+
+        // Pointer Events for Canvas Dragging
+        canvas.addEventListener('pointerdown', (e) => {
+            if (quizMode) return;
+            const rect = canvas.getBoundingClientRect();
+            const clickX = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const sliderPixelX = ORIGIN_X + (jawPosition + zeroError) * SCALE_FACTOR;
+
+            if (clickX >= sliderPixelX - 30 && clickX <= sliderPixelX + 220) {
+                isDragging = true;
+                dragStartX = clickX;
+                dragStartPos = jawPosition;
+                canvas.setPointerCapture(e.pointerId);
+            }
+        });
+
+        canvas.addEventListener('pointermove', (e) => {
+            if (!isDragging) return;
+            const rect = canvas.getBoundingClientRect();
+            const currentX = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const deltaX = currentX - dragStartX;
+            let newPos = dragStartPos + deltaX / SCALE_FACTOR;
+            newPos = Math.max(0, Math.min(6.0, newPos));
+            
+            jawPosition = Math.round(newPos * 100) / 100;
+            jawSlider.value = jawPosition;
+            updateUI();
+        });
+
+        canvas.addEventListener('pointerup', (e) => {
+            if (isDragging) {
+                isDragging = false;
+                canvas.releasePointerCapture(e.pointerId);
+            }
+        });
+
+        function setMeasurementType(type) {
+            measurementType = type;
+            document.getElementById('modeOuter').classList.toggle('active', type === 'outer');
+            document.getElementById('modeInner').classList.toggle('active', type === 'inner');
+            updateUI();
+        }
+
+        function setObjectSize(size) {
+            if (quizMode) return;
+            jawPosition = size;
+            jawSlider.value = jawPosition;
+            updateUI();
+        }
+
+        function setZeroError(err) {
+            zeroError = err;
+            document.getElementById('zeNone').classList.toggle('active', err === 0);
+            document.getElementById('zePos').classList.toggle('active', err === 0.03);
+            document.getElementById('zeNeg').classList.toggle('active', err === -0.02);
+            updateUI();
+        }
+
+        function toggleQuizMode() {
+            quizMode = !quizMode;
+            if (quizMode) {
+                modeToggleBtn.innerText = "Switch to Inspector";
+                readoutPanel.style.display = "none";
+                quizPanel.style.display = "flex";
+                jawSlider.disabled = true;
+                generateRandomTarget();
+            } else {
+                modeToggleBtn.innerText = "Switch to Practice Mode";
+                readoutPanel.style.display = "flex";
+                quizPanel.style.display = "none";
+                jawSlider.disabled = false;
+                updateUI();
+            }
+        }
+
+        function generateRandomTarget() {
+            targetQuizWidth = Math.round((0.5 + Math.random() * 4.7) * 100) / 100;
+            jawPosition = targetQuizWidth;
+            quizInput.value = "";
+            quizFeedback.className = "feedback";
+            quizFeedback.style.display = "none";
+            updateUI();
+        }
+
+        function checkQuizAnswer() {
+            const userAns = parseFloat(quizInput.value);
+            if (isNaN(userAns)) return;
+
+            const effectivePos = jawPosition + zeroError;
+            const correctMSR = Math.floor(effectivePos * 10) / 10;
+            const correctVSRIndex = Math.round((effectivePos - correctMSR) * 100);
+            const correctObserved = Math.round(effectivePos * 100) / 100;
+            const correctActual = Math.round((correctObserved - zeroError) * 100) / 100;
+
+            if (Math.abs(userAns - correctActual) < 0.005) {
+                quizFeedback.className = "feedback correct";
+                quizFeedback.innerHTML = `<strong>Correct! 🎉</strong><br>Calculated Reading: ${correctActual.toFixed(2)} cm`;
+            } else {
+                quizFeedback.className = "feedback incorrect";
+                quizFeedback.innerHTML = `
+                    <strong>Try Again!</strong>
+                    <div class="explanation">
+                        <strong>Solution Breakdown:</strong><br>
+                        • MSR = ${correctMSR.toFixed(2)} cm<br>
+                        • VSR Line = ${correctVSRIndex} (Value = ${(correctVSRIndex * 0.01).toFixed(2)} cm)<br>
+                        • Observed = ${correctObserved.toFixed(2)} cm<br>
+                        ${zeroError !== 0 ? `• Zero Error = ${zeroError > 0 ? '+' : ''}${zeroError.toFixed(2)} cm<br>` : ''}
+                        • Correct Reading = <strong>${correctActual.toFixed(2)} cm</strong>
+                    </div>
+                `;
+            }
+        }
+
+        function updateUI() {
+            sliderVal.innerText = jawPosition.toFixed(2) + " cm";
+
+            const effectivePos = jawPosition + zeroError;
+            const msr = Math.floor(effectivePos * 10) / 10;
+            const vsrIndex = Math.round((effectivePos - msr) * 100);
+            const vsr = vsrIndex * 0.01;
+            const totalObserved = msr + vsr;
+            const correctedFinal = totalObserved - zeroError;
+
+            document.getElementById('msrVal').innerText = `${msr.toFixed(2)} cm`;
+            document.getElementById('vsrVal').innerText = `${vsrIndex} × 0.01 = ${vsr.toFixed(2)} cm`;
+            document.getElementById('zeVal').innerText = `${zeroError > 0 ? '+' : ''}${zeroError.toFixed(2)} cm`;
+            document.getElementById('totalVal').innerText = `${correctedFinal.toFixed(2)} cm`;
+
+            requestAnimationFrame(draw);
+        }
+
+        // --- Main Drawing Loop ---
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Background Grid
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < canvas.width; x += 40) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+            }
+
+            const sliderPixelX = ORIGIN_X + (jawPosition + zeroError) * SCALE_FACTOR;
+
+            // 1. Draw Depth Probe
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillRect(ORIGIN_X + 480, MAIN_Y + 18, (jawPosition + zeroError) * SCALE_FACTOR, 4);
+
+            // 2. Main Beam & Fixed Jaw
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fillRect(40, MAIN_Y, 740, 50);
+
+            // Fixed Jaw (Outer - Bottom)
+            ctx.beginPath();
+            ctx.moveTo(ORIGIN_X, MAIN_Y + 50);
+            ctx.lineTo(ORIGIN_X, MAIN_Y + 220);
+            ctx.quadraticCurveTo(ORIGIN_X - 25, MAIN_Y + 220, ORIGIN_X - 45, MAIN_Y + 120);
+            ctx.lineTo(ORIGIN_X - 45, MAIN_Y + 50);
+            ctx.closePath();
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fill();
+            ctx.strokeStyle = '#64748b';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // Fixed Jaw (Inner - Top, BACK-FACING: flat edge faces LEFT, slant faces RIGHT)
+            ctx.beginPath();
+            ctx.moveTo(ORIGIN_X, MAIN_Y);
+            ctx.lineTo(ORIGIN_X, MAIN_Y - 70);
+            ctx.lineTo(ORIGIN_X + 35, MAIN_Y);
+            ctx.closePath();
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fill();
+            ctx.stroke();
+
+            // Main Scale Graduations (0 to 8 cm)
+            ctx.fillStyle = '#0f172a';
+            ctx.strokeStyle = '#0f172a';
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'center';
+
+            for (let i = 0; i <= 80; i++) {
+                const x = ORIGIN_X + (i * SCALE_FACTOR / 10);
+                if (x > 760) break;
+                
+                let h = 10;
+                if (i % 10 === 0) {
+                    h = 22;
+                    ctx.fillText(i / 10, x, MAIN_Y + 34);
+                } else if (i % 5 === 0) {
+                    h = 16;
+                }
+                ctx.beginPath();
+                ctx.moveTo(x, MAIN_Y);
+                ctx.lineTo(x, MAIN_Y + h);
+                ctx.lineWidth = i % 10 === 0 ? 1.5 : 1;
+                ctx.stroke();
+            }
+            ctx.fillText("cm", ORIGIN_X - 15, MAIN_Y + 34);
+
+            // 3. Target Measurement Object
+            if (jawPosition > 0 && !quizMode) {
+                const objWidth = jawPosition * SCALE_FACTOR;
+
+                if (measurementType === 'outer') {
+                    // Outer Measurement: Solid Cylinder between Lower Jaws
+                    const objX = ORIGIN_X;
+                    const objY = MAIN_Y + 130;
+                    
+                    let gradient = ctx.createLinearGradient(objX, 0, objX + objWidth, 0);
+                    gradient.addColorStop(0, '#e11d48');
+                    gradient.addColorStop(0.5, '#fb7185');
+                    gradient.addColorStop(1, '#be123c');
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(objX, objY - 40, objWidth, 80);
+                    ctx.strokeStyle = '#881337';
+                    ctx.lineWidth = 1.5;
+                    ctx.strokeRect(objX, objY - 40, objWidth, 80);
+
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 12px sans-serif';
+                    ctx.fillText(`Outer: ${jawPosition.toFixed(2)} cm`, objX + objWidth / 2, objY + 4);
+
+                } else {
+                    // Inner Measurement: Hollow Ring/Pipe surrounding Upper Jaws
+                    const innerLeftX = ORIGIN_X;
+                    const innerRightX = sliderPixelX;
+                    const wallThickness = 25;
+
+                    ctx.fillStyle = 'rgba(225, 29, 72, 0.25)';
+                    ctx.strokeStyle = '#e11d48';
+                    ctx.lineWidth = 2;
+
+                    // Left Ring Wall
+                    ctx.fillRect(innerLeftX - wallThickness, MAIN_Y - 95, wallThickness, 85);
+                    ctx.strokeRect(innerLeftX - wallThickness, MAIN_Y - 95, wallThickness, 85);
+
+                    // Right Ring Wall
+                    ctx.fillRect(innerRightX, MAIN_Y - 95, wallThickness, 85);
+                    ctx.strokeRect(innerRightX, MAIN_Y - 95, wallThickness, 85);
+
+                    // Top Connecting Arc / Bridge of Pipe
+                    ctx.beginPath();
+                    ctx.moveTo(innerLeftX - wallThickness, MAIN_Y - 95);
+                    ctx.lineTo(innerRightX + wallThickness, MAIN_Y - 95);
+                    ctx.lineTo(innerRightX + wallThickness, MAIN_Y - 80);
+                    ctx.lineTo(innerLeftX - wallThickness, MAIN_Y - 80);
+                    ctx.closePath();
+                    ctx.fillStyle = 'rgba(225, 29, 72, 0.4)';
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Inner Measurement Dimension Arrows & Text
+                    const midX = (innerLeftX + innerRightX) / 2;
+                    ctx.strokeStyle = '#38bdf8';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(innerLeftX, MAIN_Y - 40);
+                    ctx.lineTo(innerRightX, MAIN_Y - 40);
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#38bdf8';
+                    ctx.font = 'bold 12px sans-serif';
+                    ctx.fillText(`Inner Dia: ${jawPosition.toFixed(2)} cm`, midX, MAIN_Y - 48);
+                }
+
+            } else if (quizMode) {
+                const objWidth = jawPosition * SCALE_FACTOR;
+                ctx.fillStyle = '#334155';
+                ctx.fillRect(ORIGIN_X, MAIN_Y + 90, objWidth, 80);
+                ctx.strokeStyle = '#0284c7';
+                ctx.strokeRect(ORIGIN_X, MAIN_Y + 90, objWidth, 80);
+                ctx.fillStyle = '#38bdf8';
+                ctx.font = 'bold 12px sans-serif';
+                ctx.fillText("Hidden Target Object", ORIGIN_X + objWidth / 2, MAIN_Y + 134);
+            }
+
+            // 4. Transparent Sliding Vernier Assembly
+            // Sliding Outer Jaw (Bottom)
+            ctx.beginPath();
+            ctx.moveTo(sliderPixelX, MAIN_Y + 50);
+            ctx.lineTo(sliderPixelX, MAIN_Y + 220);
+            ctx.quadraticCurveTo(sliderPixelX + 25, MAIN_Y + 220, sliderPixelX + 45, MAIN_Y + 120);
+            ctx.lineTo(sliderPixelX + 45, MAIN_Y + 50);
+            ctx.closePath();
+            ctx.fillStyle = '#94a3b8';
+            ctx.fill();
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // Sliding Inner Jaw (Top, BACK-FACING: flat edge faces RIGHT, slant faces LEFT)
+            ctx.beginPath();
+            ctx.moveTo(sliderPixelX, MAIN_Y);
+            ctx.lineTo(sliderPixelX, MAIN_Y - 70);
+            ctx.lineTo(sliderPixelX - 35, MAIN_Y);
+            ctx.closePath();
+            ctx.fillStyle = '#94a3b8';
+            ctx.fill();
+            ctx.stroke();
+
+            // Semi-Transparent Vernier Body Window (Glass Effect)
+            ctx.fillStyle = 'rgba(2, 132, 199, 0.18)'; 
+            ctx.fillRect(sliderPixelX - 20, MAIN_Y - 10, 160, 70);
+            ctx.strokeStyle = 'rgba(2, 132, 199, 0.6)';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(sliderPixelX - 20, MAIN_Y - 10, 160, 70);
+
+            // Clear View Window Area (Transparent Glass overlay)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+            ctx.fillRect(sliderPixelX, MAIN_Y, 130, 50);
+
+            // Thumb Screw Knob
+            ctx.fillStyle = '#64748b';
+            ctx.fillRect(sliderPixelX + 80, MAIN_Y + 60, 30, 12);
+            ctx.strokeRect(sliderPixelX + 80, MAIN_Y + 60, 30, 12);
+
+            // Vernier Scale Markings & Coincidence Highlights
+            const effectivePos = jawPosition + zeroError;
+            const msr = Math.floor(effectivePos * 10) / 10;
+            const alignedVsrIndex = Math.round((effectivePos - msr) * 100);
+
+            ctx.font = 'bold 9px sans-serif';
+            ctx.textAlign = 'center';
+
+            // Highlight Zero Point Alignment Line
+            ctx.strokeStyle = '#0284c7';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(sliderPixelX, MAIN_Y - 5);
+            ctx.lineTo(sliderPixelX, MAIN_Y + 28);
+            ctx.stroke();
+
+            // Zero Mark Indicator
+            ctx.fillStyle = '#0284c7';
+            ctx.beginPath();
+            ctx.moveTo(sliderPixelX - 4, MAIN_Y - 8);
+            ctx.lineTo(sliderPixelX + 4, MAIN_Y - 8);
+            ctx.lineTo(sliderPixelX, MAIN_Y - 2);
+            ctx.closePath();
+            ctx.fill();
+
+            for (let j = 0; j <= 10; j++) {
+                const vx = sliderPixelX + (j * (SCALE_FACTOR * 0.9 / 10));
+                const isAligned = (j === alignedVsrIndex);
+                
+                ctx.strokeStyle = isAligned ? '#d97706' : '#0284c7';
+                ctx.lineWidth = isAligned ? 2.5 : 1.2;
+
+                ctx.beginPath();
+                ctx.moveTo(vx, MAIN_Y);
+                ctx.lineTo(vx, MAIN_Y + 22);
+                ctx.stroke();
+
+                ctx.fillStyle = isAligned ? '#b45309' : '#0284c7';
+                ctx.fillText(j, vx, MAIN_Y + 32);
+            }
+
+            // 5. Magnifier / Inspector Window Overlay
+            if (magnifierEnabled && !quizMode) {
+                drawMagnifier(sliderPixelX, alignedVsrIndex);
+            }
+        }
+
+        function drawMagnifier(sliderPixelX, alignedIndex) {
+            const magX = 640;
+            const magY = 280;
+            const magRadius = 90;
+
+            ctx.save();
+            
+            // Outer Ring
+            ctx.beginPath();
+            ctx.arc(magX, magY, magRadius + 4, 0, Math.PI * 2);
+            ctx.fillStyle = '#0284c7';
+            ctx.fill();
+
+            // Lens Clipping Circle
+            ctx.beginPath();
+            ctx.arc(magX, magY, magRadius, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.fillStyle = '#f8fafc';
+            ctx.fill();
+
+            const zoomCenterPixelX = sliderPixelX + (alignedIndex * (SCALE_FACTOR * 0.9 / 10));
+            const zoomCenterPixelY = MAIN_Y + 12;
+
+            ctx.translate(magX, magY);
+            ctx.scale(2.4, 2.4);
+            ctx.translate(-zoomCenterPixelX, -zoomCenterPixelY);
+
+            // Draw Main Scale zoomed lines
+            for (let i = 0; i <= 80; i++) {
+                const x = ORIGIN_X + (i * SCALE_FACTOR / 10);
+                let h = i % 10 === 0 ? 18 : 10;
+                ctx.strokeStyle = '#0f172a';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(x, MAIN_Y);
+                ctx.lineTo(x, MAIN_Y + h);
+                ctx.stroke();
+            }
+
+            // Draw Vernier Scale zoomed transparent lines
+            for (let j = 0; j <= 10; j++) {
+                const vx = sliderPixelX + (j * (SCALE_FACTOR * 0.9 / 10));
+                const isAligned = (j === alignedIndex);
+                ctx.strokeStyle = isAligned ? '#ef4444' : '#0284c7';
+                ctx.lineWidth = isAligned ? 1.5 : 1;
+                ctx.beginPath();
+                ctx.moveTo(vx, MAIN_Y);
+                ctx.lineTo(vx, MAIN_Y + 22);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+
+            // Lens Outer Border
+            ctx.beginPath();
+            ctx.arc(magX, magY, magRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = '#0284c7';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            // Reticle Label
+            ctx.fillStyle = '#0284c7';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Coinciding Division: Line ${alignedIndex}`, magX, magY + magRadius + 18);
+        }
+
+        // Initial render
+        updateUI();
+    </script>
+</body>
+</html>

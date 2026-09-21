@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>0-25mm Interactive Micrometer Screw Gauge Simulation</title>
+    <!-- Tailwind CSS for modern responsive visual styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#111827',
+                            900: '#0f172a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        canvas {
+            touch-action: none; /* Prevent touch scroll interference during thimble dragging */
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(100, 116, 139, 0.5);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans antialiased select-none overflow-x-hidden">
+
+    <header class="bg-slate-800/80 backdrop-blur border-b border-slate-700/60 sticky top-0 z-30 px-4 py-3 shadow-md">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-indigo-600/20 text-indigo-400 rounded-lg border border-indigo-500/30">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-white leading-tight">Virtual Micrometer Screw Gauge</h1>
+                    <p class="text-xs text-slate-400">Precision: 0.01 mm | Range: 0.00 – 25.00 mm</p>
+                </div>
+            </div>
+
+            <!-- Mode Switcher -->
+            <div class="flex items-center bg-slate-900/80 p-1 rounded-xl border border-slate-700/70">
+                <button id="btn-mode-teacher" onclick="setMode('teacher')" class="px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-indigo-600 text-white shadow-sm">
+                    🎓 Teacher Demo / Guided
+                </button>
+                <button id="btn-mode-student" onclick="setMode('student')" class="px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all duration-200">
+                    📝 Student Quiz / Practice
+                </button>
+            </div>
+
+            <!-- Quick Action Buttons -->
+            <div class="flex items-center space-x-2 text-xs">
+                <button onclick="toggleAudio()" id="btn-audio" class="p-2 bg-slate-700/60 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-600/50 transition flex items-center space-x-1" title="Toggle Sound">
+                    <span id="icon-audio">🔊</span> <span class="hidden sm:inline">Audio</span>
+                </button>
+                <button onclick="toggleLabels()" id="btn-labels" class="p-2 bg-slate-700/60 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-600/50 transition flex items-center space-x-1" title="Toggle Anatomy Labels">
+                    <span>🏷️</span> <span class="hidden sm:inline">Labels</span>
+                </button>
+                <button onclick="resetSimulation()" class="p-2 bg-slate-700/60 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-600/50 transition flex items-center space-x-1" title="Reset All Settings">
+                    <span>🔄</span> <span class="hidden sm:inline">Reset</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- Left: Canvas Viewport & Fine Controls (8 Columns) -->
+        <div class="lg:col-span-8 flex flex-col gap-4">
+            
+            <!-- Canvas Container -->
+            <div class="relative bg-slate-800/90 rounded-2xl border border-slate-700/80 shadow-2xl overflow-hidden group">
+                
+                <!-- Lock Indicator -->
+                <div id="lock-badge" class="hidden absolute top-4 left-4 z-10 px-3 py-1 bg-red-500/20 text-red-400 border border-red-500/40 rounded-full text-xs font-bold items-center space-x-1.5 backdrop-blur">
+                    <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                    <span>LOCK ENGAGED</span>
+                </div>
+
+                <!-- Student Mode Zoom View Badge Indicator -->
+                <div id="student-zoom-badge" class="hidden absolute top-4 right-4 z-10 px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-full text-xs font-bold items-center space-x-1.5 backdrop-blur shadow-lg">
+                    <span>🔍</span>
+                    <span id="student-zoom-text">ENLARGED QUIZ VIEW (1.50x)</span>
+                </div>
+
+                <!-- Control Guidance Overlay -->
+                <div class="absolute bottom-3 left-4 z-10 text-[11px] text-slate-400 bg-slate-900/60 backdrop-blur px-2.5 py-1 rounded-md border border-slate-700/50 pointer-events-none hidden sm:block">
+                    💡 <span class="font-semibold text-slate-300">Drag Canvas / Wheel</span> • Arrow keys: ±0.01mm (PgUp/Down: ±0.5mm)
+                </div>
+
+                <!-- Main Canvas -->
+                <canvas id="micrometerCanvas" class="w-full h-auto cursor-grab active:cursor-grabbing block" width="1200" height="675"></canvas>
+
+                <!-- Magnifier Lens -->
+                <div id="magnifier-container" class="absolute bottom-4 right-4 z-20 w-48 h-48 rounded-xl border-2 border-indigo-500/80 bg-slate-950 shadow-2xl overflow-hidden pointer-events-none flex flex-col">
+                    <div class="bg-indigo-900/80 text-[10px] font-bold text-indigo-200 px-2 py-0.5 border-b border-indigo-700/60 uppercase tracking-wider flex justify-between items-center">
+                        <span>Zoom Magnifier</span>
+                        <span class="text-indigo-400">4x</span>
+                    </div>
+                    <canvas id="zoomCanvas" class="w-full flex-1" width="200" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- Direct Controls & Knurled Spinner Wheel -->
+            <div class="bg-slate-800/60 backdrop-blur rounded-xl border border-slate-700/60 p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg">
+                
+                <!-- Interactive Roller Wheel -->
+                <div class="flex items-center space-x-3 w-full md:w-auto bg-slate-900/80 p-2.5 rounded-xl border border-slate-700/70">
+                    <div class="text-center min-w-[70px]">
+                        <div class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Spindle Drive</div>
+                        <div class="text-[9px] text-indigo-400 font-mono">Open / Close</div>
+                    </div>
+
+                    <!-- Continuous Open Button -->
+                    <button onmousedown="startContinuousRotate(-1)" onmouseup="stopContinuousRotate()" onmouseleave="stopContinuousRotate()" ontouchstart="startContinuousRotate(-1); event.preventDefault();" ontouchend="stopContinuousRotate()" class="px-3 py-2 bg-slate-700 hover:bg-indigo-600 text-slate-200 rounded-lg text-xs font-bold transition border border-slate-600 active:scale-95 flex items-center justify-center select-none" title="Hold to Open Spindle">
+                        ↺ Open
+                    </button>
+
+                    <!-- Knurled Roller Canvas -->
+                    <div class="relative group cursor-ns-resize flex-1 sm:flex-initial">
+                        <canvas id="thumbwheelCanvas" width="130" height="38" class="bg-slate-950 rounded-lg border border-indigo-500/40 shadow-inner touch-none"></canvas>
+                        <div class="absolute inset-0 pointer-events-none flex items-center justify-between px-2 text-[10px] text-slate-500 opacity-60 group-hover:opacity-100 transition">
+                            <span>▲</span>
+                            <span class="text-[9px] text-slate-400">DRAG</span>
+                            <span>▼</span>
+                        </div>
+                    </div>
+
+                    <!-- Continuous Close Button -->
+                    <button onmousedown="startContinuousRotate(1)" onmouseup="stopContinuousRotate()" onmouseleave="stopContinuousRotate()" ontouchstart="startContinuousRotate(1); event.preventDefault();" ontouchend="stopContinuousRotate()" class="px-3 py-2 bg-slate-700 hover:bg-indigo-600 text-slate-200 rounded-lg text-xs font-bold transition border border-slate-600 active:scale-95 flex items-center justify-center select-none" title="Hold to Close Spindle">
+                        Close ↻
+                    </button>
+                </div>
+
+                <!-- Fine Stepping Controls -->
+                <div class="flex items-center space-x-1 sm:space-x-1.5 flex-wrap justify-center">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Nudge:</span>
+                    <button onclick="stepGauge(-1.0)" class="px-2 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-mono font-bold border border-slate-600 transition active:scale-95">-1.0mm</button>
+                    <button onclick="stepGauge(-0.1)" class="px-2 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-mono font-bold border border-slate-600 transition active:scale-95">-0.1mm</button>
+                    <button onclick="stepGauge(-0.01)" class="px-2 py-1.5 bg-indigo-600/80 hover:bg-indigo-600 text-white rounded-lg text-xs font-mono font-bold border border-indigo-500/50 transition active:scale-95">-0.01mm</button>
+                    <button onclick="stepGauge(0.01)" class="px-2 py-1.5 bg-indigo-600/80 hover:bg-indigo-600 text-white rounded-lg text-xs font-mono font-bold border border-indigo-500/50 transition active:scale-95">+0.01mm</button>
+                    <button onclick="stepGauge(0.1)" class="px-2 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-mono font-bold border border-slate-600 transition active:scale-95">+0.1mm</button>
+                    <button onclick="stepGauge(1.0)" class="px-2 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-mono font-bold border border-slate-600 transition active:scale-95">+1.0mm</button>
+                </div>
+
+                <!-- Lock Nut Switch -->
+                <div class="flex items-center space-x-3">
+                    <button id="btn-lock" onclick="toggleLock()" class="px-4 py-1.5 rounded-lg text-xs font-bold border transition flex items-center space-x-2 bg-slate-700 text-slate-300 border-slate-600 hover:bg-slate-650">
+                        <span id="lock-icon">🔓</span>
+                        <span id="lock-text">Lock Spindle</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Diagnostic Readings & Configuration Panels (4 Columns) -->
+        <div class="lg:col-span-4 flex flex-col gap-6">
+            
+            <!-- TEACHER MODE PANEL -->
+            <div id="panel-teacher" class="space-y-6">
+                
+                <!-- Live Reading Breakdown -->
+                <div class="bg-slate-800/80 backdrop-blur rounded-2xl border border-slate-700/80 p-5 shadow-xl relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-indigo-400 mb-4 flex items-center space-x-2">
+                        <span>📊 Live Measurement Analysis</span>
+                    </h2>
+
+                    <div class="space-y-3">
+                        <!-- MSR Box -->
+                        <div class="flex justify-between items-center p-2.5 bg-slate-900/60 rounded-xl border border-slate-700/50">
+                            <div>
+                                <div class="text-xs text-slate-400 font-medium">Main Scale (MSR)</div>
+                                <div class="text-[11px] text-slate-500">Sleeve datum reading</div>
+                            </div>
+                            <div id="calc-msr" class="font-mono text-base font-bold text-emerald-400">0.00 mm</div>
+                        </div>
+
+                        <!-- CSR Box -->
+                        <div class="flex justify-between items-center p-2.5 bg-slate-900/60 rounded-xl border border-slate-700/50">
+                            <div>
+                                <div class="text-xs text-slate-400 font-medium">Circular Scale (CSR)</div>
+                                <div class="text-[11px] text-slate-500"><span id="calc-csr-div">0</span> div × 0.01 mm</div>
+                            </div>
+                            <div id="calc-csr" class="font-mono text-base font-bold text-amber-400">0.00 mm</div>
+                        </div>
+
+                        <!-- Observed Reading -->
+                        <div class="flex justify-between items-center p-2.5 bg-slate-900/60 rounded-xl border border-slate-700/50">
+                            <div class="text-xs text-slate-300 font-semibold">Observed Reading</div>
+                            <div id="calc-obs" class="font-mono text-base font-bold text-slate-200">0.00 mm</div>
+                        </div>
+
+                        <!-- Zero Error Adjustment -->
+                        <div class="flex justify-between items-center p-2.5 bg-slate-900/60 rounded-xl border border-slate-700/50">
+                            <div>
+                                <div class="text-xs text-slate-400 font-medium">Zero Error Correction</div>
+                                <div class="text-[11px] text-slate-500">Observed - (Zero Error)</div>
+                            </div>
+                            <div id="calc-zero-err" class="font-mono text-sm font-bold text-red-400">0.00 mm</div>
+                        </div>
+
+                        <!-- Final Corrected Reading -->
+                        <div class="pt-2 border-t border-slate-700/70 flex justify-between items-center">
+                            <span class="text-xs font-bold uppercase tracking-wider text-indigo-300">Actual Thickness:</span>
+                            <span id="calc-final" class="font-mono text-xl font-extrabold text-indigo-400 bg-indigo-950/60 px-3 py-1 rounded-lg border border-indigo-500/30">0.00 mm</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Setup & Specimen Controls -->
+                <div class="bg-slate-800/80 backdrop-blur rounded-2xl border border-slate-700/80 p-5 shadow-xl space-y-4">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-slate-300 mb-2">⚙️ Specimen & Calibration Setup</h2>
+
+                    <!-- Specimen Thickness / Object Size Control -->
+                    <div class="p-3 bg-slate-900/70 rounded-xl border border-indigo-500/30 space-y-2">
+                        <div class="flex justify-between items-center">
+                            <label class="text-xs font-bold text-indigo-300">📐 Specimen Size (Thickness):</label>
+                            <span id="lbl-object-size" class="font-mono text-xs font-bold text-amber-400">0.00 mm</span>
+                        </div>
+
+                        <!-- Object Size Range Slider -->
+                        <input type="range" id="range-object-size" min="0.10" max="25.00" step="0.01" value="5.00" oninput="setObjectSize(this.value)" class="w-full accent-indigo-500 cursor-pointer">
+
+                        <!-- Specimen Step Controls -->
+                        <div class="flex items-center space-x-1.5 pt-1">
+                            <button onclick="nudgeObjectSize(-1.0)" class="flex-1 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[11px] font-mono border border-slate-700">-1.0mm</button>
+                            <button onclick="nudgeObjectSize(-0.1)" class="flex-1 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[11px] font-mono border border-slate-700">-0.1mm</button>
+                            <button onclick="nudgeObjectSize(0.1)" class="flex-1 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[11px] font-mono border border-slate-700">+0.1mm</button>
+                            <button onclick="nudgeObjectSize(1.0)" class="flex-1 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[11px] font-mono border border-slate-700">+1.0mm</button>
+                        </div>
+
+                        <!-- Auto-Clamp Checkbox -->
+                        <div class="flex items-center space-x-2 pt-1 border-t border-slate-800">
+                            <input type="checkbox" id="chk-autoclamp" checked onchange="toggleAutoClamp(this.checked)" class="rounded text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5 accent-indigo-500 cursor-pointer">
+                            <label for="chk-autoclamp" class="text-[11px] text-slate-300 cursor-pointer">Auto-clamp spindle when changing specimen size</label>
+                        </div>
+                    </div>
+
+                    <!-- Direct Numerical Value Setting -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Set Spindle Opening directly (0.00 - 25.00 mm):</label>
+                        <div class="flex space-x-2">
+                            <input type="number" id="input-direct-val" step="0.01" min="0" max="25" value="0.00" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 font-mono text-sm text-white focus:outline-none focus:border-indigo-500 transition">
+                            <button onclick="setDirectValue()" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold transition">Set</button>
+                        </div>
+                    </div>
+
+                    <!-- Object Specimen Actions -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1.5">Specimen Actions:</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="generateRandomObject()" class="col-span-1 px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1 shadow-md">
+                                <span>🎲 Random Specimen</span>
+                            </button>
+                            <button onclick="removeObject()" class="col-span-1 px-3 py-2 bg-slate-700 hover:bg-slate-650 text-slate-300 rounded-xl text-xs font-medium transition">
+                                🗑️ Remove Specimen
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Zero Error Calibration -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Zero Error Configuration:</label>
+                        <select id="select-zero-error" onchange="handleZeroErrorSelect(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                            <option value="0.00">No Zero Error (0.00 mm)</option>
+                            <option value="0.03">Positive Zero Error (+0.03 mm)</option>
+                            <option value="-0.04">Negative Zero Error (-0.04 mm)</option>
+                            <option value="custom">Custom Offset...</option>
+                        </select>
+                        
+                        <!-- Custom Zero Error Slider -->
+                        <div id="custom-zero-container" class="hidden mt-2 p-2.5 bg-slate-900/60 rounded-xl border border-slate-700/50 space-y-1">
+                            <div class="flex justify-between text-xs text-slate-400">
+                                <span>Custom Offset:</span>
+                                <span id="lbl-custom-zero" class="font-mono font-bold text-slate-200">+0.00 mm</span>
+                            </div>
+                            <input type="range" id="range-zero-error" min="-0.09" max="0.09" step="0.01" value="0.00" oninput="updateCustomZeroError(this.value)" class="w-full accent-indigo-500 cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STUDENT QUIZ PANEL -->
+            <div id="panel-student" class="hidden space-y-6">
+                <div class="bg-slate-800/80 backdrop-blur rounded-2xl border border-slate-700/80 p-5 shadow-xl space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                        <h2 class="text-sm font-bold uppercase tracking-wider text-amber-400 flex items-center space-x-2">
+                            <span>✏️ Student Assessment Test</span>
+                        </h2>
+                        <span id="quiz-score-badge" class="px-2.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-full text-xs font-bold">Score: 0 / 0</span>
+                    </div>
+
+                    <!-- Student Scale Zoom Selector -->
+                    <div class="flex items-center justify-between p-2.5 bg-slate-900/60 rounded-xl border border-slate-700/50">
+                        <span class="text-xs font-medium text-slate-300">🔍 Scale Zoom Level:</span>
+                        <div class="flex space-x-1">
+                            <button onclick="setStudentZoom(1.25)" id="btn-zoom-125" class="px-2 py-1 rounded text-xs font-bold transition bg-slate-700 text-slate-300 hover:bg-slate-600">1.25x</button>
+                            <button onclick="setStudentZoom(1.5)" id="btn-zoom-150" class="px-2.5 py-1 rounded text-xs font-bold transition bg-amber-600 text-white shadow">1.50x</button>
+                            <button onclick="setStudentZoom(1.8)" id="btn-zoom-180" class="px-2 py-1 rounded text-xs font-bold transition bg-slate-700 text-slate-300 hover:bg-slate-600">1.80x</button>
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        Read the micrometer scale carefully (accounting for zero error) and determine the actual specimen thickness.
+                    </p>
+
+                    <!-- Challenge Generator -->
+                    <button onclick="newQuizQuestion()" class="w-full py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-xs transition shadow-lg flex items-center justify-center space-x-2">
+                        <span>🎯 Generate Challenge Specimen</span>
+                    </button>
+
+                    <!-- Answer Input -->
+                    <div class="space-y-3 pt-2">
+                        <label class="block text-xs font-medium text-slate-300">Enter Your Final Answer (in mm):</label>
+                        <div class="flex space-x-2">
+                            <input type="number" id="quiz-answer-input" step="0.01" placeholder="0.00" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 font-mono text-base text-white focus:outline-none focus:border-amber-500">
+                            <button onclick="checkStudentAnswer()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition shadow-md">
+                                Submit
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Diagnostic Feedback -->
+                    <div id="quiz-feedback" class="hidden p-4 rounded-xl text-xs space-y-2 border"></div>
+                </div>
+
+                <!-- Hints Box -->
+                <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 p-4 text-xs text-slate-400 space-y-2">
+                    <div class="font-bold text-slate-300 uppercase tracking-wider text-[11px]">💡 Reading Steps:</div>
+                    <ol class="list-decimal list-inside space-y-1 text-slate-400">
+                        <li>Identify highest visible whole/half mm tick on sleeve datum.</li>
+                        <li>Find circular thimble division aligned with sleeve datum line.</li>
+                        <li>Add MSR + CSR for Observed Reading.</li>
+                        <li>Subtract Zero Error (Observed - Zero Error = Actual Thickness).</li>
+                    </ol>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        /**
+         * MICROMETER SCREW GAUGE CORE APPLICATION STATE & ENGINE
+         */
+        // Canvas & 2D Rendering Context References
+        let canvas, ctx;
+        let zoomCanvas, zoomCtx;
+        let thumbwheelCanvas, thumbwheelCtx;
+
+        const state = {
+            mode: 'teacher', // 'teacher' or 'student'
+            studentZoom: 1.5, // Magnification scale for Student Quiz Mode (1.25, 1.5, 1.8)
+            spindlePos: 0.00, // Physical spindle opening distance in mm (0.00 to 25.00)
+            zeroError: 0.00, // Zero error offset in mm (+0.03, -0.04, etc.)
+            isLocked: false,
+            showLabels: false,
+            audioEnabled: true,
+            hasObject: false,
+            objectType: 'ball', // 'ball', 'wire', 'block'
+            objectThickness: 5.00,
+            autoClamp: true, // Automatically keep spindle clamped when modifying object size
+            
+            // Interaction State
+            isDraggingThimble: false,
+            dragStartY: 0,
+            dragStartPos: 0,
+            
+            // Quiz State
+            quizScore: 0,
+            quizAttempts: 0,
+            quizTargetThickness: null
+        };
+
+        function initCanvasReferences() {
+            canvas = document.getElementById('micrometerCanvas');
+            if (canvas) ctx = canvas.getContext('2d');
+
+            zoomCanvas = document.getElementById('zoomCanvas');
+            if (zoomCanvas) zoomCtx = zoomCanvas.getContext('2d');
+
+            thumbwheelCanvas = document.getElementById('thumbwheelCanvas');
+            if (thumbwheelCanvas) thumbwheelCtx = thumbwheelCanvas.getContext('2d');
+
+            if (canvas) attachCanvasEventListeners();
+        }
+
+        // Web Audio Ratchet Sound Synthesizer
+        let audioCtx = null;
+        function playClickSound() {
+            if (!state.audioEnabled) return;
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.015);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.015);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.015);
+            } catch (e) {
+                // Audio fallback ignore
+            }
+        }
+
+        // Synchronize UI Controls with Application State
+        function syncObjectSizeUI() {
+            const range = document.getElementById('range-object-size');
+            const lbl = document.getElementById('lbl-object-size');
+            const inputDirect = document.getElementById('input-direct-val');
+            if (range) range.value = state.objectThickness.toFixed(2);
+            if (lbl) lbl.innerText = state.objectThickness.toFixed(2) + ' mm';
+            if (inputDirect) inputDirect.value = state.spindlePos.toFixed(2);
+        }
+
+        // Update Math Analysis Panel Readings
+        function updateBreakoutCalculations() {
+            const observedOpening = Math.max(0, state.spindlePos + state.zeroError);
+            const msr = Math.floor(observedOpening * 2) / 2; // Nearest 0.5 mm
+            const csrDiv = Math.round(((observedOpening - msr) / 0.01)) % 50;
+            const csr = csrDiv * 0.01;
+            const obs = msr + csr;
+            const actual = obs - state.zeroError;
+
+            const elMsr = document.getElementById('calc-msr');
+            const elCsrDiv = document.getElementById('calc-csr-div');
+            const elCsr = document.getElementById('calc-csr');
+            const elObs = document.getElementById('calc-obs');
+            const elZeroErr = document.getElementById('calc-zero-err');
+            const elFinal = document.getElementById('calc-final');
+
+            if (elMsr) elMsr.innerText = msr.toFixed(2) + ' mm';
+            if (elCsrDiv) elCsrDiv.innerText = Math.abs(csrDiv);
+            if (elCsr) elCsr.innerText = csr.toFixed(2) + ' mm';
+            if (elObs) elObs.innerText = obs.toFixed(2) + ' mm';
+            if (elZeroErr) {
+                const sign = state.zeroError >= 0 ? '+' : '';
+                elZeroErr.innerText = sign + state.zeroError.toFixed(2) + ' mm';
+            }
+            if (elFinal) elFinal.innerText = Math.max(0, actual).toFixed(2) + ' mm';
+        }
+
+        // Fine Step Spindle Controls
+        function stepGauge(delta) {
+            if (state.isLocked) return;
+            
+            let newPos = Math.max(0, Math.min(25.00, state.spindlePos + delta));
+            newPos = Math.round(newPos * 100) / 100;
+
+            if (state.hasObject && state.autoClamp) {
+                state.objectThickness = newPos;
+            } else if (state.hasObject && newPos < state.objectThickness) {
+                newPos = state.objectThickness;
+            }
+
+            state.spindlePos = newPos;
+            playClickSound();
+            syncObjectSizeUI();
+            updateBreakoutCalculations();
+            render();
+        }
+
+        function setObjectSize(val) {
+            const num = parseFloat(val);
+            if (isNaN(num)) return;
+            state.objectThickness = Math.max(0.10, Math.min(25.00, num));
+            state.hasObject = true;
+            if (state.autoClamp && !state.isLocked) {
+                state.spindlePos = state.objectThickness;
+            }
+            syncObjectSizeUI();
+            updateBreakoutCalculations();
+            render();
+        }
+
+        function nudgeObjectSize(delta) {
+            setObjectSize(state.objectThickness + delta);
+        }
+
+        function toggleAutoClamp(checked) {
+            state.autoClamp = checked;
+            if (checked && state.hasObject && !state.isLocked) {
+                state.spindlePos = state.objectThickness;
+                syncObjectSizeUI();
+                updateBreakoutCalculations();
+                render();
+            }
+        }
+
+        function setDirectValue() {
+            if (state.isLocked) return;
+            const input = document.getElementById('input-direct-val');
+            if (!input) return;
+            const val = parseFloat(input.value);
+            if (!isNaN(val)) {
+                const clamped = Math.max(0, Math.min(25.00, val));
+                state.spindlePos = Math.round(clamped * 100) / 100;
+                if (state.hasObject && state.autoClamp) {
+                    state.objectThickness = state.spindlePos;
+                }
+                syncObjectSizeUI();
+                updateBreakoutCalculations();
+                render();
+            }
+        }
+
+        function generateRandomObject() {
+            const types = ['ball', 'wire', 'block'];
+            state.objectType = types[Math.floor(Math.random() * types.length)];
+            const randVal = (Math.random() * 21.0 + 1.0).toFixed(2);
+            setObjectSize(randVal);
+        }
+
+        function removeObject() {
+            state.hasObject = false;
+            syncObjectSizeUI();
+            updateBreakoutCalculations();
+            render();
+        }
+
+        function handleZeroErrorSelect(val) {
+            const customContainer = document.getElementById('custom-zero-container');
+            if (val === 'custom') {
+                if (customContainer) customContainer.classList.remove('hidden');
+                const range = document.getElementById('range-zero-error');
+                if (range) updateCustomZeroError(range.value);
+            } else {
+                if (customContainer) customContainer.classList.add('hidden');
+                state.zeroError = parseFloat(val) || 0;
+                updateBreakoutCalculations();
+                render();
+            }
+        }
+
+        function updateCustomZeroError(val) {
+            const num = parseFloat(val) || 0;
+            state.zeroError = num;
+            const lbl = document.getElementById('lbl-custom-zero');
+            if (lbl) {
+                const sign = num >= 0 ? '+' : '';
+                lbl.innerText = sign + num.toFixed(2) + ' mm';
+            }
+            updateBreakoutCalculations();
+            render();
+        }
+
+        function newQuizQuestion() {
+            generateRandomObject();
+            state.quizTargetThickness = state.objectThickness;
+            const feedback = document.getElementById('quiz-feedback');
+            if (feedback) {
+                feedback.classList.add('hidden');
+                feedback.innerHTML = '';
+            }
+            const input = document.getElementById('quiz-answer-input');
+            if (input) input.value = '';
+        }
+
+        function checkStudentAnswer() {
+            const input = document.getElementById('quiz-answer-input');
+            const feedback = document.getElementById('quiz-feedback');
+            if (!input || !feedback) return;
+
+            const userAns = parseFloat(input.value);
+            if (isNaN(userAns)) {
+                feedback.className = "p-4 rounded-xl text-xs space-y-2 border bg-amber-500/20 text-amber-300 border-amber-500/40";
+                feedback.innerHTML = "⚠️ Please enter a numerical answer in mm.";
+                feedback.classList.remove('hidden');
+                return;
+            }
+
+            state.quizAttempts++;
+            const actualThickness = state.objectThickness;
+            const diff = Math.abs(userAns - actualThickness);
+
+            if (diff < 0.015) {
+                state.quizScore++;
+                feedback.className = "p-4 rounded-xl text-xs space-y-2 border bg-emerald-500/20 text-emerald-300 border-emerald-500/40";
+                feedback.innerHTML = `✅ <strong>Correct!</strong> Actual Thickness = ${actualThickness.toFixed(2)} mm. Outstanding precision!`;
+            } else {
+                let hint = "Double-check the main scale reading and circular scale division alignment.";
+                if (Math.abs(diff - 0.5) < 0.05) {
+                    hint = "Hint: Check whether the 0.5 mm sub-division line on the sleeve datum is visible!";
+                } else if (state.zeroError !== 0 && Math.abs(userAns - (actualThickness + state.zeroError)) < 0.02) {
+                    hint = "Hint: Did you forget to apply the Zero Error correction? (Actual = Observed - Zero Error)";
+                }
+
+                feedback.className = "p-4 rounded-xl text-xs space-y-2 border bg-red-500/20 text-red-300 border-red-500/40";
+                feedback.innerHTML = `❌ <strong>Incorrect.</strong> Your Answer: ${userAns.toFixed(2)} mm.<br>💡 <em>${hint}</em>`;
+            }
+
+            feedback.classList.remove('hidden');
+            const badge = document.getElementById('quiz-score-badge');
+            if (badge) badge.innerText = `Score: ${state.quizScore} / ${state.quizAttempts}`;
+        }
+
+        function toggleAudio() {
+            state.audioEnabled = !state.audioEnabled;
+            const icon = document.getElementById('icon-audio');
+            if (icon) icon.innerText = state.audioEnabled ? '🔊' : '🔇';
+        }
+
+        function toggleLabels() {
+            state.showLabels = !state.showLabels;
+            render();
+        }
+
+        function resetSimulation() {
+            state.spindlePos = 0.00;
+            state.zeroError = 0.00;
+            state.isLocked = false;
+            state.hasObject = false;
+            state.objectThickness = 5.00;
+            state.autoClamp = true;
+
+            const selectZero = document.getElementById('select-zero-error');
+            if (selectZero) selectZero.value = '0.00';
+            const customContainer = document.getElementById('custom-zero-container');
+            if (customContainer) customContainer.classList.add('hidden');
+
+            const lockBadge = document.getElementById('lock-badge');
+            if (lockBadge) lockBadge.classList.add('hidden');
+
+            const lockIcon = document.getElementById('lock-icon');
+            const lockText = document.getElementById('lock-text');
+            if (lockIcon) lockIcon.innerText = '🔓';
+            if (lockText) lockText.innerText = 'Lock Spindle';
+
+            syncObjectSizeUI();
+            updateBreakoutCalculations();
+            render();
+        }
+
+        let rotateInterval = null;
+        function startContinuousRotate(dir) {
+            if (rotateInterval) clearInterval(rotateInterval);
+            rotateInterval = setInterval(() => {
+                stepGauge(dir * 0.01);
+            }, 30);
+        }
+
+        function stopContinuousRotate() {
+            if (rotateInterval) {
+                clearInterval(rotateInterval);
+                rotateInterval = null;
+            }
+        }
+
+        function toggleLock() {
+            state.isLocked = !state.isLocked;
+            const lockBadge = document.getElementById('lock-badge');
+            const lockIcon = document.getElementById('lock-icon');
+            const lockText = document.getElementById('lock-text');
+
+            if (state.isLocked) {
+                if (lockBadge) lockBadge.classList.remove('hidden');
+                if (lockIcon) lockIcon.innerText = '🔒';
+                if (lockText) lockText.innerText = 'Unlock Spindle';
+            } else {
+                if (lockBadge) lockBadge.classList.add('hidden');
+                if (lockIcon) lockIcon.innerText = '🔓';
+                if (lockText) lockText.innerText = 'Lock Spindle';
+            }
+        }
+
+        function drawUFrame(ctx, originX, centerY, sleeveX, scaleMM) {
+            ctx.save();
+            const zoomRatio = scaleMM / 14.0;
+
+            // Frame Structural Anchors & Proportions
+            const leftOuterX = originX - (42 * zoomRatio);
+            const leftInnerX = originX - (6 * zoomRatio);
+            const rightInnerX = sleeveX - (10 * zoomRatio);
+            const rightOuterX = sleeveX + (28 * zoomRatio);
+            
+            const topY = centerY - (24 * zoomRatio);
+            const hubBottomY = centerY + (24 * zoomRatio);
+
+            const innerDropY = centerY + (155 * zoomRatio);
+            const outerDropY = centerY + (240 * zoomRatio);
+
+            // --- 1. MAIN C-FRAME OUTER BOUNDARY PATH ---
+            ctx.beginPath();
+            // Start at top-left of anvil mounting hub
+            ctx.moveTo(leftOuterX, topY);
+            ctx.lineTo(leftInnerX, topY);
+            ctx.lineTo(leftInnerX, hubBottomY);
+
+            // Smooth inner throat U-curve (throat clearance across measuring range)
+            ctx.bezierCurveTo(
+                leftInnerX, innerDropY,
+                rightInnerX, innerDropY,
+                rightInnerX, hubBottomY
+            );
+
+            // Right sleeve hub top & outer edge
+            ctx.lineTo(rightOuterX, hubBottomY);
+            ctx.lineTo(rightOuterX, topY);
+
+            // Outer thick forged backbone C-bow
+            ctx.bezierCurveTo(
+                rightOuterX + (12 * zoomRatio), outerDropY,
+                leftOuterX - (12 * zoomRatio), outerDropY,
+                leftOuterX, hubBottomY
+            );
+
+            ctx.closePath();
+
+            // Gradient Fill - High-Grade Cast Steel / Dark Enamel Finish
+            let frameGrad = ctx.createLinearGradient(leftOuterX, topY, rightOuterX, outerDropY);
+            frameGrad.addColorStop(0, '#1e293b');
+            frameGrad.addColorStop(0.3, '#334155');
+            frameGrad.addColorStop(0.7, '#1e293b');
+            frameGrad.addColorStop(1, '#0f172a');
+
+            ctx.fillStyle = frameGrad;
+            ctx.fill();
+
+            // Frame Bevel Edge Contour
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 2.5 * zoomRatio;
+            ctx.stroke();
+
+            // --- 2. THERMAL INSULATION & SPECIFICATION BADGE ---
+            const midX = (originX + sleeveX) / 2;
+            const plateY = centerY + (115 * zoomRatio);
+            const plateW = Math.max(100 * zoomRatio, (sleeveX - originX) * 0.55);
+            const plateH = 42 * zoomRatio;
+
+            // Insulating Heat Grip Plate
+            ctx.beginPath();
+            if (ctx.roundRect) {
+                ctx.roundRect(midX - plateW / 2, plateY - plateH / 2, plateW, plateH, 8 * zoomRatio);
+            } else {
+                ctx.rect(midX - plateW / 2, plateY - plateH / 2, plateW, plateH);
+            }
+            let plateGrad = ctx.createLinearGradient(0, plateY - plateH / 2, 0, plateY + plateH / 2);
+            plateGrad.addColorStop(0, '#0f172a');
+            plateGrad.addColorStop(1, '#1e293b');
+            ctx.fillStyle = plateGrad;
+            ctx.fill();
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 1.5 * zoomRatio;
+            ctx.stroke();
+
+            // Engraved Metallic Range & Resolution Markings
+            ctx.fillStyle = '#e2e8f0';
+            ctx.font = `bold ${Math.max(10, Math.round(12 * zoomRatio))}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.fillText("0 – 25 mm", midX, plateY - (3 * zoomRatio));
+            
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = `${Math.max(8, Math.round(10 * zoomRatio))}px sans-serif`;
+            ctx.fillText("0.01 mm", midX, plateY + (13 * zoomRatio));
+
+            ctx.restore();
+        }
+
+        function drawSpecimen(ctx, originX, centerY, gapWidthPx) {
+            if (gapWidthPx <= 0) return;
+            ctx.save();
+            
+            ctx.beginPath();
+            ctx.rect(originX, centerY - 100, gapWidthPx, 200);
+            ctx.clip();
+
+            const cx = originX + gapWidthPx / 2;
+            if (state.objectType === 'ball') {
+                const radius = gapWidthPx / 2;
+                let grad = ctx.createRadialGradient(cx - radius/3, centerY - radius/3, radius/10, cx, centerY, radius);
+                grad.addColorStop(0, '#fef08a');
+                grad.addColorStop(0.7, '#eab308');
+                grad.addColorStop(1, '#854d0e');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(cx, centerY, radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#713f12';
+                ctx.stroke();
+            } else if (state.objectType === 'wire') {
+                let grad = ctx.createLinearGradient(0, centerY - 25, 0, centerY + 25);
+                grad.addColorStop(0, '#f97316');
+                grad.addColorStop(0.5, '#ffedd5');
+                grad.addColorStop(1, '#c2410c');
+                ctx.fillStyle = grad;
+                ctx.fillRect(originX, centerY - 22, gapWidthPx, 44);
+                ctx.strokeStyle = '#9a3412';
+                ctx.strokeRect(originX, centerY - 22, gapWidthPx, 44);
+            } else {
+                let grad = ctx.createLinearGradient(originX, centerY - 30, originX + gapWidthPx, centerY + 30);
+                grad.addColorStop(0, '#38bdf8');
+                grad.addColorStop(0.5, '#bae6fd');
+                grad.addColorStop(1, '#0284c7');
+                ctx.fillStyle = grad;
+                ctx.fillRect(originX, centerY - 30, gapWidthPx, 60);
+                ctx.strokeStyle = '#0369a1';
+                ctx.strokeRect(originX, centerY - 30, gapWidthPx, 60);
+            }
+            ctx.restore();
+        }
+
+        function drawLockNut(ctx, x, y) {
+            ctx.save();
+            ctx.fillStyle = state.isLocked ? '#ef4444' : '#64748b';
+            ctx.fillRect(x - 8, y - 8, 16, 16);
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(x - 8, y - 8, 16, 16);
+
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(state.isLocked ? x - 15 : x + 15, y + 20);
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#94a3b8';
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawAnatomicalLabels(ctx, originX, centerY, sleeveX, thimbleX) {
+            ctx.save();
+            ctx.fillStyle = '#60a5fa';
+            ctx.strokeStyle = '#60a5fa';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+
+            const labels = [
+                { text: "Anvil", x: originX - 17, y: centerY - 45, tx: originX - 17, ty: centerY - 65 },
+                { text: "Spindle", x: originX + 30, y: centerY - 30, tx: originX + 30, ty: centerY - 55 },
+                { text: "Frame", x: originX + 80, y: centerY + 120, tx: originX + 80, ty: centerY + 145 },
+                { text: "Main Scale / Sleeve", x: sleeveX + 50, y: centerY - 35, tx: sleeveX + 50, ty: centerY - 60 },
+                { text: "Circular Scale / Thimble", x: thimbleX + 40, y: centerY - 45, tx: thimbleX + 40, ty: centerY - 70 },
+                { text: "Ratchet Stop", x: thimbleX + 175, y: centerY - 30, tx: thimbleX + 175, ty: centerY - 55 }
+            ];
+
+            labels.forEach(l => {
+                ctx.beginPath();
+                ctx.arc(l.x, l.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(l.x, l.y);
+                ctx.lineTo(l.tx, l.ty);
+                ctx.stroke();
+                ctx.fillText(l.text, l.tx, l.ty - 4);
+            });
+            ctx.restore();
+        }
+
+        function drawThumbwheel() {
+            if (!thumbwheelCanvas || !thumbwheelCtx) return;
+            const w = thumbwheelCanvas.width;
+            const h = thumbwheelCanvas.height;
+
+            thumbwheelCtx.fillStyle = '#020617';
+            thumbwheelCtx.fillRect(0, 0, w, h);
+
+            let grad = thumbwheelCtx.createLinearGradient(0, 0, 0, h);
+            grad.addColorStop(0, '#1e293b');
+            grad.addColorStop(0.5, '#475569');
+            grad.addColorStop(1, '#0f172a');
+
+            thumbwheelCtx.fillStyle = grad;
+            thumbwheelCtx.fillRect(4, 4, w - 8, h - 8);
+
+            const offset = (state.spindlePos * 20) % 12;
+            thumbwheelCtx.strokeStyle = '#94a3b8';
+            thumbwheelCtx.lineWidth = 1.5;
+
+            for (let x = 4 + offset; x < w - 4; x += 8) {
+                thumbwheelCtx.beginPath();
+                thumbwheelCtx.moveTo(x, 6);
+                thumbwheelCtx.lineTo(x, h - 6);
+                thumbwheelCtx.stroke();
+            }
+        }
+
+        function setStudentZoom(zoom) {
+            state.studentZoom = zoom;
+            [1.25, 1.5, 1.8].forEach(z => {
+                const btn = document.getElementById(`btn-zoom-${Math.round(z * 100)}`);
+                if (btn) {
+                    if (Math.abs(z - zoom) < 0.05) {
+                        btn.className = "px-2.5 py-1 rounded text-xs font-bold transition bg-amber-600 text-white shadow";
+                    } else {
+                        btn.className = "px-2 py-1 rounded text-xs font-bold transition bg-slate-700 text-slate-300 hover:bg-slate-600";
+                    }
+                }
+            });
+
+            const badgeText = document.getElementById('student-zoom-text');
+            if (badgeText) badgeText.innerText = `ENLARGED QUIZ VIEW (${zoom.toFixed(2)}x)`;
+
+            render();
+        }
+
+        function setMode(mode) {
+            state.mode = mode;
+            const btnTeacher = document.getElementById('btn-mode-teacher');
+            const btnStudent = document.getElementById('btn-mode-student');
+            const panelTeacher = document.getElementById('panel-teacher');
+            const panelStudent = document.getElementById('panel-student');
+            const zoomBadge = document.getElementById('student-zoom-badge');
+
+            if (mode === 'teacher') {
+                btnTeacher.className = "px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-indigo-600 text-white shadow-sm";
+                btnStudent.className = "px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all duration-200";
+                panelTeacher.classList.remove('hidden');
+                panelStudent.classList.add('hidden');
+                if (zoomBadge) zoomBadge.classList.add('hidden');
+            } else {
+                btnStudent.className = "px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-amber-600 text-white shadow-sm";
+                btnTeacher.className = "px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all duration-200";
+                panelStudent.classList.remove('hidden');
+                panelTeacher.classList.add('hidden');
+                if (zoomBadge) zoomBadge.classList.remove('hidden');
+                if (state.quizTargetThickness === null) {
+                    newQuizQuestion();
+                }
+            }
+            render();
+        }
+
+        function render() {
+            if (!canvas || !ctx) {
+                initCanvasReferences();
+                if (!canvas || !ctx) return;
+            }
+
+            const w = canvas.width;
+            const h = canvas.height;
+
+            // Background
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, w, h);
+
+            // Subtle background grid
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < w; x += 40) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, h);
+                ctx.stroke();
+            }
+            for (let y = 0; y < h; y += 40) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(w, y);
+                ctx.stroke();
+            }
+
+            // Physical Coordinate Metrics (Base 1 mm = 14 px)
+            let scaleMM = 14.0;
+            let originX = 180; // Anvil contact face position
+            let centerY = 330;
+
+            // In Student Quiz mode, zoom in on the scale reading zone and center it dynamically
+            if (state.mode === 'student') {
+                scaleMM = 14.0 * state.studentZoom;
+                const observedOpening = Math.max(0, state.spindlePos + state.zeroError);
+                // Center the active reading line (Thimble edge) in the canvas
+                originX = (w / 2) - ((25 * scaleMM) + 15 + (observedOpening * scaleMM)) + (100 * state.studentZoom);
+            }
+
+            const observedOpening = Math.max(0, state.spindlePos + state.zeroError);
+            const spindleGapPx = observedOpening * scaleMM;
+
+            // Sleeve Start Position
+            const sleeveX = originX + (25 * scaleMM) + 15;
+            const sleeveLength = 520 * (scaleMM / 14.0);
+
+            // --- 1. DRAW U-FRAME ---
+            drawUFrame(ctx, originX, centerY, sleeveX, scaleMM);
+
+            // --- 2. DRAW ANVIL ---
+            ctx.save();
+            let anvilGrad = ctx.createLinearGradient(0, centerY - 25, 0, centerY + 25);
+            anvilGrad.addColorStop(0, '#94a3b8');
+            anvilGrad.addColorStop(0.5, '#f8fafc');
+            anvilGrad.addColorStop(1, '#64748b');
+            ctx.fillStyle = anvilGrad;
+            ctx.fillRect(originX - 35, centerY - 22, 35, 44);
+            ctx.strokeStyle = '#334155';
+            ctx.strokeRect(originX - 35, centerY - 22, 35, 44);
+            
+            // Carbide Tip
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fillRect(originX - 4, centerY - 22, 4, 44);
+            ctx.restore();
+
+            // --- 3. DRAW SPECIMEN (If Active) ---
+            if (state.hasObject && state.spindlePos > 0) {
+                drawSpecimen(ctx, originX, centerY, state.spindlePos * scaleMM);
+            }
+
+            // --- 4. DRAW MOVABLE SPINDLE ROD ---
+            const spindleLeft = originX + spindleGapPx;
+            ctx.save();
+            let spindleGrad = ctx.createLinearGradient(0, centerY - 22, 0, centerY + 22);
+            spindleGrad.addColorStop(0, '#cbd5e1');
+            spindleGrad.addColorStop(0.3, '#ffffff');
+            spindleGrad.addColorStop(0.7, '#94a3b8');
+            spindleGrad.addColorStop(1, '#475569');
+            
+            ctx.fillStyle = spindleGrad;
+            ctx.fillRect(spindleLeft, centerY - 22, sleeveX - spindleLeft + 40, 44);
+            ctx.strokeStyle = '#334155';
+            ctx.strokeRect(spindleLeft, centerY - 22, sleeveX - spindleLeft + 40, 44);
+            
+            ctx.fillStyle = '#e2e8f0';
+            ctx.fillRect(spindleLeft, centerY - 22, 4, 44);
+            ctx.restore();
+
+            // --- 5. DRAW LOCK NUT LEVER ---
+            drawLockNut(ctx, originX + (260 * (scaleMM / 14.0)), centerY + 45);
+
+            // --- 6. DRAW MAIN SLEEVE BARREL ---
+            drawSleeve(ctx, sleeveX, centerY, sleeveLength, scaleMM);
+
+            // --- 7. DRAW THIMBLE ASSEMBLY ---
+            const thimbleX = sleeveX + spindleGapPx - (state.zeroError * scaleMM);
+            drawThimble(ctx, thimbleX, centerY, scaleMM);
+
+            // --- 8. ANATOMICAL LABELS OVERLAY ---
+            if (state.showLabels) {
+                drawAnatomicalLabels(ctx, originX, centerY, sleeveX, thimbleX);
+            }
+
+            // --- 9. MAGNIFIER LENS UPDATE ---
+            renderZoomMagnifier(thimbleX, centerY, scaleMM);
+
+            // --- 10. THUMBWHEEL UPDATE ---
+            drawThumbwheel();
+        }
+
+        function drawSleeve(ctx, sleeveX, centerY, sleeveLength, scaleMM) {
+            ctx.save();
+
+            const zoomRatio = scaleMM / 14.0;
+            const sleeveHeight = 50 * zoomRatio;
+            const sleeveY = centerY - sleeveHeight / 2;
+
+            let grad = ctx.createLinearGradient(sleeveX, sleeveY, sleeveX, sleeveY + sleeveHeight);
+            grad.addColorStop(0, '#94a3b8');
+            grad.addColorStop(0.2, '#f1f5f9');
+            grad.addColorStop(0.5, '#cbd5e1');
+            grad.addColorStop(0.8, '#94a3b8');
+            grad.addColorStop(1, '#475569');
+
+            ctx.fillStyle = grad;
+            ctx.fillRect(sleeveX, sleeveY, sleeveLength, sleeveHeight);
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 1.5 * zoomRatio;
+            ctx.strokeRect(sleeveX, sleeveY, sleeveLength, sleeveHeight);
+
+            // Sleeve Datum Line
+            ctx.strokeStyle = '#0f172a';
+            ctx.lineWidth = 1.5 * zoomRatio;
+            ctx.beginPath();
+            ctx.moveTo(sleeveX, centerY);
+            ctx.lineTo(sleeveX + sleeveLength - 10, centerY);
+            ctx.stroke();
+
+            // Main Scale Graduations
+            ctx.fillStyle = '#0f172a';
+            const fontSize = Math.max(10, Math.round(10 * zoomRatio));
+            ctx.font = `bold ${fontSize}px monospace`;
+            ctx.textAlign = 'center';
+
+            for (let mm = 0; mm <= 25; mm++) {
+                const x = sleeveX + (mm * scaleMM);
+                if (x > sleeveX + sleeveLength - 10) break;
+
+                const isFive = mm % 5 === 0;
+                const tickHeight = (isFive ? 14 : 9) * zoomRatio;
+
+                // Whole mm ticks (upwards)
+                ctx.beginPath();
+                ctx.moveTo(x, centerY);
+                ctx.lineTo(x, centerY - tickHeight);
+                ctx.lineWidth = (isFive ? 1.5 : 1) * zoomRatio;
+                ctx.stroke();
+
+                if (isFive) {
+                    ctx.fillText(mm.toString(), x, centerY - (17 * zoomRatio));
+                }
+
+                // Half mm ticks (downwards)
+                if (mm < 25) {
+                    const halfX = x + (0.5 * scaleMM);
+                    if (halfX <= sleeveX + sleeveLength - 10) {
+                        ctx.beginPath();
+                        ctx.moveTo(halfX, centerY);
+                        ctx.lineTo(halfX, centerY + (9 * zoomRatio));
+                        ctx.lineWidth = 1 * zoomRatio;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            ctx.restore();
+        }
+
+        function drawThimble(ctx, thimbleX, centerY, scaleMM) {
+            ctx.save();
+
+            const zoomRatio = scaleMM / 14.0;
+            const thimbleHeight = 70 * zoomRatio;
+            const bevelWidth = 25 * zoomRatio;
+            const bodyWidth = 130 * zoomRatio;
+            const ratchetWidth = 45 * zoomRatio;
+            const thimbleY = centerY - thimbleHeight / 2;
+
+            const observedOpening = Math.max(0, state.spindlePos + state.zeroError);
+
+            // Bevel Collar
+            ctx.beginPath();
+            ctx.moveTo(thimbleX, centerY - (25 * zoomRatio));
+            ctx.lineTo(thimbleX + bevelWidth, thimbleY);
+            ctx.lineTo(thimbleX + bevelWidth, thimbleY + thimbleHeight);
+            ctx.lineTo(thimbleX, centerY + (25 * zoomRatio));
+            ctx.closePath();
+
+            let bevelGrad = ctx.createLinearGradient(thimbleX, thimbleY, thimbleX, thimbleY + thimbleHeight);
+            bevelGrad.addColorStop(0, '#cbd5e1');
+            bevelGrad.addColorStop(0.3, '#ffffff');
+            bevelGrad.addColorStop(0.5, '#94a3b8');
+            bevelGrad.addColorStop(0.8, '#cbd5e1');
+            bevelGrad.addColorStop(1, '#475569');
+
+            ctx.fillStyle = bevelGrad;
+            ctx.fill();
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 1.5 * zoomRatio;
+            ctx.stroke();
+
+            // Knurled Body
+            const bodyX = thimbleX + bevelWidth;
+            let bodyGrad = ctx.createLinearGradient(bodyX, thimbleY, bodyX, thimbleY + thimbleHeight);
+            bodyGrad.addColorStop(0, '#64748b');
+            bodyGrad.addColorStop(0.2, '#cbd5e1');
+            bodyGrad.addColorStop(0.5, '#475569');
+            bodyGrad.addColorStop(0.8, '#cbd5e1');
+            bodyGrad.addColorStop(1, '#334155');
+
+            ctx.fillStyle = bodyGrad;
+            ctx.fillRect(bodyX, thimbleY, bodyWidth, thimbleHeight);
+            ctx.strokeRect(bodyX, thimbleY, bodyWidth, thimbleHeight);
+
+            ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+            ctx.lineWidth = 1 * zoomRatio;
+            for (let k = bodyX + (12 * zoomRatio); k < bodyX + bodyWidth - (10 * zoomRatio); k += (6 * zoomRatio)) {
+                ctx.beginPath();
+                ctx.moveTo(k, thimbleY + (4 * zoomRatio));
+                ctx.lineTo(k, thimbleY + thimbleHeight - (4 * zoomRatio));
+                ctx.stroke();
+            }
+
+            // Ratchet Stop
+            const ratchetX = bodyX + bodyWidth;
+            const ratchetHeight = 44 * zoomRatio;
+            const ratchetY = centerY - ratchetHeight / 2;
+
+            let ratchetGrad = ctx.createLinearGradient(ratchetX, ratchetY, ratchetX, ratchetY + ratchetHeight);
+            ratchetGrad.addColorStop(0, '#334155');
+            ratchetGrad.addColorStop(0.5, '#94a3b8');
+            ratchetGrad.addColorStop(1, '#1e293b');
+
+            ctx.fillStyle = ratchetGrad;
+            ctx.fillRect(ratchetX, ratchetY, ratchetWidth, ratchetHeight);
+            ctx.strokeStyle = '#0f172a';
+            ctx.strokeRect(ratchetX, ratchetY, ratchetWidth, ratchetHeight);
+
+            ctx.fillStyle = '#0f172a';
+            for (let rx = ratchetX + (5 * zoomRatio); rx < ratchetX + ratchetWidth - (5 * zoomRatio); rx += (5 * zoomRatio)) {
+                ctx.fillRect(rx, ratchetY + (2 * zoomRatio), 2 * zoomRatio, ratchetHeight - (4 * zoomRatio));
+            }
+
+            // Circular Scale Graduations
+            const currentDiv = (observedOpening / 0.01) % 50;
+
+            ctx.fillStyle = '#0f172a';
+            ctx.strokeStyle = '#0f172a';
+            const fontPx = Math.max(9, Math.round(9 * zoomRatio));
+            ctx.font = `bold ${fontPx}px monospace`;
+            ctx.textAlign = 'right';
+
+            for (let offset = -14; offset <= 14; offset++) {
+                const divNumber = (Math.round(currentDiv) + offset + 500) % 50;
+                const actualDiff = offset - (currentDiv - Math.round(currentDiv));
+
+                const theta = actualDiff * (Math.PI / 25);
+                if (Math.abs(theta) > Math.PI / 2.2) continue;
+
+                const yPos = centerY - Math.sin(theta) * (32 * zoomRatio);
+                const cosTheta = Math.cos(theta);
+
+                const lineLeftX = thimbleX + (2 * zoomRatio);
+                const isMajor = divNumber % 5 === 0;
+                const lineWidthPx = (isMajor ? bevelWidth - (4 * zoomRatio) : bevelWidth - (12 * zoomRatio));
+                const lineRightX = thimbleX + lineWidthPx;
+
+                ctx.globalAlpha = Math.max(0.2, cosTheta);
+                ctx.lineWidth = (isMajor ? 1.5 : 1) * zoomRatio;
+
+                ctx.beginPath();
+                ctx.moveTo(lineLeftX, yPos);
+                ctx.lineTo(lineRightX, yPos);
+                ctx.stroke();
+
+                if (isMajor) {
+                    ctx.fillText(divNumber.toString().padStart(2, '0'), lineRightX + (16 * zoomRatio), yPos + (3 * zoomRatio));
+                }
+            }
+            ctx.globalAlpha = 1.0;
+
+            ctx.restore();
+        }
+
+        function renderZoomMagnifier(thimbleX, centerY, scaleMM = 14.0) {
+            if (!zoomCtx || !zoomCanvas || !canvas) return;
+            const zw = zoomCanvas.width;
+            const zh = zoomCanvas.height;
+
+            zoomCtx.fillStyle = '#0f172a';
+            zoomCtx.fillRect(0, 0, zw, zh);
+
+            const zoomRatio = scaleMM / 14.0;
+            const sourceW = 60 * zoomRatio;
+            const sourceH = 70 * zoomRatio;
+            const sourceX = thimbleX - (25 * zoomRatio);
+            const sourceY = centerY - (35 * zoomRatio);
+
+            zoomCtx.drawImage(
+                canvas,
+                sourceX, sourceY, sourceW, sourceH,
+                0, 0, zw, zh
+            );
+
+            zoomCtx.strokeStyle = 'rgba(239, 68, 68, 0.8)';
+            zoomCtx.lineWidth = 1.5;
+            zoomCtx.beginPath();
+            zoomCtx.moveTo(0, zh / 2);
+            zoomCtx.lineTo(zw, zh / 2);
+            zoomCtx.stroke();
+        }
+
+        // Canvas Mouse & Touch Dragging
+        let isDragging = false;
+        let lastY = 0;
+        let listenersAttached = false;
+
+        function attachCanvasEventListeners() {
+            if (listenersAttached || !canvas) return;
+            listenersAttached = true;
+
+            canvas.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                lastY = e.clientY;
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const deltaY = e.clientY - lastY;
+                lastY = e.clientY;
+                const deltaVal = deltaY * 0.01;
+                if (Math.abs(deltaVal) >= 0.01) {
+                    stepGauge(deltaVal > 0 ? 0.01 : -0.01);
+                }
+            });
+
+            canvas.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? 0.01 : -0.01;
+                stepGauge(delta);
+            }, { passive: false });
+
+            canvas.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    isDragging = true;
+                    lastY = e.touches[0].clientY;
+                }
+            });
+
+            canvas.addEventListener('touchmove', (e) => {
+                if (!isDragging || e.touches.length !== 1) return;
+                const deltaY = e.touches[0].clientY - lastY;
+                lastY = e.touches[0].clientY;
+                const deltaVal = deltaY * 0.01;
+                if (Math.abs(deltaVal) >= 0.01) {
+                    stepGauge(deltaVal > 0 ? 0.01 : -0.01);
+                }
+            });
+        }
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        window.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+        // Keyboard Controls
+        window.addEventListener('keydown', (e) => {
+            if (['input', 'select', 'textarea'].includes(document.activeElement.tagName.toLowerCase())) {
+                return;
+            }
+
+            if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+                stepGauge(0.01);
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+                stepGauge(-0.01);
+            } else if (e.key === 'PageUp') {
+                stepGauge(0.5);
+            } else if (e.key === 'PageDown') {
+                stepGauge(-0.5);
+            }
+        });
+
+        // Initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            initCanvasReferences();
+            syncObjectSizeUI();
+            updateBreakoutCalculations();
+            render();
+        });
+
+        window.onload = function() {
+            initCanvasReferences();
+            syncObjectSizeUI();
+            updateBreakoutCalculations();
+            render();
+        };
+    </script>
+</body>
+</html>

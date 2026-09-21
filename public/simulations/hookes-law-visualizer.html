@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hooke's Law Interactive Physics Simulation</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Custom scrollbar styling for dark theme */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    input[type="range"] {
+      accent-color: #38bdf8;
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col font-sans antialiased bg-slate-950 text-slate-100 overflow-hidden select-none">
+
+  <!-- Header Navigation -->
+  <header class="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between shrink-0 shadow-lg z-10">
+    <div class="flex items-center space-x-3">
+      <div class="p-2 bg-sky-500/20 text-sky-400 rounded-lg border border-sky-500/30">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+        </svg>
+      </div>
+      <div>
+        <h1 class="font-bold text-lg text-white leading-tight">Hooke's Law Visualizer</h1>
+        <p class="text-xs text-slate-400">Elasticity, Restoring Forces & Dynamic Harmonic Motion</p>
+      </div>
+    </div>
+    
+    <div class="flex items-center space-x-3">
+      <button id="btn-release" class="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg border border-emerald-500/40 transition flex items-center gap-1.5 shadow-md active:scale-95">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        Release / Oscillate
+      </button>
+      <button id="btn-reset" class="px-3.5 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition flex items-center gap-1.5 active:scale-95">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+        </svg>
+        Reset Equilibrium
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Viewport Layout -->
+  <div class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+    
+    <!-- Canvas Visualization Area -->
+    <div class="flex-1 relative bg-slate-950 flex flex-col overflow-hidden">
+      <!-- Physics Canvas Container -->
+      <div class="flex-1 relative min-h-[300px]">
+        <canvas id="physics-canvas" class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
+        
+        <!-- Legend Overlay -->
+        <div class="absolute top-4 left-4 bg-slate-900/80 backdrop-blur border border-slate-800 rounded-lg px-3.5 py-2.5 text-xs flex flex-wrap items-center gap-4 shadow-lg pointer-events-none">
+          <div class="flex items-center gap-1.5">
+            <span class="w-3 h-1 bg-amber-400 rounded inline-block"></span>
+            <span class="text-amber-300 font-medium">Spring Force (Fₛ)</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-3 h-1 bg-sky-400 rounded inline-block"></span>
+            <span class="text-sky-300 font-medium">Applied Force (Fₑₓₜ)</span>
+          </div>
+          <div id="gravity-legend" class="flex items-center gap-1.5 hidden">
+            <span class="w-3 h-1 bg-purple-400 rounded inline-block"></span>
+            <span class="text-purple-300 font-medium">Gravity (W = mg)</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 border-l-2 border-emerald-400 inline-block"></span>
+            <span class="text-emerald-300 font-medium">Equilibrium (x=0)</span>
+          </div>
+        </div>
+
+        <!-- Canvas Interactive Tooltip -->
+        <div class="absolute bottom-4 left-4 bg-slate-900/80 backdrop-blur border border-slate-800/80 rounded-lg px-3 py-1.5 text-[11px] text-slate-400 pointer-events-none space-y-0.5 shadow-md">
+          <div>💡 <strong>Drag Mass:</strong> Click and drag mass block on screen to stretch/compress</div>
+          <div>💡 <strong>Release / Oscillate:</strong> Click top button or release mass to start motion</div>
+        </div>
+      </div>
+
+      <!-- Real-time F vs x Graph Bar (Bottom Panel - Expanded Height & Flex Box) -->
+      <div class="h-56 bg-slate-900/90 border-t border-slate-800 p-3 flex flex-col sm:flex-row gap-3 shrink-0">
+        <!-- Force vs Extension Canvas Container -->
+        <div class="w-full sm:w-1/2 flex flex-col bg-slate-950 rounded-lg border border-slate-800/80 p-2.5 overflow-hidden">
+          <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1 mb-1 flex justify-between shrink-0">
+            <span>Force vs. Extension (F vs. x)</span>
+            <span id="graph-slope-label" class="text-sky-400 font-mono">Slope (k) = 50.0 N/m</span>
+          </div>
+          <div class="flex-1 w-full relative overflow-hidden min-h-0">
+            <canvas id="graph-canvas" class="w-full h-full block absolute inset-0"></canvas>
+          </div>
+        </div>
+
+        <!-- Live Energy Breakdown -->
+        <div class="w-full sm:w-1/2 flex flex-col bg-slate-950 rounded-lg border border-slate-800/80 p-3 justify-between">
+          <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1 flex justify-between">
+            <span>Energy Breakdown</span>
+            <span class="text-emerald-400 font-mono" id="val-total-energy">E_total = 0.00 J</span>
+          </div>
+          <div class="space-y-3 my-auto">
+            <!-- Elastic Potential Energy Bar -->
+            <div>
+              <div class="flex justify-between text-xs font-mono mb-1">
+                <span class="text-sky-300">Elastic PE (Uₑ = ½kx²):</span>
+                <span id="val-pe" class="text-sky-300 font-bold">0.00 J</span>
+              </div>
+              <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                <div id="bar-pe" class="bg-sky-400 h-full rounded-full transition-all duration-75" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <!-- Kinetic Energy Bar -->
+            <div>
+              <div class="flex justify-between text-xs font-mono mb-1">
+                <span class="text-amber-300">Kinetic Energy (K = ½mv²):</span>
+                <span id="val-ke" class="text-amber-300 font-bold">0.00 J</span>
+              </div>
+              <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                <div id="bar-ke" class="bg-amber-400 h-full rounded-full transition-all duration-75" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls Sidebar (Right) -->
+    <aside class="w-full lg:w-[380px] bg-slate-900 border-t lg:border-t-0 lg:border-l border-slate-800 flex flex-col overflow-y-auto shrink-0 shadow-2xl">
+      <div class="p-5 space-y-6">
+        
+        <!-- SYSTEM PARAMETERS -->
+        <section class="space-y-4">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between border-b border-slate-800 pb-2">
+            <span>Physical Parameters</span>
+            <span class="text-[10px] text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded border border-sky-500/20">Hooke's Law: F = -kx</span>
+          </h2>
+
+          <!-- Spring Constant Slider -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-xs">
+              <label for="slider-k" class="text-slate-300 font-medium">Spring Constant (k)</label>
+              <span id="label-k" class="font-mono text-sky-400 font-bold">50 N/m</span>
+            </div>
+            <input type="range" id="slider-k" min="10" max="200" step="5" value="50" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+            <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+              <span>10 N/m (Soft)</span>
+              <span>200 N/m (Stiff)</span>
+            </div>
+          </div>
+
+          <!-- Mass Slider -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-xs">
+              <label for="slider-m" class="text-slate-300 font-medium">Hanging / Attached Mass (m)</label>
+              <span id="label-m" class="font-mono text-sky-400 font-bold">1.00 kg</span>
+            </div>
+            <input type="range" id="slider-m" min="0.1" max="5.0" step="0.1" value="1.0" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+            <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+              <span>0.1 kg</span>
+              <span>5.0 kg</span>
+            </div>
+          </div>
+
+          <!-- Manual Displacement Slider -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-xs">
+              <label for="slider-x" class="text-slate-300 font-medium">Displacement (x)</label>
+              <span id="label-x" class="font-mono text-sky-400 font-bold">0.00 m</span>
+            </div>
+            <input type="range" id="slider-x" min="-2.0" max="2.0" step="0.05" value="0.00" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+            <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+              <span>-2.0m (Compressed)</span>
+              <span>+2.0m (Stretched)</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ENVIRONMENT & HARMONIC OSCILLATION -->
+        <section class="space-y-3 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Environment & Damping</h3>
+          
+          <!-- Gravity Toggle -->
+          <div class="flex items-center justify-between text-xs py-1">
+            <span class="text-slate-300 font-medium">Orientation / Gravity</span>
+            <button id="btn-toggle-gravity" class="px-3 py-1 rounded bg-slate-800 border border-slate-700 text-slate-200 font-medium hover:bg-slate-700 transition text-[11px] flex items-center gap-1.5">
+              <span id="gravity-status-icon">↔️</span>
+              <span id="gravity-status-text">Horizontal (g = 0)</span>
+            </button>
+          </div>
+
+          <!-- Damping Slider -->
+          <div class="space-y-1.5 pt-2 border-t border-slate-800/80">
+            <div class="flex justify-between text-xs">
+              <label for="slider-damping" class="text-slate-300 font-medium">Damping Coefficient (b)</label>
+              <span id="label-damping" class="font-mono text-amber-400 font-bold">0.20</span>
+            </div>
+            <input type="range" id="slider-damping" min="0.0" max="2.0" step="0.05" value="0.20" class="w-full accent-amber-400 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+            <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+              <span>0.00 (No Damping)</span>
+              <span>2.00 (Heavy)</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- MATHEMATICAL DASHBOARD -->
+        <section class="space-y-3 bg-slate-950/80 p-4 rounded-xl border border-slate-800">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Live Calculations</h3>
+
+          <div class="space-y-2 font-mono text-xs">
+            <div class="p-2.5 bg-slate-900 rounded border border-slate-800 flex justify-between items-center">
+              <span class="text-slate-400">Restoring Force (F⛑):</span>
+              <span id="dash-fs" class="text-amber-400 font-bold">0.00 N</span>
+            </div>
+            <div class="p-2.5 bg-slate-900 rounded border border-slate-800 flex justify-between items-center">
+              <span class="text-slate-400">Applied Force (Fₑₓₜ):</span>
+              <span id="dash-fext" class="text-sky-400 font-bold">0.00 N</span>
+            </div>
+            <div class="p-2.5 bg-slate-900 rounded border border-slate-800 flex justify-between items-center">
+              <span class="text-slate-400">Velocity (v):</span>
+              <span id="dash-v" class="text-emerald-400 font-bold">0.00 m/s</span>
+            </div>
+            <div class="p-2.5 bg-slate-900 rounded border border-slate-800 flex justify-between items-center">
+              <span class="text-slate-400">Angular Frequency (ω):</span>
+              <span id="dash-omega" class="text-purple-300 font-bold">7.07 rad/s</span>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </aside>
+  </div>
+
+  <!-- JavaScript Physics & Visualization Engine -->
+  <script>
+    // --- State & Constants ---
+    const state = {
+      k: 50.0,              // Spring constant (N/m)
+      m: 1.0,               // Mass (kg)
+      x: 0.0,               // Displacement from equilibrium (m)
+      v: 0.0,               // Velocity (m/s)
+      a: 0.0,               // Acceleration (m/s^2)
+      damping: 0.20,        // Damping factor (b)
+      isVertical: false,    // Horizontal vs Vertical mode
+      g: 9.81,              // Acceleration due to gravity (m/s^2)
+      isOscillating: false, // State of animation
+      isDraggingMass: false,// Drag handle on canvas
+      maxDisplacement: 2.0  // Elastic limit safety constraint (|x| <= 2.0m)
+    };
+
+    const PIXELS_PER_METER = 100; // Visual scale conversion
+
+    // --- DOM Elements ---
+    const physCanvas = document.getElementById('physics-canvas');
+    const physCtx = physCanvas.getContext('2d');
+    const graphCanvas = document.getElementById('graph-canvas');
+    const graphCtx = graphCanvas.getContext('2d');
+
+    // Controls
+    const sliderK = document.getElementById('slider-k');
+    const sliderM = document.getElementById('slider-m');
+    const sliderX = document.getElementById('slider-x');
+    const sliderDamping = document.getElementById('slider-damping');
+    const labelK = document.getElementById('label-k');
+    const labelM = document.getElementById('label-m');
+    const labelX = document.getElementById('label-x');
+    const labelDamping = document.getElementById('label-damping');
+    
+    const btnRelease = document.getElementById('btn-release');
+    const btnReset = document.getElementById('btn-reset');
+    const btnToggleGravity = document.getElementById('btn-toggle-gravity');
+    const gravityStatusIcon = document.getElementById('gravity-status-icon');
+    const gravityStatusText = document.getElementById('gravity-status-text');
+    const gravityLegend = document.getElementById('gravity-legend');
+
+    // Dashboard Output
+    const dashFs = document.getElementById('dash-fs');
+    const dashFext = document.getElementById('dash-fext');
+    const dashV = document.getElementById('dash-v');
+    const dashOmega = document.getElementById('dash-omega');
+    const valPe = document.getElementById('val-pe');
+    const valKe = document.getElementById('val-ke');
+    const valTotalEnergy = document.getElementById('val-total-energy');
+    const barPe = document.getElementById('bar-pe');
+    const barKe = document.getElementById('bar-ke');
+    const graphSlopeLabel = document.getElementById('graph-slope-label');
+
+    // Canvas Size Handling
+    let physWidth = 0, physHeight = 0;
+    let graphWidth = 0, graphHeight = 0;
+
+    function resizeCanvases() {
+      const dpr = window.devicePixelRatio || 1;
+      
+      // Physics Canvas
+      const pRect = physCanvas.parentElement.getBoundingClientRect();
+      physWidth = pRect.width;
+      physHeight = pRect.height;
+      physCanvas.width = physWidth * dpr;
+      physCanvas.height = physHeight * dpr;
+      physCtx.scale(dpr, dpr);
+
+      // Graph Canvas
+      const gRect = graphCanvas.parentElement.getBoundingClientRect();
+      graphWidth = gRect.width;
+      graphHeight = gRect.height;
+      graphCanvas.width = graphWidth * dpr;
+      graphCanvas.height = graphHeight * dpr;
+      graphCtx.scale(dpr, dpr);
+
+      render();
+    }
+
+    // --- Physics Simulation Loop ---
+    let lastTime = null;
+
+    function physicsStep(timestamp) {
+      if (!lastTime) lastTime = timestamp;
+      const dt = Math.min((timestamp - lastTime) / 1000, 0.033); // Cap dt to prevent numerical explosion
+      lastTime = timestamp;
+
+      if (state.isOscillating && !state.isDraggingMass) {
+        let F_spring = -state.k * state.x;
+        let F_damping = -state.damping * state.v;
+        let F_total = F_spring + F_damping;
+
+        state.a = F_total / state.m;
+
+        // Numerical Integration (Semi-implicit Euler)
+        state.v += state.a * dt;
+        state.x += state.v * dt;
+
+        // Boundaries & Elastic Limits
+        if (Math.abs(state.x) > state.maxDisplacement) {
+          state.x = Math.sign(state.x) * state.maxDisplacement;
+          state.v = -state.v * 0.5; // Elastic wall rebound
+        }
+
+        // Auto-stop near equilibrium to prevent perpetual sub-pixel drift
+        if (Math.abs(state.v) < 0.0005 && Math.abs(state.x) < 0.001) {
+          state.v = 0;
+          state.x = 0;
+          state.isOscillating = false;
+        }
+
+        sliderX.value = state.x.toFixed(2);
+        labelX.textContent = `${state.x >= 0 ? '+' : ''}${state.x.toFixed(2)} m`;
+      }
+
+      render();
+      requestAnimationFrame(physicsStep);
+    }
+
+    // --- Drawing Functions ---
+
+    // 1. Draw 2D Parametric Spring
+    function drawSpring(ctx, startX, startY, endX, endY, coils = 14, radius = 18) {
+      ctx.save();
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 3.5;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      const dx = endX - startX;
+      const dy = endY - startY;
+      const dist = Math.hypot(dx, dy);
+      const angle = Math.atan2(dy, dx);
+
+      ctx.translate(startX, startY);
+      ctx.rotate(angle);
+
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+
+      const leadIn = 25; // Straight segment
+      const springLength = dist - leadIn * 2;
+      ctx.lineTo(leadIn, 0);
+
+      if (springLength > 0) {
+        const step = springLength / (coils * 4);
+        let currentX = leadIn;
+
+        for (let i = 0; i < coils * 4; i++) {
+          currentX += step;
+          let dir = (i % 4 === 1) ? 1 : (i % 4 === 3) ? -1 : 0;
+          ctx.lineTo(currentX, dir * radius);
+        }
+      }
+
+      ctx.lineTo(dist, 0);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 2. Vector Arrow Rendering Helper
+    function drawArrow(ctx, fromX, fromY, toX, toY, color, label = '') {
+      const headLen = 10;
+      const dx = toX - fromX;
+      const dy = toY - fromY;
+      const angle = Math.atan2(dy, dx);
+      const length = Math.hypot(dx, dy);
+
+      if (length < 3) return;
+
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 2.5;
+
+      // Shaft
+      ctx.beginPath();
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(toX, toY);
+      ctx.stroke();
+
+      // Arrowhead
+      ctx.beginPath();
+      ctx.moveTo(toX, toY);
+      ctx.lineTo(toX - headLen * Math.cos(angle - Math.PI / 6), toY - headLen * Math.sin(angle - Math.PI / 6));
+      ctx.lineTo(toX - headLen * Math.cos(angle + Math.PI / 6), toY - headLen * Math.sin(angle + Math.PI / 6));
+      ctx.closePath();
+      ctx.fill();
+
+      // Label Overlay
+      if (label) {
+        ctx.font = 'bold 11px sans-serif';
+        const textX = toX + Math.cos(angle) * 15;
+        const textY = toY + Math.sin(angle) * 15;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, textX, textY);
+      }
+
+      ctx.restore();
+    }
+
+    // 3. Render Main Physics Environment
+    function renderPhysics() {
+      physCtx.clearRect(0, 0, physWidth, physHeight);
+
+      const isVert = state.isVertical;
+      
+      let supportX = isVert ? physWidth / 2 : 80;
+      let supportY = isVert ? 60 : physHeight / 2;
+
+      let eqOffsetPixels = 200; // Base rest length
+      if (isVert) {
+        eqOffsetPixels += (state.m * state.g / state.k) * PIXELS_PER_METER;
+      }
+
+      let eqX = isVert ? supportX : supportX + eqOffsetPixels;
+      let eqY = isVert ? supportY + eqOffsetPixels : supportY;
+
+      let massX = isVert ? eqX : eqX + state.x * PIXELS_PER_METER;
+      let massY = isVert ? eqY + state.x * PIXELS_PER_METER : eqY;
+
+      // Wall / Ceiling Support
+      physCtx.save();
+      physCtx.fillStyle = '#334155';
+      physCtx.strokeStyle = '#64748b';
+      physCtx.lineWidth = 2;
+
+      if (!isVert) {
+        physCtx.fillRect(supportX - 25, supportY - 100, 25, 200);
+        physCtx.strokeRect(supportX - 25, supportY - 100, 25, 200);
+        physCtx.strokeStyle = '#475569';
+        for (let y = supportY - 90; y < supportY + 90; y += 15) {
+          physCtx.beginPath();
+          physCtx.moveTo(supportX - 25, y + 10);
+          physCtx.lineTo(supportX, y);
+          physCtx.stroke();
+        }
+        physCtx.strokeStyle = '#475569';
+        physCtx.lineWidth = 1.5;
+        physCtx.beginPath();
+        physCtx.moveTo(supportX, supportY + 50);
+        physCtx.lineTo(physWidth - 20, supportY + 50);
+        physCtx.stroke();
+      } else {
+        physCtx.fillRect(supportX - 100, supportY - 25, 200, 25);
+        physCtx.strokeRect(supportX - 100, supportY - 25, 200, 25);
+        physCtx.strokeStyle = '#475569';
+        for (let x = supportX - 90; x < supportX + 90; x += 15) {
+          physCtx.beginPath();
+          physCtx.moveTo(x, supportY - 25);
+          physCtx.lineTo(x + 10, supportY);
+          physCtx.stroke();
+        }
+      }
+      physCtx.restore();
+
+      // Equilibrium Line (x = 0)
+      physCtx.save();
+      physCtx.strokeStyle = '#10b981';
+      physCtx.lineWidth = 1.5;
+      physCtx.setLineDash([4, 4]);
+
+      if (!isVert) {
+        physCtx.beginPath();
+        physCtx.moveTo(eqX, supportY - 70);
+        physCtx.lineTo(eqX, supportY + 70);
+        physCtx.stroke();
+        physCtx.fillStyle = '#10b981';
+        physCtx.font = '11px sans-serif';
+        physCtx.textAlign = 'center';
+        physCtx.fillText('Equilibrium (x=0)', eqX, supportY - 78);
+      } else {
+        physCtx.beginPath();
+        physCtx.moveTo(supportX - 70, eqY);
+        physCtx.lineTo(supportX + 70, eqY);
+        physCtx.stroke();
+        physCtx.fillStyle = '#10b981';
+        physCtx.font = '11px sans-serif';
+        physCtx.textAlign = 'right';
+        physCtx.fillText('Equilibrium (x=0)', supportX - 78, eqY + 4);
+      }
+      physCtx.restore();
+
+      // Spring Coils
+      drawSpring(physCtx, supportX, supportY, massX, massY);
+
+      // Mass Block
+      physCtx.save();
+      const blockSize = 50 + Math.sqrt(state.m) * 8;
+      const blockLeft = massX - blockSize / 2;
+      const blockTop = isVert ? massY : massY - blockSize / 2;
+
+      const grad = physCtx.createLinearGradient(blockLeft, blockTop, blockLeft + blockSize, blockTop + blockSize);
+      grad.addColorStop(0, '#38bdf8');
+      grad.addColorStop(1, '#0284c7');
+
+      physCtx.fillStyle = grad;
+      physCtx.strokeStyle = '#e0f2fe';
+      physCtx.lineWidth = 2;
+      physCtx.shadowColor = 'rgba(0,0,0,0.4)';
+      physCtx.shadowBlur = 10;
+
+      physCtx.fillRect(blockLeft, blockTop, blockSize, blockSize);
+      physCtx.strokeRect(blockLeft, blockTop, blockSize, blockSize);
+
+      physCtx.shadowColor = 'transparent';
+      physCtx.fillStyle = '#ffffff';
+      physCtx.font = 'bold 12px sans-serif';
+      physCtx.textAlign = 'center';
+      physCtx.textBaseline = 'middle';
+      physCtx.fillText(`${state.m.toFixed(1)} kg`, blockLeft + blockSize / 2, blockTop + blockSize / 2);
+      physCtx.restore();
+
+      // Displacement Dimension Indicator
+      if (Math.abs(state.x) > 0.02) {
+        physCtx.save();
+        physCtx.strokeStyle = '#38bdf8';
+        physCtx.lineWidth = 1.5;
+
+        if (!isVert) {
+          const dimY = supportY + 65;
+          physCtx.beginPath();
+          physCtx.moveTo(eqX, dimY);
+          physCtx.lineTo(massX, dimY);
+          physCtx.stroke();
+
+          physCtx.beginPath();
+          physCtx.moveTo(eqX, dimY - 4); physCtx.lineTo(eqX, dimY + 4);
+          physCtx.moveTo(massX, dimY - 4); physCtx.lineTo(massX, dimY + 4);
+          physCtx.stroke();
+
+          physCtx.fillStyle = '#38bdf8';
+          physCtx.font = 'bold 11px font-mono';
+          physCtx.textAlign = 'center';
+          physCtx.fillText(`x = ${state.x > 0 ? '+' : ''}${state.x.toFixed(2)}m`, (eqX + massX) / 2, dimY + 15);
+        } else {
+          const dimX = supportX + blockSize / 2 + 25;
+          physCtx.beginPath();
+          physCtx.moveTo(dimX, eqY);
+          physCtx.lineTo(dimX, massY);
+          physCtx.stroke();
+
+          physCtx.beginPath();
+          physCtx.moveTo(dimX - 4, eqY); physCtx.lineTo(dimX + 4, eqY);
+          physCtx.moveTo(dimX - 4, massY); physCtx.lineTo(dimX + 4, massY);
+          physCtx.stroke();
+
+          physCtx.fillStyle = '#38bdf8';
+          physCtx.font = 'bold 11px font-mono';
+          physCtx.textAlign = 'left';
+          physCtx.fillText(`x = ${state.x > 0 ? '+' : ''}${state.x.toFixed(2)}m`, dimX + 10, (eqY + massY) / 2);
+        }
+        physCtx.restore();
+      }
+
+      // Force Vectors
+      const F_s = -state.k * state.x;
+      const arrowScale = 1.5;
+
+      if (!isVert) {
+        if (Math.abs(F_s) > 0.1) {
+          const arrowLen = F_s * arrowScale;
+          drawArrow(physCtx, massX, massY, massX + arrowLen, massY, '#fbbf24', `Fₛ = ${F_s.toFixed(1)}N`);
+        }
+
+        if (state.isDraggingMass && Math.abs(F_s) > 0.1) {
+          const extLen = -F_s * arrowScale;
+          drawArrow(physCtx, massX, massY - 20, massX + extLen, massY - 20, '#38bdf8', `Fₑₓₜ = ${(-F_s).toFixed(1)}N`);
+        }
+      } else {
+        if (Math.abs(F_s) > 0.1) {
+          const arrowLen = -F_s * arrowScale;
+          drawArrow(physCtx, massX, massY + blockSize / 2, massX, massY + blockSize / 2 + arrowLen, '#fbbf24', `Fₛ = ${F_s.toFixed(1)}N`);
+        }
+
+        const W = state.m * state.g;
+        drawArrow(physCtx, massX - 20, massY + blockSize / 2, massX - 20, massY + blockSize / 2 + W * arrowScale, '#c084fc', `W = ${W.toFixed(1)}N`);
+      }
+    }
+
+    // 4. Render Force vs Extension Graph (Adjusted for Padding & Bounds)
+    function renderGraph() {
+      graphCtx.clearRect(0, 0, graphWidth, graphHeight);
+
+      if (graphWidth === 0 || graphHeight === 0) return;
+
+      const margin = { top: 20, right: 30, bottom: 25, left: 40 };
+      const w = graphWidth - margin.left - margin.right;
+      const h = graphHeight - margin.top - margin.bottom;
+
+      const originX = margin.left + w / 2;
+      const originY = margin.top + h / 2;
+
+      const maxRangeX = 2.5;
+      const maxRangeF = 400; // Increased scale range to ensure extreme spring constants fit
+
+      const toGraphX = (xVal) => originX + (xVal / maxRangeX) * (w / 2);
+      const toGraphY = (fVal) => originY - (fVal / maxRangeF) * (h / 2);
+
+      // Grid Axes
+      graphCtx.save();
+      graphCtx.strokeStyle = '#334155';
+      graphCtx.lineWidth = 1;
+
+      // X and Y Axes
+      graphCtx.beginPath();
+      graphCtx.moveTo(margin.left, originY); graphCtx.lineTo(graphWidth - margin.right, originY);
+      graphCtx.moveTo(originX, margin.top); graphCtx.lineTo(originX, graphHeight - margin.bottom);
+      graphCtx.stroke();
+
+      // Axis Labels & Markers
+      graphCtx.fillStyle = '#94a3b8';
+      graphCtx.font = '10px monospace';
+      graphCtx.textAlign = 'right';
+      graphCtx.fillText('+F', originX - 6, margin.top + 8);
+      graphCtx.fillText('-F', originX - 6, graphHeight - margin.bottom);
+      graphCtx.textAlign = 'center';
+      graphCtx.fillText('+x', graphWidth - margin.right + 12, originY + 3);
+      graphCtx.fillText('-x', margin.left - 12, originY + 3);
+
+      // Linear Line (F = -k * x)
+      graphCtx.strokeStyle = '#38bdf8';
+      graphCtx.lineWidth = 2;
+      graphCtx.beginPath();
+      const lineX1 = -state.maxDisplacement;
+      const lineF1 = -state.k * lineX1;
+      const lineX2 = state.maxDisplacement;
+      const lineF2 = -state.k * lineX2;
+
+      graphCtx.moveTo(toGraphX(lineX1), toGraphY(lineF1));
+      graphCtx.lineTo(toGraphX(lineX2), toGraphY(lineF2));
+      graphCtx.stroke();
+
+      // Plot dynamic marker point
+      const currentF = -state.k * state.x;
+      const ptX = toGraphX(state.x);
+      const ptY = toGraphY(currentF);
+
+      graphCtx.strokeStyle = '#fbbf24';
+      graphCtx.setLineDash([3, 3]);
+      graphCtx.beginPath();
+      graphCtx.moveTo(ptX, originY); graphCtx.lineTo(ptX, ptY);
+      graphCtx.moveTo(originX, ptY); graphCtx.lineTo(ptX, ptY);
+      graphCtx.stroke();
+
+      graphCtx.setLineDash([]);
+      graphCtx.fillStyle = '#fbbf24';
+      graphCtx.beginPath();
+      graphCtx.arc(ptX, ptY, 5, 0, Math.PI * 2);
+      graphCtx.fill();
+      graphCtx.strokeStyle = '#ffffff';
+      graphCtx.stroke();
+
+      graphCtx.restore();
+    }
+
+    // --- Composite Render Call ---
+    function render() {
+      renderPhysics();
+      renderGraph();
+      updateDashboardUI();
+    }
+
+    // --- Update Dynamic Dashboard & Mathematical UI Text ---
+    function updateDashboardUI() {
+      const F_s = -state.k * state.x;
+      const F_ext = -F_s;
+      const U_e = 0.5 * state.k * Math.pow(state.x, 2);
+      const K = 0.5 * state.m * Math.pow(state.v, 2);
+      const E_total = U_e + K;
+      const omega = Math.sqrt(state.k / state.m);
+
+      dashFs.textContent = `${F_s >= 0 ? '+' : ''}${F_s.toFixed(2)} N`;
+      dashFext.textContent = `${F_ext >= 0 ? '+' : ''}${F_ext.toFixed(2)} N`;
+      dashV.textContent = `${state.v >= 0 ? '+' : ''}${state.v.toFixed(2)} m/s`;
+      dashOmega.textContent = `${omega.toFixed(2)} rad/s`;
+
+      valPe.textContent = `${U_e.toFixed(2)} J`;
+      valKe.textContent = `${K.toFixed(2)} J`;
+      valTotalEnergy.textContent = `E_total = ${E_total.toFixed(2)} J`;
+
+      graphSlopeLabel.textContent = `Slope (k) = ${state.k.toFixed(1)} N/m`;
+
+      const maxEnergyRef = Math.max(10, E_total, 0.5 * state.k * 4.0); 
+      barPe.style.width = `${Math.min(100, (U_e / maxEnergyRef) * 100)}%`;
+      barKe.style.width = `${Math.min(100, (K / maxEnergyRef) * 100)}%`;
+    }
+
+    // --- Interaction Event Listeners ---
+    function initEvents() {
+      window.addEventListener('resize', resizeCanvases);
+
+      // Sliders Controls
+      sliderK.addEventListener('input', (e) => {
+        state.k = parseFloat(e.target.value);
+        labelK.textContent = `${state.k.toFixed(0)} N/m`;
+        render();
+      });
+
+      sliderM.addEventListener('input', (e) => {
+        state.m = parseFloat(e.target.value);
+        labelM.textContent = `${state.m.toFixed(2)} kg`;
+        render();
+      });
+
+      sliderX.addEventListener('input', (e) => {
+        state.x = parseFloat(e.target.value);
+        state.v = 0;
+        state.isOscillating = false;
+        labelX.textContent = `${state.x >= 0 ? '+' : ''}${state.x.toFixed(2)} m`;
+        render();
+      });
+
+      sliderDamping.addEventListener('input', (e) => {
+        state.damping = parseFloat(e.target.value);
+        labelDamping.textContent = state.damping.toFixed(2);
+      });
+
+      // RELEASE BUTTON FIX: Set oscillation state and trigger physics loop
+      btnRelease.addEventListener('click', () => {
+        if (Math.abs(state.x) < 0.05) {
+          state.x = 1.0; // Default displacement if released at rest/equilibrium
+          sliderX.value = "1.00";
+          labelX.textContent = "+1.00 m";
+        }
+        state.v = 0;
+        state.isOscillating = true;
+      });
+
+      btnReset.addEventListener('click', () => {
+        state.x = 0;
+        state.v = 0;
+        state.a = 0;
+        state.isOscillating = false;
+        sliderX.value = 0;
+        labelX.textContent = '0.00 m';
+        render();
+      });
+
+      btnToggleGravity.addEventListener('click', () => {
+        state.isVertical = !state.isVertical;
+        if (state.isVertical) {
+          gravityStatusIcon.textContent = '↕️';
+          gravityStatusText.textContent = 'Vertical (g = 9.81 m/s²)';
+          gravityLegend.classList.remove('hidden');
+        } else {
+          gravityStatusIcon.textContent = '↔️';
+          gravityStatusText.textContent = 'Horizontal (g = 0)';
+          gravityLegend.classList.add('hidden');
+        }
+        state.x = 0;
+        state.v = 0;
+        state.isOscillating = false;
+        render();
+      });
+
+      // Drag Mass Logic
+      physCanvas.addEventListener('mousedown', (e) => {
+        const rect = physCanvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+
+        const isVert = state.isVertical;
+        let supportX = isVert ? physWidth / 2 : 80;
+        let supportY = isVert ? 60 : physHeight / 2;
+        let eqOffsetPixels = 200;
+        if (isVert) eqOffsetPixels += (state.m * state.g / state.k) * PIXELS_PER_METER;
+
+        let eqX = isVert ? supportX : supportX + eqOffsetPixels;
+        let eqY = isVert ? supportY + eqOffsetPixels : supportY;
+        let massX = isVert ? eqX : eqX + state.x * PIXELS_PER_METER;
+        let massY = isVert ? eqY + state.x * PIXELS_PER_METER : eqY;
+
+        const hitRadius = 50;
+        if (Math.hypot(mx - massX, my - massY) < hitRadius) {
+          state.isDraggingMass = true;
+          state.isOscillating = false;
+          state.v = 0;
+        }
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!state.isDraggingMass) return;
+
+        const rect = physCanvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+
+        const isVert = state.isVertical;
+        let supportX = isVert ? physWidth / 2 : 80;
+        let supportY = isVert ? 60 : physHeight / 2;
+        let eqOffsetPixels = 200;
+        if (isVert) eqOffsetPixels += (state.m * state.g / state.k) * PIXELS_PER_METER;
+
+        let eqX = isVert ? supportX : supportX + eqOffsetPixels;
+        let eqY = isVert ? supportY + eqOffsetPixels : supportY;
+
+        let deltaPixels = isVert ? (my - eqY) : (mx - eqX);
+        let calculatedX = deltaPixels / PIXELS_PER_METER;
+
+        calculatedX = Math.max(-state.maxDisplacement, Math.min(state.maxDisplacement, calculatedX));
+        state.x = calculatedX;
+
+        sliderX.value = state.x.toFixed(2);
+        labelX.textContent = `${state.x >= 0 ? '+' : ''}${state.x.toFixed(2)} m`;
+        render();
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (state.isDraggingMass) {
+          state.isDraggingMass = false;
+          state.isOscillating = true; // Auto-oscillate on drag release
+        }
+      });
+    }
+
+    // Initializer
+    window.addEventListener('DOMContentLoaded', () => {
+      initEvents();
+      resizeCanvases();
+      requestAnimationFrame(physicsStep);
+    });
+  </script>
+</body>
+</html>

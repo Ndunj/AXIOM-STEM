@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accurate Vernier Caliper Textbook Simulation</title>
+    <style>
+        :root {
+            --professional-bg: #1e293b;
+            --professional-text: #f1f5f9;
+            --canvas-bg: #f8fafc;
+            --control-panel-bg: #334155;
+            --control-panel-text: #f1f5f9;
+            --control-border: #475569;
+            --highlight: #38bdf8;
+            --accent-orange: #f97316;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--professional-bg);
+            color: var(--professional-text);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            width: 100%;
+            background-color: var(--control-panel-bg);
+            padding: 1.25rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--highlight);
+            letter-spacing: 0.05em;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 95%;
+            max-width: 1200px;
+            margin: 1.5rem 0;
+            gap: 1.5rem;
+        }
+
+        #caliperCanvas {
+            background-color: var(--canvas-bg);
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .controls {
+            background-color: var(--control-panel-bg);
+            width: 100%;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--control-border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            align-items: center;
+            box-sizing: border-box;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--professional-text);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .value-display {
+            color: var(--highlight);
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            background: var(--professional-bg);
+            height: 8px;
+            border-radius: 4px;
+            outline: none;
+            border: 1px solid var(--control-border);
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--highlight);
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid var(--control-panel-bg);
+        }
+
+        select {
+            padding: 0.6rem;
+            border-radius: 0.5rem;
+            background-color: var(--professional-bg);
+            color: var(--professional-text);
+            border: 1px solid var(--control-border);
+            font-family: inherit;
+            font-size: 0.9rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .readout-card {
+            background-color: rgba(15, 23, 42, 0.6);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--control-border);
+            text-align: center;
+        }
+
+        .readout-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #94a3b8;
+            margin-bottom: 0.25rem;
+        }
+
+        .readout-val {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--highlight);
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Interactive Vernier Caliper Textbook Simulation</h1>
+</header>
+
+<div class="container">
+    <canvas id="caliperCanvas" width="1200" height="540"></canvas>
+
+    <div class="controls">
+        <div class="control-group">
+            <label for="objectType">Measurement Mode:</label>
+            <select id="objectType">
+                <option value="external">External Diameter (OD)</option>
+                <option value="internal">Internal Diameter (ID)</option>
+                <option value="depth">Depth Measurement</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label for="objectSizeSlider">
+                <span>Adjust Dimension:</span>
+                <span class="value-display" id="objectSizeValue">26.55 mm</span>
+            </label>
+            <input type="range" id="objectSizeSlider" min="5.00" max="100.00" step="0.05" value="26.55">
+        </div>
+
+        <div class="readout-card">
+            <div class="readout-label">Accurate Readout</div>
+            <div class="readout-val" id="measurementValue">26.55 mm</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('caliperCanvas');
+    const ctx = canvas.getContext('2d');
+    const objectTypeSelect = document.getElementById('objectType');
+    const objectSizeSlider = document.getElementById('objectSizeSlider');
+    const objectSizeValueDisplay = document.getElementById('objectSizeValue');
+    const measurementValueDisplay = document.getElementById('measurementValue');
+
+    const CONFIG = {
+        pixelsPerMm: 6,         
+        originX: 200,           // Zero reference point (X)
+        mainScaleY: 180,        // Beam Y height
+        beamHeight: 50,         
+        maxMeasurement: 120,    
+        extJawLength: 170,      
+        intJawHeight: 70,       
+    };
+
+    const PALETTE = {
+        steelMain: '#94a3b8',
+        steelSlider: '#cbd5e1',
+        steelDark: '#475569',
+        markings: '#0f172a',
+        objectFill: '#38bdf8',
+        objectStroke: '#0284c7',
+        depthBlock: '#64748b',
+        annotationText: '#1e293b',
+        accentOrange: '#f97316',
+        indicatorRed: '#ef4444'
+    };
+
+    let activeObjectType = 'external';
+    let activeObjectSize = 26.55;
+
+    function init() {
+        setupEventListeners();
+        updateDisplay();
+        drawScene();
+    }
+
+    function setupEventListeners() {
+        objectTypeSelect.addEventListener('change', (e) => {
+            activeObjectType = e.target.value;
+            drawScene();
+        });
+
+        objectSizeSlider.addEventListener('input', (e) => {
+            activeObjectSize = parseFloat(e.target.value);
+            updateDisplay();
+            drawScene();
+        });
+    }
+
+    function updateDisplay() {
+        const valStr = activeObjectSize.toFixed(2) + ' mm';
+        objectSizeValueDisplay.textContent = valStr;
+        measurementValueDisplay.textContent = valStr;
+    }
+
+    function drawScene() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const gapPixels = activeObjectSize * CONFIG.pixelsPerMm;
+        const sliderX = CONFIG.originX + gapPixels;
+
+        // 1. Measured Objects
+        drawMeasuredObject(gapPixels);
+
+        // 2. Depth Rod
+        drawDepthRod(sliderX);
+
+        // 3. Main Scale & Fixed Jaws
+        drawMainScaleAssembly();
+
+        // 4. Moving Vernier Frame & Slider Jaws
+        drawVernierSliderAssembly(sliderX);
+
+        // 5. Diagram Annotations
+        drawTextbookAnnotations(sliderX);
+    }
+
+    function drawMainScaleAssembly() {
+        const y = CONFIG.mainScaleY;
+
+        // FIXED EXTERNAL JAW
+        ctx.fillStyle = PALETTE.steelMain;
+        ctx.strokeStyle = PALETTE.steelDark;
+        ctx.lineWidth = 1.5;
+
+        ctx.beginPath();
+        ctx.moveTo(CONFIG.originX, y + CONFIG.beamHeight);
+        ctx.lineTo(CONFIG.originX, y + CONFIG.beamHeight + CONFIG.extJawLength);
+        ctx.lineTo(CONFIG.originX - 12, y + CONFIG.beamHeight + CONFIG.extJawLength);
+        ctx.bezierCurveTo(
+            CONFIG.originX - 35, y + CONFIG.beamHeight + (CONFIG.extJawLength * 0.7), 
+            CONFIG.originX - 60, y + CONFIG.beamHeight + (CONFIG.extJawLength * 0.3), 
+            CONFIG.originX - 65, y + CONFIG.beamHeight
+        );
+        ctx.lineTo(CONFIG.originX - 80, y + CONFIG.beamHeight);
+        ctx.lineTo(CONFIG.originX - 80, y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // FIXED INTERNAL JAW
+        ctx.beginPath();
+        ctx.moveTo(CONFIG.originX, y);                             
+        ctx.lineTo(CONFIG.originX, y - CONFIG.intJawHeight + 15);   
+        ctx.lineTo(CONFIG.originX - 25, y - CONFIG.intJawHeight);   
+        ctx.lineTo(CONFIG.originX - 25, y - CONFIG.intJawHeight + 12); 
+        ctx.bezierCurveTo(
+            CONFIG.originX - 25, y - 30, 
+            CONFIG.originX - 35, y - 10, 
+            CONFIG.originX - 50, y
+        );                                                          
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Main Scale Beam
+        const beamWidth = (CONFIG.maxMeasurement + 30) * CONFIG.pixelsPerMm;
+        ctx.fillRect(CONFIG.originX - 80, y, beamWidth, CONFIG.beamHeight);
+        ctx.strokeRect(CONFIG.originX - 80, y, beamWidth, CONFIG.beamHeight);
+
+        // Main Scale Markings
+        ctx.fillStyle = PALETTE.markings;
+        ctx.strokeStyle = PALETTE.markings;
+        ctx.lineWidth = 1;
+        ctx.font = '11px monospace';
+
+        for (let mm = 0; mm <= CONFIG.maxMeasurement; mm++) {
+            const markX = CONFIG.originX + (mm * CONFIG.pixelsPerMm);
+            let tickHeight = 8;
+
+            if (mm % 10 === 0) {
+                tickHeight = 20;
+                ctx.fillText(mm.toString(), markX - (ctx.measureText(mm.toString()).width / 2), y + 32);
+            } else if (mm % 5 === 0) {
+                tickHeight = 14;
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(markX, y);
+            ctx.lineTo(markX, y + tickHeight);
+            ctx.stroke();
+        }
+    }
+
+    function drawVernierSliderAssembly(sliderX) {
+        const y = CONFIG.mainScaleY;
+
+        // MOVING EXTERNAL JAW
+        ctx.fillStyle = PALETTE.steelSlider;
+        ctx.strokeStyle = PALETTE.steelDark;
+        ctx.lineWidth = 1.5;
+
+        ctx.beginPath();
+        ctx.moveTo(sliderX, y + CONFIG.beamHeight);
+        ctx.lineTo(sliderX, y + CONFIG.beamHeight + CONFIG.extJawLength);
+        ctx.lineTo(sliderX + 12, y + CONFIG.beamHeight + CONFIG.extJawLength);
+        ctx.bezierCurveTo(
+            sliderX + 35, y + CONFIG.beamHeight + (CONFIG.extJawLength * 0.7), 
+            sliderX + 60, y + CONFIG.beamHeight + (CONFIG.extJawLength * 0.3), 
+            sliderX + 75, y + CONFIG.beamHeight + 40
+        );
+        ctx.lineTo(sliderX + 120, y + CONFIG.beamHeight + 40);
+        ctx.lineTo(sliderX + 120, y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // MOVING INTERNAL JAW
+        ctx.beginPath();
+        ctx.moveTo(sliderX, y);                             
+        ctx.lineTo(sliderX, y - CONFIG.intJawHeight + 15);   
+        ctx.lineTo(sliderX + 25, y - CONFIG.intJawHeight);   
+        ctx.lineTo(sliderX + 25, y - CONFIG.intJawHeight + 12); 
+        ctx.bezierCurveTo(
+            sliderX + 25, y - 30, 
+            sliderX + 35, y - 10, 
+            sliderX + 50, y
+        );                                                  
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Vernier Scale Window Plate
+        const windowWidth = 19 * CONFIG.pixelsPerMm; 
+        ctx.fillRect(sliderX - 5, y + 5, windowWidth + 10, CONFIG.beamHeight - 10);
+        ctx.strokeRect(sliderX - 5, y + 5, windowWidth + 10, CONFIG.beamHeight - 10);
+
+        // Vernier Scale Markings & Alignment Logic
+        ctx.font = '9px monospace';
+        const divWidth = (19 * CONFIG.pixelsPerMm) / 20;
+
+        // Find coinciding line index (0 to 20)
+        const vernierFraction = Math.round((activeObjectSize % 1) * 100) / 100;
+        const coincidingDivIndex = Math.round(vernierFraction / 0.05);
+
+        for (let div = 0; div <= 20; div++) {
+            const markX = sliderX + (div * divWidth);
+            let tickHeight = 6;
+            const isAligned = (div === coincidingDivIndex);
+
+            if (div % 2 === 0) {
+                tickHeight = 12;
+                if (div % 4 === 0) {
+                    const label = (div / 2).toString();
+                    ctx.fillStyle = isAligned ? PALETTE.accentOrange : PALETTE.markings;
+                    ctx.fillText(label, markX - 3, y + 20);
+                }
+            }
+
+            ctx.beginPath();
+            ctx.strokeStyle = isAligned ? PALETTE.accentOrange : PALETTE.markings;
+            ctx.lineWidth = isAligned ? 2 : 1;
+            ctx.moveTo(markX, y + 6);
+            ctx.lineTo(markX, y + 6 + tickHeight);
+            ctx.stroke();
+        }
+
+        // Draw Alignment Pointer Line & Arrow Indicator
+        const coincideX = sliderX + (coincidingDivIndex * divWidth);
+        
+        ctx.save();
+        ctx.strokeStyle = PALETTE.indicatorRed;
+        ctx.fillStyle = PALETTE.indicatorRed;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([3, 3]);
+
+        // Alignment line extending up across main scale ticks
+        ctx.beginPath();
+        ctx.moveTo(coincideX, y - 2);
+        ctx.lineTo(coincideX, y + 24);
+        ctx.stroke();
+        ctx.restore();
+
+        // Indicator Arrow pointing down at the aligned mark
+        ctx.fillStyle = PALETTE.indicatorRed;
+        ctx.beginPath();
+        ctx.moveTo(coincideX, y + 26);
+        ctx.lineTo(coincideX - 5, y + 36);
+        ctx.lineTo(coincideX + 5, y + 36);
+        ctx.closePath();
+        ctx.fill();
+
+        // Label for coinciding Vernier reading
+        ctx.fillStyle = PALETTE.indicatorRed;
+        ctx.font = 'bold 11px sans-serif';
+        const coincideValueStr = (coincidingDivIndex * 0.05).toFixed(2) + ' mm';
+        ctx.fillText(`Coinciding Line: ${coincideValueStr}`, coincideX - 50, y + 48);
+
+        // Locking Screw
+        ctx.fillStyle = PALETTE.steelDark;
+        ctx.fillRect(sliderX + 30, y - 18, 20, 18);
+        ctx.strokeRect(sliderX + 30, y - 18, 20, 18);
+
+        // Thumb Roller
+        ctx.beginPath();
+        ctx.arc(sliderX + 95, y + CONFIG.beamHeight + 20, 12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+    }
+
+    function drawDepthRod(sliderX) {
+        const y = CONFIG.mainScaleY + (CONFIG.beamHeight / 2) - 3;
+        const endOfBeam = CONFIG.originX + (CONFIG.maxMeasurement * CONFIG.pixelsPerMm) + 80;
+
+        ctx.fillStyle = PALETTE.steelMain;
+        ctx.fillRect(sliderX, y, endOfBeam - sliderX + (activeObjectSize * CONFIG.pixelsPerMm), 6);
+        ctx.strokeStyle = PALETTE.steelDark;
+        ctx.strokeRect(sliderX, y, endOfBeam - sliderX + (activeObjectSize * CONFIG.pixelsPerMm), 6);
+    }
+
+    function drawMeasuredObject(gapPixels) {
+        const y = CONFIG.mainScaleY;
+
+        ctx.fillStyle = PALETTE.objectFill;
+        ctx.strokeStyle = PALETTE.objectStroke;
+        ctx.lineWidth = 2;
+
+        if (activeObjectType === 'external') {
+            const objRadius = gapPixels / 2;
+            const objY = y + CONFIG.beamHeight + (CONFIG.extJawLength / 2);
+            const objX = CONFIG.originX + objRadius;
+
+            ctx.beginPath();
+            ctx.arc(objX, objY, objRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = PALETTE.annotationText;
+            ctx.font = 'bold 12px sans-serif';
+            ctx.fillText('OBJECT (OD)', objX - 35, objY + 4);
+
+        } else if (activeObjectType === 'internal') {
+            const leftContactX = CONFIG.originX - 25;
+            const rightContactX = CONFIG.originX + gapPixels + 25;
+            const spanWidth = rightContactX - leftContactX;
+            const objRadius = spanWidth / 2;
+            const objX = leftContactX + objRadius;
+            const objY = y - CONFIG.intJawHeight + 6;
+
+            ctx.beginPath();
+            ctx.arc(objX, objY, objRadius, 0, Math.PI * 2, false);
+            ctx.arc(objX, objY, objRadius - 18, 0, Math.PI * 2, true);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = PALETTE.annotationText;
+            ctx.font = 'bold 12px sans-serif';
+            ctx.fillText('OBJECT (ID)', objX - 35, objY - objRadius - 8);
+
+        } else if (activeObjectType === 'depth') {
+            const endOfBeam = CONFIG.originX + (CONFIG.maxMeasurement * CONFIG.pixelsPerMm) + 80;
+            const blockX = endOfBeam;
+            const blockY = y - 20;
+            const holeDepth = gapPixels;
+
+            ctx.fillStyle = PALETTE.depthBlock;
+            ctx.fillRect(blockX, blockY, 80, 100);
+            ctx.strokeRect(blockX, blockY, 80, 100);
+
+            ctx.fillStyle = canvas.style.backgroundColor || '#f8fafc';
+            ctx.fillRect(blockX, blockY + 35, holeDepth, 30);
+            ctx.strokeRect(blockX, blockY + 35, holeDepth, 30);
+
+            ctx.fillStyle = PALETTE.annotationText;
+            ctx.font = 'bold 12px sans-serif';
+            ctx.fillText('OBJECT (DEPTH)', blockX + 5, blockY + 120);
+        }
+    }
+
+    function drawTextbookAnnotations(sliderX) {
+        ctx.fillStyle = PALETTE.annotationText;
+        ctx.font = '12px sans-serif';
+
+        drawLabelWithPointer('External Jaws', CONFIG.originX - 45, CONFIG.mainScaleY + CONFIG.beamHeight + 110, CONFIG.originX - 10, CONFIG.mainScaleY + CONFIG.beamHeight + 90);
+        drawLabelWithPointer('Internal Jaws', CONFIG.originX - 45, CONFIG.mainScaleY - 45, CONFIG.originX - 15, CONFIG.mainScaleY - 40);
+        drawLabelWithPointer('Locking Screw', sliderX + 40, CONFIG.mainScaleY - 35, sliderX + 40, CONFIG.mainScaleY - 18);
+        drawLabelWithPointer('Main Scale', CONFIG.originX + 120, CONFIG.mainScaleY - 20, CONFIG.originX + 120, CONFIG.mainScaleY + 5);
+        drawLabelWithPointer('Vernier Scale', sliderX + 25, CONFIG.mainScaleY + CONFIG.beamHeight + 35, sliderX + 25, CONFIG.mainScaleY + CONFIG.beamHeight + 5);
+        drawLabelWithPointer('Thumb Roller', sliderX + 120, CONFIG.mainScaleY + CONFIG.beamHeight + 35, sliderX + 103, CONFIG.mainScaleY + CONFIG.beamHeight + 22);
+    }
+
+    function drawLabelWithPointer(text, textX, textY, targetX, targetY) {
+        ctx.fillStyle = PALETTE.annotationText;
+        ctx.fillText(text, textX, textY);
+
+        ctx.strokeStyle = '#64748b';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(textX + (ctx.measureText(text).width / 2), textY + (textY > targetY ? -12 : 4));
+        ctx.lineTo(targetX, targetY);
+        ctx.stroke();
+    }
+
+    window.onload = init;
+</script>
+
+</body>
+</html>

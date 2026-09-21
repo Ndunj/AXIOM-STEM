@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Calculus Grapher & Visualizer</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Custom scrollbar for dark theme controls */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    input[type="range"] {
+      accent-color: #6366f1;
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col font-sans antialiased bg-slate-950 text-slate-100 overflow-hidden">
+
+  <!-- Header Navigation -->
+  <header class="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between shrink-0 shadow-lg">
+    <div class="flex items-center space-x-3">
+      <div class="p-2 bg-indigo-600/20 text-indigo-400 rounded-lg border border-indigo-500/30">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+        </svg>
+      </div>
+      <div>
+        <h1 class="font-bold text-lg text-white leading-tight">Calculus Grapher & Visualizer</h1>
+        <p class="text-xs text-slate-400">Interactive Derivatives, Tangents, & Riemann Integrals</p>
+      </div>
+    </div>
+    
+    <div class="flex items-center space-x-3">
+      <button id="reset-view-btn" class="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+        </svg>
+        Reset View
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Viewport Layout -->
+  <div class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+    
+    <!-- Canvas Visualization Panel (Center/Left) -->
+    <div class="flex-1 relative bg-slate-950 flex items-center justify-center overflow-hidden min-h-[400px]">
+      <canvas id="graph-canvas" class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
+      
+      <!-- Legend Overlay -->
+      <div class="absolute top-4 left-4 bg-slate-900/80 backdrop-blur border border-slate-800 rounded-lg px-3 py-2 text-xs flex flex-wrap items-center gap-3 shadow-lg pointer-events-none">
+        <div class="flex items-center gap-1.5">
+          <span class="w-3 h-1 bg-cyan-400 rounded inline-block"></span>
+          <span class="text-cyan-300 font-semibold">f(x)</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="w-3 h-1 bg-rose-400 rounded inline-block"></span>
+          <span class="text-rose-300 font-semibold">f'(x)</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="w-3 h-1 bg-amber-400 rounded inline-block"></span>
+          <span class="text-amber-300 font-semibold">Tangent</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="w-2.5 h-2.5 bg-indigo-500/50 border border-indigo-400 inline-block rounded-xs"></span>
+          <span class="text-indigo-300 font-semibold">Integral Area</span>
+        </div>
+      </div>
+
+      <!-- Quick Canvas Instructions -->
+      <div class="absolute bottom-4 left-4 bg-slate-900/80 backdrop-blur border border-slate-800/80 rounded px-3 py-1.5 text-[11px] text-slate-400 pointer-events-none space-y-0.5">
+        <div>💡 <strong>Pan:</strong> Click & Drag canvas | <strong>Zoom:</strong> Mouse Scroll</div>
+        <div>💡 <strong>Interactive Points:</strong> Drag x₀, a, or b markers along axis</div>
+      </div>
+    </div>
+
+    <!-- Controls & Dashboard Sidebar (Right) -->
+    <aside class="w-full lg:w-[440px] bg-slate-900 border-t lg:border-t-0 lg:border-l border-slate-800 flex flex-col overflow-y-auto shrink-0 shadow-xl">
+      
+      <div class="p-5 space-y-6">
+        
+        <!-- FUNCTION INPUT & PRESETS -->
+        <section class="space-y-3">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+            <span>Function Input</span>
+            <span class="text-[10px] text-indigo-400">JS Math Syntax</span>
+          </h2>
+          
+          <div class="space-y-2">
+            <div>
+              <label for="preset-select" class="block text-[11px] text-slate-400 mb-1">Function Presets</label>
+              <select id="preset-select" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                <option value="x^3 - 3*x">Polynomial: f(x) = x³ - 3x</option>
+                <option value="sin(x)">Trigonometric: f(x) = sin(x)</option>
+                <option value="cos(x) * x">Combined: f(x) = x · cos(x)</option>
+                <option value="exp(-x^2)">Gaussian: f(x) = e^(-x²)</option>
+                <option value="1 / (1 + x^2)">Runge Function: f(x) = 1 / (1 + x²)</option>
+                <option value="x^2 - 4">Parabola: f(x) = x² - 4</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="func-input" class="block text-[11px] text-slate-400 mb-1">Custom Function f(x)</label>
+              <div class="relative flex items-center">
+                <span class="absolute left-3 text-xs text-indigo-400 font-mono font-bold">f(x) =</span>
+                <input type="text" id="func-input" value="x^3 - 3*x" placeholder="e.g. x^2 - 3*x" class="w-full bg-slate-950 border border-slate-800 rounded-lg pl-14 pr-3 py-2 text-xs font-mono text-cyan-300 focus:outline-none focus:border-indigo-500">
+              </div>
+              <p id="func-error" class="text-[11px] text-rose-400 mt-1 hidden"></p>
+            </div>
+          </div>
+        </section>
+
+        <!-- VISIBILITY TOGGLES -->
+        <section class="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800/80 space-y-2">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Display Layers</h3>
+          <div class="grid grid-cols-2 gap-2 text-xs text-slate-300">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="toggle-grid" checked class="rounded border-slate-700 bg-slate-800 text-indigo-500 focus:ring-indigo-500/40">
+              <span>Grid & Axes</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="toggle-derivative" checked class="rounded border-slate-700 bg-slate-800 text-indigo-500 focus:ring-indigo-500/40">
+              <span class="text-rose-300">Derivative f'(x)</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="toggle-tangent" checked class="rounded border-slate-700 bg-slate-800 text-indigo-500 focus:ring-indigo-500/40">
+              <span class="text-amber-300">Tangent Line</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="toggle-riemann" checked class="rounded border-slate-700 bg-slate-800 text-indigo-500 focus:ring-indigo-500/40">
+              <span class="text-indigo-300">Riemann Sum</span>
+            </label>
+          </div>
+        </section>
+
+        <!-- DERIVATIVE & TANGENT MODULE -->
+        <section class="space-y-3 bg-slate-950/40 p-4 rounded-xl border border-amber-500/20">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-amber-400"></span> Derivative & Tangent
+            </h3>
+            <span id="x0-display" class="text-xs font-mono text-amber-300/90">x₀ = 1.00</span>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+              <span>Evaluation Point (x₀)</span>
+              <span id="tangent-slope-val" class="font-mono text-amber-300">m = 0.00</span>
+            </div>
+            <input type="range" id="slider-x0" min="-5" max="5" step="0.05" value="1.0" class="w-full accent-amber-400 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+          </div>
+
+          <div class="p-2.5 bg-slate-900/90 rounded border border-slate-800/80 font-mono text-[11px] space-y-1">
+            <div class="text-slate-400 text-[10px]">Linear Approximation Equation L(x):</div>
+            <div id="linear-approx-eq" class="text-amber-300 font-semibold truncate">L(x) = f(x₀) + f'(x₀)(x - x₀)</div>
+          </div>
+        </section>
+
+        <!-- DEFINITE INTEGRAL & RIEMANN SUM MODULE -->
+        <section class="space-y-3 bg-slate-950/40 p-4 rounded-xl border border-indigo-500/20">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-indigo-400"></span> Definite Integral
+            </h3>
+            <span id="interval-display" class="text-xs font-mono text-indigo-300/90">[a, b] = [-2.00, 2.00]</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                <span>Lower Bound (a)</span>
+                <span id="val-a" class="font-mono text-indigo-300">-2.0</span>
+              </div>
+              <input type="range" id="slider-a" min="-5" max="5" step="0.1" value="-2" class="w-full accent-indigo-400 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                <span>Upper Bound (b)</span>
+                <span id="val-b" class="font-mono text-indigo-300">2.0</span>
+              </div>
+              <input type="range" id="slider-b" min="-5" max="5" step="0.1" value="2" class="w-full accent-indigo-400 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                <span>Subintervals (n)</span>
+                <span id="val-n" class="font-mono text-indigo-300">12</span>
+              </div>
+              <input type="range" id="slider-n" min="1" max="100" step="1" value="12" class="w-full accent-indigo-400 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <div>
+              <label for="riemann-method" class="block text-[11px] text-slate-400 mb-1">Sum Method</label>
+              <select id="riemann-method" class="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none">
+                <option value="left">Left Riemann</option>
+                <option value="right">Right Riemann</option>
+                <option value="midpoint" selected>Midpoint Rule</option>
+                <option value="trapezoidal">Trapezoidal Rule</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <!-- REAL-TIME ANALYSIS DASHBOARD -->
+        <section class="space-y-3 bg-slate-950/80 p-4 rounded-xl border border-slate-800">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+            <span>Mathematical Analysis</span>
+            <span class="text-[10px] text-slate-500 font-normal">Real-time Numerical Calculations</span>
+          </h2>
+
+          <div class="space-y-2 font-mono text-xs">
+            <div class="p-2.5 bg-slate-900/90 rounded border border-slate-800/80 flex justify-between items-center">
+              <span class="text-slate-400">f(x₀):</span>
+              <span id="dash-fx0" class="text-cyan-300 font-bold">0.0000</span>
+            </div>
+            <div class="p-2.5 bg-slate-900/90 rounded border border-slate-800/80 flex justify-between items-center">
+              <span class="text-slate-400">Slope f'(x₀):</span>
+              <span id="dash-dfx0" class="text-rose-300 font-bold">0.0000</span>
+            </div>
+            <div class="p-2.5 bg-slate-900/90 rounded border border-slate-800/80 flex justify-between items-center">
+              <span class="text-slate-400">Riemann Sum:</span>
+              <span id="dash-riemann" class="text-indigo-300 font-bold">0.0000</span>
+            </div>
+            <div class="p-2.5 bg-emerald-950/20 rounded border border-emerald-500/30 flex justify-between items-center">
+              <span class="text-emerald-400 font-sans font-bold">∫ₐᵇ f(x)dx (Exact):</span>
+              <span id="dash-exact-int" class="text-emerald-300 font-bold">0.0000</span>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </aside>
+  </div>
+
+  <!-- JavaScript Visualizer Logic -->
+  <script>
+    // --- Application State ---
+    const state = {
+      rawExpr: 'x^3 - 3*x',
+      compiledFunc: null,
+      xMin: -5,
+      xMax: 5,
+      yMin: -5,
+      yMax: 5,
+      x0: 1.0,
+      a: -2.0,
+      b: 2.0,
+      n: 12,
+      riemannMethod: 'midpoint',
+      showGrid: true,
+      showDerivative: true,
+      showTangent: true,
+      showRiemann: true,
+      isDraggingCanvas: false,
+      isDraggingMarker: null, // 'x0', 'a', 'b'
+      dragStart: { x: 0, y: 0 },
+      dragViewStart: { xMin: 0, xMax: 0, yMin: 0, yMax: 0 }
+    };
+
+    // --- DOM Elements ---
+    const canvas = document.getElementById('graph-canvas');
+    const ctx = canvas.getContext('2d');
+
+    const funcInput = document.getElementById('func-input');
+    const presetSelect = document.getElementById('preset-select');
+    const funcError = document.getElementById('func-error');
+
+    const toggleGrid = document.getElementById('toggle-grid');
+    const toggleDerivative = document.getElementById('toggle-derivative');
+    const toggleTangent = document.getElementById('toggle-tangent');
+    const toggleRiemann = document.getElementById('toggle-riemann');
+
+    const sliderX0 = document.getElementById('slider-x0');
+    const sliderA = document.getElementById('slider-a');
+    const sliderB = document.getElementById('slider-b');
+    const sliderN = document.getElementById('slider-n');
+    const riemannMethodSelect = document.getElementById('riemann-method');
+
+    const x0Display = document.getElementById('x0-display');
+    const tangentSlopeVal = document.getElementById('tangent-slope-val');
+    const linearApproxEq = document.getElementById('linear-approx-eq');
+    const intervalDisplay = document.getElementById('interval-display');
+    const valA = document.getElementById('val-a');
+    const valB = document.getElementById('val-b');
+    const valN = document.getElementById('val-n');
+
+    const dashFx0 = document.getElementById('dash-fx0');
+    const dashDfx0 = document.getElementById('dash-dfx0');
+    const dashRiemann = document.getElementById('dash-riemann');
+    const dashExactInt = document.getElementById('dash-exact-int');
+    const resetViewBtn = document.getElementById('reset-view-btn');
+
+    // --- Safe Math Parser & Function Evaluator ---
+    function parseFunction(expr) {
+      try {
+        let parsed = expr
+          .replace(/\^/g, '**')
+          .replace(/sin/g, 'Math.sin')
+          .replace(/cos/g, 'Math.cos')
+          .replace(/tan/g, 'Math.tan')
+          .replace(/exp/g, 'Math.exp')
+          .replace(/log|ln/g, 'Math.log')
+          .replace(/sqrt/g, 'Math.sqrt')
+          .replace(/abs/g, 'Math.abs')
+          .replace(/pi|PI/g, 'Math.PI')
+          .replace(/e|E/g, 'Math.E');
+
+        // Safe Function Evaluator
+        const fn = new Function('x', `
+          try {
+            const val = ${parsed};
+            return typeof val === 'number' && !isNaN(val) && isFinite(val) ? val : null;
+          } catch(e) {
+            return null;
+          }
+        `);
+
+        // Test invocation
+        const testVal = fn(1);
+        funcError.classList.add('hidden');
+        return fn;
+      } catch (e) {
+        funcError.textContent = "Invalid mathematical expression format.";
+        funcError.classList.remove('hidden');
+        return null;
+      }
+    }
+
+    function evaluateFunc(x) {
+      if (!state.compiledFunc) return 0;
+      const res = state.compiledFunc(x);
+      return res !== null ? res : NaN;
+    }
+
+    // Numerical Derivative (Central Difference)
+    function evaluateDerivative(x) {
+      const h = 0.0001;
+      const f1 = evaluateFunc(x + h);
+      const f2 = evaluateFunc(x - h);
+      if (isNaN(f1) || isNaN(f2)) return NaN;
+      return (f1 - f2) / (2 * h);
+    }
+
+    // --- Coordinate System Transformations ---
+    let width = 0, height = 0;
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      width = rect.width;
+      height = rect.height;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.scale(dpr, dpr);
+      render();
+    }
+
+    function worldToScreen(wx, wy) {
+      const sx = ((wx - state.xMin) / (state.xMax - state.xMin)) * width;
+      const sy = height - ((wy - state.yMin) / (state.yMax - state.yMin)) * height;
+      return { x: sx, y: sy };
+    }
+
+    function screenToWorld(sx, sy) {
+      const wx = state.xMin + (sx / width) * (state.xMax - state.xMin);
+      const wy = state.yMin + ((height - sy) / height) * (state.yMax - state.yMin);
+      return { x: wx, y: wy };
+    }
+
+    // --- Drawing Functions ---
+    function drawGrid() {
+      if (!state.showGrid) return;
+
+      ctx.save();
+      ctx.lineWidth = 1;
+
+      // Calculate reasonable grid tick increments
+      const rangeX = state.xMax - state.xMin;
+      const rangeY = state.yMax - state.yMin;
+
+      const stepX = Math.pow(10, Math.floor(Math.log10(rangeX / 8)));
+      const stepY = Math.pow(10, Math.floor(Math.log10(rangeY / 8)));
+
+      // Minor grid lines
+      ctx.strokeStyle = '#1e293b';
+      const startX = Math.floor(state.xMin / stepX) * stepX;
+      for (let x = startX; x <= state.xMax; x += stepX) {
+        const pt = worldToScreen(x, 0);
+        ctx.beginPath();
+        ctx.moveTo(pt.x, 0);
+        ctx.lineTo(pt.x, height);
+        ctx.stroke();
+      }
+
+      const startY = Math.floor(state.yMin / stepY) * stepY;
+      for (let y = startY; y <= state.yMax; y += stepY) {
+        const pt = worldToScreen(0, y);
+        ctx.beginPath();
+        ctx.moveTo(0, pt.y);
+        ctx.lineTo(width, pt.y);
+        ctx.stroke();
+      }
+
+      // X and Y Axes
+      const origin = worldToScreen(0, 0);
+      ctx.strokeStyle = '#475569';
+      ctx.lineWidth = 1.5;
+
+      // X-Axis
+      ctx.beginPath();
+      ctx.moveTo(0, origin.y);
+      ctx.lineTo(width, origin.y);
+      ctx.stroke();
+
+      // Y-Axis
+      ctx.beginPath();
+      ctx.moveTo(origin.x, 0);
+      ctx.lineTo(origin.x, height);
+      ctx.stroke();
+
+      // Ticks & Labels
+      ctx.fillStyle = '#64748b';
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+
+      for (let x = startX; x <= state.xMax; x += stepX) {
+        if (Math.abs(x) < stepX * 0.1) continue;
+        const pt = worldToScreen(x, 0);
+        if (pt.x >= 0 && pt.x <= width) {
+          ctx.beginPath();
+          ctx.moveTo(pt.x, origin.y - 3);
+          ctx.lineTo(pt.x, origin.y + 3);
+          ctx.stroke();
+          ctx.fillText(x.toFixed(x % 1 === 0 ? 0 : 1), pt.x, Math.max(10, Math.min(height - 20, origin.y + 5)));
+        }
+      }
+
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      for (let y = startY; y <= state.yMax; y += stepY) {
+        if (Math.abs(y) < stepY * 0.1) continue;
+        const pt = worldToScreen(0, y);
+        if (pt.y >= 0 && pt.y <= height) {
+          ctx.beginPath();
+          ctx.moveTo(origin.x - 3, pt.y);
+          ctx.lineTo(origin.x + 3, pt.y);
+          ctx.stroke();
+          ctx.fillText(y.toFixed(y % 1 === 0 ? 0 : 1), Math.max(25, Math.min(width - 10, origin.x - 6)), pt.y);
+        }
+      }
+
+      ctx.restore();
+    }
+
+    function drawFunctionCurve(evaluator, color, lineWidth = 2, isDashed = false) {
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lineWidth;
+      if (isDashed) ctx.setLineDash([5, 5]);
+
+      ctx.beginPath();
+      let started = false;
+      const numSteps = width;
+
+      for (let i = 0; i <= numSteps; i++) {
+        const sx = i;
+        const wx = state.xMin + (i / width) * (state.xMax - state.xMin);
+        const wy = evaluator(wx);
+
+        if (isNaN(wy) || wy === null || Math.abs(wy) > 1e5) {
+          started = false;
+          continue;
+        }
+
+        const pt = worldToScreen(wx, wy);
+
+        if (!started) {
+          ctx.moveTo(pt.x, pt.y);
+          started = true;
+        } else {
+          ctx.lineTo(pt.x, pt.y);
+        }
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawRiemannSum() {
+      if (!state.showRiemann) return;
+
+      const a = Math.min(state.a, state.b);
+      const b = Math.max(state.a, state.b);
+      const n = state.n;
+      const dx = (b - a) / n;
+
+      ctx.save();
+
+      let totalSum = 0;
+
+      for (let i = 0; i < n; i++) {
+        const xLeft = a + i * dx;
+        const xRight = xLeft + dx;
+        let xEval = xLeft;
+
+        if (state.riemannMethod === 'right') {
+          xEval = xRight;
+        } else if (state.riemannMethod === 'midpoint') {
+          xEval = xLeft + dx / 2;
+        } else if (state.riemannMethod === 'trapezoidal') {
+          xEval = xLeft; // Handled specially below
+        }
+
+        const yEval = evaluateFunc(xEval);
+
+        if (state.riemannMethod === 'trapezoidal') {
+          const yL = evaluateFunc(xLeft);
+          const yR = evaluateFunc(xRight);
+          if (isNaN(yL) || isNaN(yR)) continue;
+
+          const p1 = worldToScreen(xLeft, 0);
+          const p2 = worldToScreen(xLeft, yL);
+          const p3 = worldToScreen(xRight, yR);
+          const p4 = worldToScreen(xRight, 0);
+
+          ctx.fillStyle = yL + yR >= 0 ? 'rgba(99, 102, 241, 0.25)' : 'rgba(244, 63, 94, 0.25)';
+          ctx.strokeStyle = 'rgba(129, 140, 248, 0.6)';
+          ctx.lineWidth = 1;
+
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.lineTo(p3.x, p3.y);
+          ctx.lineTo(p4.x, p4.y);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          totalSum += 0.5 * (yL + yR) * dx;
+        } else {
+          if (isNaN(yEval)) continue;
+
+          const pTL = worldToScreen(xLeft, yEval);
+          const pBR = worldToScreen(xRight, 0);
+          const pZero = worldToScreen(xLeft, 0);
+
+          const rectWidth = pBR.x - pTL.x;
+          const rectHeight = pZero.y - pTL.y;
+
+          ctx.fillStyle = yEval >= 0 ? 'rgba(99, 102, 241, 0.25)' : 'rgba(244, 63, 94, 0.25)';
+          ctx.strokeStyle = 'rgba(129, 140, 248, 0.6)';
+          ctx.lineWidth = 1;
+
+          ctx.fillRect(pTL.x, pTL.y, rectWidth, rectHeight);
+          ctx.strokeRect(pTL.x, pTL.y, rectWidth, rectHeight);
+
+          totalSum += yEval * dx;
+        }
+      }
+
+      ctx.restore();
+      return totalSum;
+    }
+
+    function drawTangentAndMarkers() {
+      const x0 = state.x0;
+      const y0 = evaluateFunc(x0);
+      const m = evaluateDerivative(x0);
+
+      // Draw Tangent Line
+      if (state.showTangent && !isNaN(y0) && !isNaN(m)) {
+        const tangentFunc = (x) => y0 + m * (x - x0);
+        drawFunctionCurve(tangentFunc, '#fbbf24', 2, false);
+
+        // Point of Tangency
+        const p0 = worldToScreen(x0, y0);
+        ctx.save();
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath();
+        ctx.arc(p0.x, p0.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Draw Draggable X0 Axis Marker
+      const pX0 = worldToScreen(x0, 0);
+      drawAxisHandle(pX0.x, pX0.y, '#fbbf24', 'x₀');
+
+      // Draw Draggable Integral Bounds (a, b) Markers
+      if (state.showRiemann) {
+        const pA = worldToScreen(state.a, 0);
+        const pB = worldToScreen(state.b, 0);
+        drawAxisHandle(pA.x, pA.y, '#818cf8', 'a');
+        drawAxisHandle(pB.x, pB.y, '#818cf8', 'b');
+      }
+    }
+
+    function drawAxisHandle(sx, sy, color, label) {
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+
+      // Vertical marker line
+      ctx.beginPath();
+      ctx.setLineDash([3, 3]);
+      ctx.moveTo(sx, 0);
+      ctx.lineTo(sx, height);
+      ctx.stroke();
+
+      // Handle Handle Circle
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(sx, sy, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Label Text
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(label, sx, sy - 10);
+
+      ctx.restore();
+    }
+
+    // High Precision Numerical Integration (Simpson's Rule for Exact reference)
+    function calculateExactIntegral(a, b) {
+      const n = 200; // subintervals
+      const h = (b - a) / n;
+      let sum = evaluateFunc(a) + evaluateFunc(b);
+
+      for (let i = 1; i < n; i++) {
+        const x = a + i * h;
+        const val = evaluateFunc(x);
+        if (isNaN(val)) return NaN;
+        sum += val * (i % 2 === 0 ? 2 : 4);
+      }
+      return (sum * h) / 3;
+    }
+
+    // --- Main Rendering Loop ---
+    function render() {
+      ctx.clearRect(0, 0, width, height);
+
+      drawGrid();
+
+      // 1. Draw Riemann Area Blocks
+      const riemannSumVal = drawRiemannSum();
+
+      // 2. Draw Main Function Curve f(x)
+      drawFunctionCurve(evaluateFunc, '#22d3ee', 2.5);
+
+      // 3. Draw Derivative Curve f'(x)
+      if (state.showDerivative) {
+        drawFunctionCurve(evaluateDerivative, '#f43f5e', 1.8, true);
+      }
+
+      // 4. Draw Tangent Lines & Dynamic Point Markers
+      drawTangentAndMarkers();
+
+      // Update Dashboard Calculations
+      updateDashboard(riemannSumVal);
+    }
+
+    // --- Update Dynamic UI Text & Math Summaries ---
+    function updateDashboard(riemannSumVal) {
+      const x0 = state.x0;
+      const fx0 = evaluateFunc(x0);
+      const dfx0 = evaluateDerivative(x0);
+
+      sliderX0.value = x0;
+      sliderA.value = state.a;
+      sliderB.value = state.b;
+      sliderN.value = state.n;
+
+      x0Display.textContent = `x₀ = ${x0.toFixed(2)}`;
+      valA.textContent = state.a.toFixed(1);
+      valB.textContent = state.b.toFixed(1);
+      valN.textContent = state.n;
+
+      intervalDisplay.textContent = `[a, b] = [${Math.min(state.a, state.b).toFixed(2)}, ${Math.max(state.a, state.b).toFixed(2)}]`;
+      tangentSlopeVal.textContent = `m = ${isNaN(dfx0) ? 'Undefined' : dfx0.toFixed(2)}`;
+
+      // Format Linear Approximation Equation: L(x) = f(x0) + f'(x0)(x - x0)
+      if (!isNaN(fx0) && !isNaN(dfx0)) {
+        const sign = dfx0 >= 0 ? '+' : '-';
+        linearApproxEq.textContent = `L(x) = ${fx0.toFixed(2)} ${sign} ${Math.abs(dfx0).toFixed(2)}(x - ${x0.toFixed(2)})`;
+      } else {
+        linearApproxEq.textContent = `L(x) = Undefined`;
+      }
+
+      dashFx0.textContent = isNaN(fx0) ? 'NaN' : fx0.toFixed(4);
+      dashDfx0.textContent = isNaN(dfx0) ? 'NaN' : dfx0.toFixed(4);
+      dashRiemann.textContent = riemannSumVal !== undefined && !isNaN(riemannSumVal) ? riemannSumVal.toFixed(4) : 'N/A';
+
+      const exactInt = calculateExactIntegral(state.a, state.b);
+      dashExactInt.textContent = isNaN(exactInt) ? 'N/A' : exactInt.toFixed(4);
+    }
+
+    // --- Interaction Event Handlers ---
+    function initEvents() {
+      window.addEventListener('resize', resizeCanvas);
+
+      // Function Input Controls
+      funcInput.addEventListener('input', (e) => {
+        state.rawExpr = e.target.value;
+        const fn = parseFunction(state.rawExpr);
+        if (fn) {
+          state.compiledFunc = fn;
+          render();
+        }
+      });
+
+      presetSelect.addEventListener('change', (e) => {
+        funcInput.value = e.target.value;
+        state.rawExpr = e.target.value;
+        state.compiledFunc = parseFunction(state.rawExpr);
+        render();
+      });
+
+      // Toggles
+      toggleGrid.addEventListener('change', (e) => { state.showGrid = e.target.checked; render(); });
+      toggleDerivative.addEventListener('change', (e) => { state.showDerivative = e.target.checked; render(); });
+      toggleTangent.addEventListener('change', (e) => { state.showTangent = e.target.checked; render(); });
+      toggleRiemann.addEventListener('change', (e) => { state.showRiemann = e.target.checked; render(); });
+
+      // Sliders
+      sliderX0.addEventListener('input', (e) => { state.x0 = parseFloat(e.target.value); render(); });
+      sliderA.addEventListener('input', (e) => { state.a = parseFloat(e.target.value); render(); });
+      sliderB.addEventListener('input', (e) => { state.b = parseFloat(e.target.value); render(); });
+      sliderN.addEventListener('input', (e) => { state.n = parseInt(e.target.value); render(); });
+      riemannMethodSelect.addEventListener('change', (e) => { state.riemannMethod = e.target.value; render(); });
+
+      resetViewBtn.addEventListener('click', () => {
+        state.xMin = -5; state.xMax = 5;
+        state.yMin = -5; state.yMax = 5;
+        render();
+      });
+
+      // Canvas Dragging & Zooming Interactions
+      canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+
+        // Check if user clicked near x0, a, or b markers
+        const pX0 = worldToScreen(state.x0, 0);
+        const pA = worldToScreen(state.a, 0);
+        const pB = worldToScreen(state.b, 0);
+
+        if (Math.hypot(mx - pX0.x, my - pX0.y) < 12) {
+          state.isDraggingMarker = 'x0';
+          return;
+        }
+        if (state.showRiemann && Math.hypot(mx - pA.x, my - pA.y) < 12) {
+          state.isDraggingMarker = 'a';
+          return;
+        }
+        if (state.showRiemann && Math.hypot(mx - pB.x, my - pB.y) < 12) {
+          state.isDraggingMarker = 'b';
+          return;
+        }
+
+        // Otherwise Pan Canvas
+        state.isDraggingCanvas = true;
+        state.dragStart = { x: e.clientX, y: e.clientY };
+        state.dragViewStart = { xMin: state.xMin, xMax: state.xMax, yMin: state.yMin, yMax: state.yMax };
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+
+        if (state.isDraggingMarker) {
+          const world = screenToWorld(mx, my);
+          const roundedX = Math.round(world.x * 20) / 20; // 0.05 step grid snap
+
+          if (state.isDraggingMarker === 'x0') state.x0 = roundedX;
+          if (state.isDraggingMarker === 'a') state.a = roundedX;
+          if (state.isDraggingMarker === 'b') state.b = roundedX;
+          render();
+          return;
+        }
+
+        if (state.isDraggingCanvas) {
+          const dx = e.clientX - state.dragStart.x;
+          const dy = e.clientY - state.dragStart.y;
+
+          const worldDx = (dx / width) * (state.dragViewStart.xMax - state.dragViewStart.xMin);
+          const worldDy = (dy / height) * (state.dragViewStart.yMax - state.dragViewStart.yMin);
+
+          state.xMin = state.dragViewStart.xMin - worldDx;
+          state.xMax = state.dragViewStart.xMax - worldDx;
+          state.yMin = state.dragViewStart.yMin + worldDy;
+          state.yMax = state.dragViewStart.yMax + worldDy;
+
+          render();
+        }
+      });
+
+      window.addEventListener('mouseup', () => {
+        state.isDraggingCanvas = false;
+        state.isDraggingMarker = null;
+      });
+
+      // Zoom via Scroll Wheel
+      canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const zoomFactor = e.deltaY < 0 ? 0.9 : 1.1;
+
+        const rect = canvas.getBoundingClientRect();
+        const mouseWorld = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
+
+        state.xMin = mouseWorld.x + (state.xMin - mouseWorld.x) * zoomFactor;
+        state.xMax = mouseWorld.x + (state.xMax - mouseWorld.x) * zoomFactor;
+        state.yMin = mouseWorld.y + (state.yMin - mouseWorld.y) * zoomFactor;
+        state.yMax = mouseWorld.y + (state.yMax - mouseWorld.y) * zoomFactor;
+
+        render();
+      }, { passive: false });
+    }
+
+    // --- Initialization ---
+    window.addEventListener('DOMContentLoaded', () => {
+      state.compiledFunc = parseFunction(state.rawExpr);
+      initEvents();
+      resizeCanvas();
+    });
+  </script>
+</body>
+</html>

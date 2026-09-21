@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Pinhole Camera Simulation</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+        #canvas-container {
+            flex: 1;
+            height: 100%;
+            position: relative;
+            background-color: #070d19;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+        canvas:active {
+            cursor: grabbing;
+        }
+        #controls-panel {
+            width: 350px;
+            background-color: #1e293b;
+            border-left: 1px solid #334155;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+            box-shadow: -4px 0 15px rgba(0,0,0,0.4);
+            z-index: 10;
+        }
+        h1 {
+            font-size: 1.25rem;
+            color: #38bdf8;
+            border-bottom: 2px solid #334155;
+            padding-bottom: 8px;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        label {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            display: flex;
+            justify-content: space-between;
+        }
+        label span.val {
+            color: #38bdf8;
+            font-weight: bold;
+        }
+        input[type="range"] {
+            width: 100%;
+            accent-color: #38bdf8;
+            cursor: pointer;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+        .checkbox-group input {
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+            accent-color: #38bdf8;
+        }
+        .info-box {
+            background-color: #0f172a;
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 0.82rem;
+            line-height: 1.4;
+            color: #cbd5e1;
+            border-left: 3px solid #38bdf8;
+        }
+        .info-box ul {
+            margin-left: 16px;
+            margin-top: 6px;
+            list-style-type: square;
+        }
+        .formula-box {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 10px;
+            margin-top: 6px;
+            text-align: center;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .formula-header {
+            font-size: 0.95rem;
+            color: #f59e0b;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+        .formula-line {
+            color: #38bdf8;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+        .formula-calc {
+            color: #f8fafc;
+            font-size: 0.85rem;
+        }
+        #instructions {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            background: rgba(30, 41, 59, 0.85);
+            border: 1px solid #334155;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            pointer-events: none;
+        }
+        #legend {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background-color: rgba(30, 41, 59, 0.88);
+            backdrop-filter: blur(6px);
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            font-size: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            pointer-events: none;
+            z-index: 5;
+        }
+        #labels-overlay {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background-color: rgba(30, 41, 59, 0.88);
+            backdrop-filter: blur(6px);
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            font-size: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+            z-index: 5;
+            width: 220px;
+        }
+        .legend-item, .label-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            #controls-panel {
+                width: 100%;
+                height: 40vh;
+                border-left: none;
+                border-top: 1px solid #334155;
+            }
+            #canvas-container {
+                height: 60vh;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <canvas id="simCanvas"></canvas>
+        
+        <div id="legend">
+            <div style="font-weight: bold; color: #38bdf8; margin-bottom: 4px;">Light Rays</div>
+            <div class="legend-item">
+                <div class="color-dot" style="background:#ef4444;"></div>
+                <span>Top Ray (Red)</span>
+            </div>
+            <div class="legend-item">
+                <div class="color-dot" style="background:#22c55e;"></div>
+                <span>Center Ray (Green)</span>
+            </div>
+            <div class="legend-item">
+                <div class="color-dot" style="background:#3b82f6;"></div>
+                <span>Bottom Ray (Blue)</span>
+            </div>
+        </div>
+
+        <div id="labels-overlay">
+            <div style="font-weight: bold; color: #38bdf8; margin-bottom: 2px;">Apparatus Key</div>
+            <div class="label-item">
+                <div class="color-dot" style="background:#38bdf8;"></div>
+                <span>Object (Light Source)</span>
+            </div>
+            <div class="label-item">
+                <div class="color-dot" style="background:#f59e0b;"></div>
+                <span>Pinhole Aperture</span>
+            </div>
+            <div class="label-item">
+                <div class="color-dot" style="background:#94a3b8;"></div>
+                <span>Transparent Darkbox</span>
+            </div>
+            <div class="label-item">
+                <div class="color-dot" style="background:#cbd5e1;"></div>
+                <span>Translucent Screen</span>
+            </div>
+            <div class="label-item">
+                <div class="color-dot" style="background:#b91c1c;"></div>
+                <span>Inverted Image</span>
+            </div>
+        </div>
+
+        <div id="instructions">Drag with mouse to rotate 3D view</div>
+    </div>
+
+    <div id="controls-panel">
+        <h1>3D Pinhole Camera</h1>
+
+        <div class="control-group">
+            <label>Object Distance (u): <span class="val" id="val-u">30</span> cm</label>
+            <input type="range" id="slider-u" min="15" max="60" value="30" step="1">
+        </div>
+
+        <div class="control-group">
+            <label>Camera Depth (v): <span class="val" id="val-v">20</span> cm</label>
+            <input type="range" id="slider-v" min="10" max="35" value="20" step="1">
+        </div>
+
+        <div class="control-group">
+            <label>Object Height (h_o): <span class="val" id="val-ho">12</span> cm</label>
+            <input type="range" id="slider-ho" min="6" max="20" value="12" step="1">
+        </div>
+
+        <div class="control-group">
+            <label>Pinhole Size: <span class="val" id="val-aperture">Small</span></label>
+            <input type="range" id="slider-aperture" min="1" max="5" value="1" step="1">
+        </div>
+
+        <div class="checkbox-group">
+            <input type="checkbox" id="check-animate" checked>
+            <label for="check-animate" style="color:#f8fafc; cursor:pointer;">Animate Photon Streams</label>
+        </div>
+
+        <div class="info-box">
+            <strong>Physics Calculations:</strong>
+            <ul>
+                <li>Image Height (h_i): <span id="val-hi" style="color:#38bdf8; font-weight:bold;">8.00</span> cm</li>
+                <li>Orientation: <strong>Real & Inverted</strong></li>
+            </ul>
+
+            <div class="formula-box">
+                <div class="formula-header">Magnification Formula</div>
+                <div class="formula-line">m = v / u = h_i / h_o</div>
+                <div class="formula-calc">m = <span id="calc-v">20</span> / <span id="calc-u">30</span> = <span id="calc-m" style="color:#38bdf8; font-weight:bold;">0.67</span></div>
+            </div>
+        </div>
+
+        <div class="info-box" style="border-left-color: #f59e0b;">
+            <strong>Key Principles:</strong>
+            <p style="margin-top: 4px;">• Light travels in straight lines (Rectilinear Propagation).</p>
+            <p style="margin-top: 4px;">• Rays pass through the pinhole and cross over to project an upside-down image on the rear screen plate.</p>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Slider Controls
+        const sliderU = document.getElementById('slider-u');
+        const sliderV = document.getElementById('slider-v');
+        const sliderHo = document.getElementById('slider-ho');
+        const sliderAperture = document.getElementById('slider-aperture');
+        const checkAnimate = document.getElementById('check-animate');
+
+        const valU = document.getElementById('val-u');
+        const valV = document.getElementById('val-v');
+        const valHo = document.getElementById('val-ho');
+        const valAperture = document.getElementById('val-aperture');
+        const valHi = document.getElementById('val-hi');
+
+        const calcU = document.getElementById('calc-u');
+        const calcV = document.getElementById('calc-v');
+        const calcM = document.getElementById('calc-m');
+
+        // View Orbit Variables
+        let angleX = -0.35;
+        let angleY = 0.65;
+        let isDragging = false;
+        let previousMouseX = 0;
+        let previousMouseY = 0;
+
+        let animTime = 0;
+
+        function resize() {
+            canvas.width = canvas.parentElement.clientWidth || window.innerWidth;
+            canvas.height = canvas.parentElement.clientHeight || window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Mouse Drag Controls
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            previousMouseX = e.clientX;
+            previousMouseY = e.clientY;
+        });
+
+        window.addEventListener('mouseup', () => isDragging = false);
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const deltaX = e.clientX - previousMouseX;
+            const deltaY = e.clientY - previousMouseY;
+            angleY += deltaX * 0.008;
+            angleX += deltaY * 0.008;
+            previousMouseX = e.clientX;
+            previousMouseY = e.clientY;
+        });
+
+        // Touch Drag Controls
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                isDragging = true;
+                previousMouseX = e.touches[0].clientX;
+                previousMouseY = e.touches[0].clientY;
+            }
+        }, { passive: true });
+
+        window.addEventListener('touchend', () => isDragging = false);
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (!isDragging || e.touches.length !== 1) return;
+            const deltaX = e.touches[0].clientX - previousMouseX;
+            const deltaY = e.touches[0].clientY - previousMouseY;
+            angleY += deltaX * 0.008;
+            angleX += deltaY * 0.008;
+            previousMouseX = e.touches[0].clientX;
+            previousMouseY = e.touches[0].clientY;
+        }, { passive: true });
+
+        // 3D Point Projection Engine
+        function project(x, y, z) {
+            let x1 = x * Math.cos(angleY) + z * Math.sin(angleY);
+            let z1 = -x * Math.sin(angleY) + z * Math.cos(angleY);
+
+            let y2 = y * Math.cos(angleX) - z1 * Math.sin(angleX);
+            let z2 = y * Math.sin(angleX) + z1 * Math.cos(angleX);
+
+            const distance = 180;
+            const scale = distance / (distance + z2 + 90);
+
+            const projX = canvas.width / 2 + x1 * scale * 4.2;
+            const projY = canvas.height / 2 - y2 * scale * 4.2;
+
+            return { x: projX, y: projY, scale: scale, zDepth: z2 };
+        }
+
+        function drawPolygon(pts, fillStyle, strokeStyle, lineWidth = 1) {
+            ctx.save();
+            ctx.fillStyle = fillStyle;
+            ctx.strokeStyle = strokeStyle;
+            ctx.lineWidth = lineWidth;
+            ctx.beginPath();
+            ctx.moveTo(pts[0].x, pts[0].y);
+            for (let i = 1; i < pts.length; i++) {
+                ctx.lineTo(pts[i].x, pts[i].y);
+            }
+            ctx.closePath();
+            if (fillStyle) ctx.fill();
+            if (strokeStyle) ctx.stroke();
+            ctx.restore();
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const u = parseFloat(sliderU.value);
+            const v = parseFloat(sliderV.value);
+            const ho = parseFloat(sliderHo.value);
+            const apertureIdx = parseInt(sliderAperture.value);
+
+            valU.innerText = u;
+            valV.innerText = v;
+            valHo.innerText = ho;
+
+            const apertureLabels = ["Tiny (Sharp)", "Small", "Medium", "Large", "Very Large (Blurry)"];
+            valAperture.innerText = apertureLabels[apertureIdx - 1];
+
+            const m = v / u;
+            const hi = ho * m;
+
+            valHi.innerText = hi.toFixed(2);
+            calcU.innerText = u;
+            calcV.innerText = v;
+            calcM.innerText = m.toFixed(2);
+
+            // Large Box Dimensions
+            const boxW = Math.max(30, ho * 2.0);
+            const boxH = boxW;
+            const pinholeR = apertureIdx * 0.8;
+
+            // 1. Draw Floor Grid
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 1;
+            for (let g = -80; g <= 80; g += 20) {
+                let p1 = project(-80, -28, g);
+                let p2 = project(80, -28, g);
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+
+                let p3 = project(g, -28, -80);
+                let p4 = project(g, -28, 80);
+                ctx.beginPath();
+                ctx.moveTo(p3.x, p3.y);
+                ctx.lineTo(p4.x, p4.y);
+                ctx.stroke();
+            }
+
+            // 2. Draw Source Object Arrow
+            const objX = -u;
+            const topObj = project(objX, ho / 2, 0);
+            const botObj = project(objX, -ho / 2, 0);
+
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(botObj.x, botObj.y);
+            ctx.lineTo(topObj.x, topObj.y);
+            ctx.stroke();
+
+            // Arrow Tip
+            const tipL = project(objX - 1.5, ho / 2 - 2, 0);
+            const tipR = project(objX + 1.5, ho / 2 - 2, 0);
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.moveTo(topObj.x, topObj.y);
+            ctx.lineTo(tipL.x, tipL.y);
+            ctx.lineTo(tipR.x, tipR.y);
+            ctx.closePath();
+            ctx.fill();
+
+            // 3. Define Solid Transparent 3D Box Vertices
+            const frontTL = project(0, boxH / 2, -boxW / 2);
+            const frontTR = project(0, boxH / 2, boxW / 2);
+            const frontBL = project(0, -boxH / 2, -boxW / 2);
+            const frontBR = project(0, -boxH / 2, boxW / 2);
+
+            const backTL = project(v, boxH / 2, -boxW / 2);
+            const backTR = project(v, boxH / 2, boxW / 2);
+            const backBL = project(v, -boxH / 2, -boxW / 2);
+            const backBR = project(v, -boxH / 2, boxW / 2);
+
+            // Draw Rear Translucent Screen Plate inside box
+            drawPolygon([backTL, backTR, backBR, backBL], 'rgba(248, 250, 252, 0.85)', '#38bdf8', 2);
+
+            // Draw Front Aperture Plate
+            drawPolygon([frontTL, frontTR, frontBR, frontBL], 'rgba(30, 41, 59, 0.85)', '#475569', 2);
+
+            // Pinhole Aperture Hole
+            const phCenter = project(0, 0, 0);
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath();
+            ctx.arc(phCenter.x, phCenter.y, pinholeR * phCenter.scale * 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#f59e0b';
+            ctx.stroke();
+
+            // 4. Formed Inverted Image
+            const topImg = project(v, -hi / 2, 0);
+            const botImg = project(v, hi / 2, 0);
+
+            ctx.save();
+            ctx.globalAlpha = Math.max(0.3, 1 - (apertureIdx - 1) * 0.15);
+            ctx.strokeStyle = '#0284c7';
+            ctx.lineWidth = 3 + (apertureIdx - 1) * 1.2;
+            ctx.beginPath();
+            ctx.moveTo(botImg.x, botImg.y);
+            ctx.lineTo(topImg.x, topImg.y);
+            ctx.stroke();
+
+            // Inverted Arrow Tip
+            const tipImgL = project(v - 0.2, -hi / 2 + 1.5, -1);
+            const tipImgR = project(v - 0.2, -hi / 2 + 1.5, 1);
+            ctx.fillStyle = '#b91c1c';
+            ctx.beginPath();
+            ctx.moveTo(topImg.x, topImg.y);
+            ctx.lineTo(tipImgL.x, tipImgL.y);
+            ctx.lineTo(tipImgR.x, tipImgR.y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+
+            // 5. Light Ray Tracing
+            const rays = [
+                { start: { x: objX, y: ho / 2, z: 0 }, end: { x: v, y: -hi / 2, z: 0 }, color: '#ef4444' },
+                { start: { x: objX, y: 0, z: 0 }, end: { x: v, y: 0, z: 0 }, color: '#22c55e' },
+                { start: { x: objX, y: -ho / 2, z: 0 }, end: { x: v, y: +hi / 2, z: 0 }, color: '#3b82f6' }
+            ];
+
+            rays.forEach(ray => {
+                const p1 = project(ray.start.x, ray.start.y, ray.start.z);
+                const pMid = project(0, 0, 0);
+                const p2 = project(ray.end.x, ray.end.y, ray.end.z);
+
+                ctx.strokeStyle = ray.color;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(pMid.x, pMid.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+
+                if (checkAnimate.checked) {
+                    [0, 0.33, 0.66].forEach(offset => {
+                        let t = (offset + animTime) % 1.0;
+                        let curX = ray.start.x + t * (ray.end.x - ray.start.x);
+                        let curY = ray.start.y + t * (ray.end.y - ray.start.y);
+                        let curZ = ray.start.z + t * (ray.end.z - ray.start.z);
+                        let pt = project(curX, curY, curZ);
+
+                        ctx.fillStyle = ray.color;
+                        ctx.beginPath();
+                        ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                }
+            });
+
+            // 6. Solid Transparent Box Outer Glass Faces
+            drawPolygon([frontTL, backTL, backTR, frontTR], 'rgba(56, 189, 248, 0.08)', 'rgba(56, 189, 248, 0.4)', 1.5);
+            drawPolygon([frontBL, backBL, backBR, frontBR], 'rgba(56, 189, 248, 0.08)', 'rgba(56, 189, 248, 0.4)', 1.5);
+            drawPolygon([frontTL, backTL, backBL, frontBL], 'rgba(56, 189, 248, 0.12)', 'rgba(56, 189, 248, 0.4)', 1.5);
+            drawPolygon([frontTR, backTR, backBR, frontBR], 'rgba(56, 189, 248, 0.12)', 'rgba(56, 189, 248, 0.4)', 1.5);
+
+            if (checkAnimate.checked) {
+                animTime += 0.008;
+            }
+
+            requestAnimationFrame(render);
+        }
+
+        render();
+    </script>
+</body>
+</html>

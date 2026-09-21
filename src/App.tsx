@@ -174,6 +174,19 @@ export default function App() {
   const [customSimulations, setCustomSimulations] = useState<SimulationItem[]>(() => {
     try {
       // Clear legacy cache keys that may contain outdated simulation catalogs
+      localStorage.removeItem("axiom_custom_simulations_v50");
+      localStorage.removeItem("axiom_custom_simulations_v49");
+      localStorage.removeItem("axiom_custom_simulations_v48");
+      localStorage.removeItem("axiom_custom_simulations_v47");
+      localStorage.removeItem("axiom_custom_simulations_v46");
+      localStorage.removeItem("axiom_custom_simulations_v45");
+      localStorage.removeItem("axiom_custom_simulations_v44");
+      localStorage.removeItem("axiom_custom_simulations_v43");
+      localStorage.removeItem("axiom_custom_simulations_v42");
+      localStorage.removeItem("axiom_custom_simulations_v41");
+      localStorage.removeItem("axiom_custom_simulations_v40");
+      localStorage.removeItem("axiom_custom_simulations_v39");
+      localStorage.removeItem("axiom_custom_simulations_v38");
       localStorage.removeItem("axiom_custom_simulations_v37");
       localStorage.removeItem("axiom_custom_simulations_v36");
       localStorage.removeItem("axiom_custom_simulations_v35");
@@ -202,7 +215,7 @@ export default function App() {
       localStorage.removeItem("axiom_custom_simulations_v12");
       localStorage.removeItem("axiom_custom_simulations_v11");
       
-      const saved = localStorage.getItem("axiom_custom_simulations_v38");
+      const saved = localStorage.getItem("axiom_custom_simulations_v51");
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -224,7 +237,7 @@ export default function App() {
   // Save simulations to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem("axiom_custom_simulations_v38", JSON.stringify(customSimulations));
+      localStorage.setItem("axiom_custom_simulations_v51", JSON.stringify(customSimulations));
       localStorage.setItem("axiom_custom_simulations", JSON.stringify(customSimulations));
     } catch (e) {
       console.error("Failed to persist simulations:", e);
@@ -252,7 +265,7 @@ export default function App() {
           assignedClasses: ["Period 1 Honors Physics", "Period 4 General Science"]
         },
         {
-          simulationId: "sim-micrometer-screw-gauge",
+          simulationId: "sim-micrometer-screw-gauge-interactive",
           licenseTier: "singleTeacher",
           purchaseDate: "2026-08-12",
           classroomPin: "MICR-4412",
@@ -356,10 +369,11 @@ export default function App() {
         // Search query match
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase();
+          const matchesId = sim.id.toLowerCase().includes(q);
           const matchesTitle = sim.title.toLowerCase().includes(q);
           const matchesTagline = sim.tagline.toLowerCase().includes(q);
           const matchesStandards = sim.standards?.some((s) => s.toLowerCase().includes(q));
-          if (!matchesTitle && !matchesTagline && !matchesStandards) return false;
+          if (!matchesId && !matchesTitle && !matchesTagline && !matchesStandards) return false;
         }
         return true;
       })
@@ -420,24 +434,6 @@ export default function App() {
     } catch (e) {
       console.error(e);
     }
-  };
-
-  // Export JSON Backup
-  const handleExportBackup = () => {
-    const backupData = {
-      version: "1.0",
-      creatorEmail: "ndunj123@gmail.com",
-      exportDate: new Date().toISOString(),
-      simulations: customSimulations,
-      standards: standards,
-    };
-    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `axiom-stem-library-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   // Cart actions
@@ -581,7 +577,6 @@ export default function App() {
         activeView={activeView}
         isCreatorMode={isCreatorMode}
         onToggleCreatorMode={() => setIsCreatorMode((prev) => !prev)}
-        onExportBackup={handleExportBackup}
         currentUser={currentUser}
         onOpenAuthModal={() => {
           setAuthModalTab("signin");

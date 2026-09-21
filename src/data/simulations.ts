@@ -95,6 +95,800 @@ export const STEM_SIMULATIONS: SimulationItem[] = [
     htmlUrl: "/simulations/menger-sponge-3d-fractal-simulator.html"
   },
   {
+    id: "sim-pinhole-camera-3d",
+    title: "3D Pinhole Camera Simulation",
+    tagline: "Interactive 3D ray-tracing optics simulation: rectilinear propagation of light, image inversion, dynamic magnification (m = v/u), and aperture diffraction effects",
+    discipline: "physics",
+    gradeLevel: ["Middle School (6-8)", "High School (9-12)", "AP / IB STEM"],
+    standards: ["NGSS MS-PS4-2", "NGSS HS-PS4-1", "NGSS HS-PS4-5", "CCSS.MATH.MP.4", "CCSS.MATH.HSG.SRT.B.5"],
+    description: "An intuitive, physically grounded 3D interactive optics simulation demonstrating the fundamental principles of a pinhole camera (Camera Obscura). Explore the rectilinear propagation of light as photon streams travel from an object arrow through a customizable pinhole aperture to form a real, inverted image on a translucent projection screen plate. Orbit freely in 3D space, dynamically adjust object distance (u), camera depth (v), object height (h_o), and aperture diameter, and observe real-time magnification (m = v / u = h_i / h_o) calculations and aperture blur effects.",
+    learningObjectives: [
+      "Demonstrate that light travels in straight lines (rectilinear propagation) through a pinhole aperture",
+      "Investigate how light rays cross at the pinhole to project an inverted, real image",
+      "Calculate magnification ratio m = v / u = h_i / h_o and correlate it with object distance, camera depth, and image size",
+      "Analyze the fundamental optical trade-off between aperture size, image brightness, and sharpness / diffraction blur",
+      "Manipulate 3D orbital perspectives to develop spatial intuition of geometric ray optics"
+    ],
+    thumbnailGradient: "from-sky-700 via-indigo-800 to-slate-950",
+    badgeColor: "bg-sky-500/10 text-sky-300 border-sky-500/20",
+    iconName: "Eye",
+    rating: 4.9,
+    reviewCount: 34,
+    teacherCount: 128,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 180,
+      districtUnlimited: 390
+    },
+    features: [
+      "Interactive 3D canvas viewport with 360° orbital rotation, mouse dragging, and touch support",
+      "Real-time geometric ray tracing with color-coded photon stream animations (top, center, bottom rays)",
+      "Dynamic parameter controls: Object Distance (u), Camera Depth (v), Object Height (h_o), and Pinhole Aperture",
+      "Live mathematical formula engine calculating magnification (m = v / u = h_i / h_o) and image height",
+      "Visual apparatus key identifying object light source, pinhole aperture, darkbox, screen, and inverted image",
+      "Variable pinhole aperture rendering modeling image sharpness versus blur degradation"
+    ],
+    parameterDefaults: {
+      u: 30,
+      v: 20,
+      ho: 12,
+      aperture: 1,
+      animate: true
+    },
+    parameterControls: [
+      {
+        key: "u",
+        label: "Object Distance (u)",
+        min: 15,
+        max: 60,
+        step: 1,
+        unit: "cm",
+        description: "Distance from the object light source to the pinhole plate"
+      },
+      {
+        key: "v",
+        label: "Camera Depth (v)",
+        min: 10,
+        max: 35,
+        step: 1,
+        unit: "cm",
+        description: "Distance from the pinhole aperture to the rear translucent screen plate"
+      },
+      {
+        key: "ho",
+        label: "Object Height (h_o)",
+        min: 6,
+        max: 20,
+        step: 1,
+        unit: "cm",
+        description: "Physical height of the illuminated object arrow"
+      },
+      {
+        key: "aperture",
+        label: "Pinhole Aperture",
+        min: 1,
+        max: 5,
+        step: 1,
+        unit: "lvl",
+        description: "Pinhole diameter ranging from tiny (sharp) to very large (blurry)"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-pinhole-1",
+        title: "Achieve Unit Magnification (m = 1.00)",
+        instruction: "Adjust Object Distance (u) and Camera Depth (v) until the magnification m equals exactly 1.00, making the image height identical to object height.",
+        targetMetric: "Magnification (m)",
+        targetValue: 1,
+        tolerance: 0.05,
+        currentValueKey: "m",
+        rewardBadge: "Magnification Master"
+      },
+      {
+        id: "ch-pinhole-2",
+        title: "Investigate Aperture Blur Trade-Off",
+        instruction: "Examine how increasing the aperture size allows more light through while causing image edge degradation and blur.",
+        targetMetric: "Pinhole Size",
+        targetValue: 5,
+        tolerance: 0,
+        currentValueKey: "aperture",
+        rewardBadge: "Wave & Ray Optician"
+      }
+    ],
+    previewFacts: [
+      "The pinhole camera (Camera Obscura) was documented by Chinese philosopher Mozi (4th century BC) and Arabic scholar Ibn al-Haytham (Alhazen) in 1021 AD.",
+      "Unlike glass lens systems, a pinhole camera has nearly infinite depth of field, rendering near and distant objects simultaneously in focus."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/pinhole-camera-3d.html"
+  },
+  {
+    id: "sim-vernier-caliper",
+    title: "Interactive Vernier Caliper Simulation",
+    tagline: "High-precision physical metrology lab: master main scale vs. vernier scale coincidence, positive & negative zero error corrections, inner/outer jaw modes, and interactive practice tests",
+    discipline: "physics",
+    gradeLevel: ["Middle School (6-8)", "High School (9-12)", "AP / IB STEM"],
+    standards: ["NGSS MS-PS1-2", "NGSS HS-PS1-3", "CCSS.MATH.MP.5", "CCSS.MATH.HSN.Q.A.1", "CCSS.MATH.HSN.Q.A.3"],
+    description: "An interactive laboratory for mastering the Vernier caliper—the fundamental instrument of precision engineering and experimental metrology. Direct canvas dragging and fine-tuning sliders allow students to measure outer diameters using lower jaws, inner pipe diameters using upper reversed jaws, and depth probe extensions. Features an interactive 2.4x reticle magnifier revealing the exact coinciding vernier scale mark, live breakdowns of Main Scale Reading (MSR) and Vernier Scale Reading (VSR = n × least count 0.01 cm), configurable positive (+0.03 cm) and negative (-0.02 cm) zero error calibrations, and an interactive practice quiz mode with automated step-by-step grading.",
+    learningObjectives: [
+      "Understand the principle of the vernier scale where 10 vernier divisions equal 9 main scale divisions (least count = 0.01 cm = 0.1 mm)",
+      "Read Main Scale Reading (MSR) and identify the coinciding Vernier Scale Reading (VSR) index",
+      "Calculate total observed reading: Observed = MSR + (VSR × Least Count)",
+      "Identify and compensate for positive and negative zero errors: True Value = Observed Reading - Zero Error",
+      "Differentiate between external lower jaws, internal upper jaws, and the sliding depth probe"
+    ],
+    thumbnailGradient: "from-sky-700 via-blue-800 to-slate-950",
+    badgeColor: "bg-sky-500/10 text-sky-300 border-sky-500/20",
+    iconName: "Compass",
+    rating: 4.9,
+    reviewCount: 52,
+    teacherCount: 184,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 180,
+      districtUnlimited: 390
+    },
+    features: [
+      "Direct canvas dragging and precision slider controls for continuous jaw movement (0 to 6.0 cm)",
+      "Dual measurement modes: outer diameter (lower jaws) and inner pipe diameter (upper jaws)",
+      "High-power 2.4x circular reticle magnifier highlighting the coinciding scale division",
+      "Real-time breakdown: Main Scale Reading (MSR), Vernier Scale Reading (VSR), and final sum",
+      "Configurable zero error modes: None (0.00 cm), Positive (+0.03 cm), and Negative (-0.02 cm)",
+      "Built-in Practice Quiz Mode with randomized target dimensions and step-by-step explanations",
+      "Preset dimension shortcuts (1.25 cm, 2.47 cm, 3.80 cm, 0.00 cm) and depth probe extension"
+    ],
+    parameterDefaults: {
+      jawPosition: 2.47,
+      measurementType: "outer",
+      zeroError: 0.0,
+      magnifierEnabled: true
+    },
+    parameterControls: [
+      {
+        key: "jawPosition",
+        label: "Jaw Opening / Diameter",
+        min: 0.0,
+        max: 6.0,
+        step: 0.01,
+        unit: "cm",
+        description: "Distance between measuring jaw surfaces"
+      },
+      {
+        key: "zeroError",
+        label: "Zero Error Offset",
+        min: -0.05,
+        max: 0.05,
+        step: 0.01,
+        unit: "cm",
+        description: "Systematic offset when caliper jaws are completely closed"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-vernier-1",
+        title: "Measure with Zero Error Correction",
+        instruction: "Select positive zero error (+0.03 cm) and set the caliper to measure an actual object of 2.44 cm. Verify that the corrected reading equals 2.44 cm.",
+        targetMetric: "Corrected Reading",
+        targetValue: 2.44,
+        tolerance: 0.01,
+        currentValueKey: "reading",
+        rewardBadge: "Metrology Calibration Expert"
+      },
+      {
+        id: "ch-vernier-2",
+        title: "Practice Mode Mastery",
+        instruction: "Switch to Practice Mode, measure the hidden target object using MSR and coinciding VSR line, and submit a correct measurement.",
+        targetMetric: "Quiz Score",
+        targetValue: 1,
+        tolerance: 0.01,
+        currentValueKey: "score",
+        rewardBadge: "Vernier Master"
+      }
+    ],
+    previewFacts: [
+      "Pierre Vernier invented the vernier scale in 1631 to allow accurate measurements between two graduation marks on a linear or circular scale.",
+      "A standard metric caliper has a least count (LC) of 0.1 mm (0.01 cm), enabling 10x finer precision than a standard centimeter ruler."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/vernier-caliper-simulation.html"
+  },
+  {
+    id: "sim-vernier-caliper-textbook",
+    title: "Accurate Vernier Caliper Textbook Simulation",
+    tagline: "Illustrated engineering textbook model: explore external diameter, internal bore diameter, depth rod probe measurements, and 0.05 mm precision vernier alignment",
+    discipline: "physics",
+    gradeLevel: ["Middle School (6-8)", "High School (9-12)", "AP / IB STEM"],
+    standards: ["NGSS MS-PS1-2", "NGSS HS-PS1-3", "CCSS.MATH.MP.5", "CCSS.MATH.HSN.Q.A.1"],
+    description: "An authentic, textbook-styled precision metrology simulation of the metric Vernier Caliper with 0.05 mm (20-division) resolution. Designed with technical anatomical callouts pointing directly to external jaws, internal knife-edge nibs, depth measuring rod, locking thumbscrew, and knurled thumb roller. Features three interactive measuring paradigms: external cylindrical object diameter (OD), internal bore diameter (ID), and stepped hole depth measurement. Dynamically renders real-time vernier coincidence indicators with highlighted dashed alignment lines and direct reading annotations.",
+    learningObjectives: [
+      "Identify the major anatomical components of a standard vernier caliper (main beam, sliding frame, internal/external jaws, depth rod, and locking screw)",
+      "Interpret high-precision 20-division vernier scales with 0.05 mm least count",
+      "Demonstrate external diameter measurements of solid cylinders using lower jaws",
+      "Demonstrate internal bore diameter measurements of hollow cylinders using upper inverted jaws",
+      "Demonstrate depth measurement using the integrated sliding tail probe rod"
+    ],
+    thumbnailGradient: "from-slate-800 via-sky-800 to-slate-950",
+    badgeColor: "bg-sky-500/10 text-sky-300 border-sky-500/20",
+    iconName: "Compass",
+    rating: 4.9,
+    reviewCount: 38,
+    teacherCount: 142,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 180,
+      districtUnlimited: 390
+    },
+    features: [
+      "Textbook-accurate graphical rendering with precision graduation lines (0 to 120 mm)",
+      "Three distinct real-world measuring modes: External OD, Internal ID, and Step Hole Depth",
+      "20-division Vernier scale model with exact 0.05 mm least-count resolution",
+      "Dynamic coinciding line indicator with dashed projection reticle and numeric readout",
+      "Illustrated anatomical callout pointers with active component tracking",
+      "Continuous precision dimension slider ranging from 5.00 mm to 100.00 mm"
+    ],
+    parameterDefaults: {
+      objectType: "external",
+      objectSize: 26.55
+    },
+    parameterControls: [
+      {
+        key: "objectSize",
+        label: "Measured Dimension",
+        min: 5.0,
+        max: 100.0,
+        step: 0.05,
+        unit: "mm",
+        description: "Exact test dimension of the measured specimen"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-caliper-textbook-1",
+        title: "Measure 26.55 mm Dimension",
+        instruction: "Set the dimension slider to exactly 26.55 mm and verify which vernier scale tick coincides with a main scale graduation mark.",
+        targetMetric: "Coinciding Mark",
+        targetValue: 26.55,
+        tolerance: 0.05,
+        currentValueKey: "dimension",
+        rewardBadge: "Textbook Caliper Precision"
+      },
+      {
+        id: "ch-caliper-textbook-2",
+        title: "Switch to Depth Measurement",
+        instruction: "Change measurement mode to Depth Measurement and observe how the tail rod extends beyond the end of the main beam.",
+        targetMetric: "Depth Mode Active",
+        targetValue: 1,
+        tolerance: 0.01,
+        currentValueKey: "depth",
+        rewardBadge: "Depth Rod Specialist"
+      }
+    ],
+    previewFacts: [
+      "Metric vernier calipers with 20 divisions on the vernier scale spanning 19 mm of the main scale yield a resolution of 1 mm / 20 = 0.05 mm.",
+      "The depth measuring rod at the rear is mechanically coupled directly to the sliding jaw, guaranteeing identical extension to the jaw gap."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/vernier-caliper-textbook.html"
+  },
+  {
+    id: "sim-micrometer-screw-gauge-interactive",
+    title: "Interactive Micrometer Screw Gauge Simulation",
+    tagline: "Ultra-precision metrology lab (0–25 mm, 0.01 mm precision): interactive spindle drive, knurled roller, sleeve datum vs. circular scale analysis, zero error calibration, and student quiz test",
+    discipline: "physics",
+    gradeLevel: ["Middle School (6-8)", "High School (9-12)", "AP / IB STEM"],
+    standards: ["NGSS MS-PS1-2", "NGSS HS-PS1-3", "CCSS.MATH.MP.5", "CCSS.MATH.HSN.Q.A.1", "CCSS.MATH.HSN.Q.A.3"],
+    description: "An ultra-precision engineering metrology laboratory replicating a standard 0–25 mm micrometer screw gauge with 0.01 mm least-count resolution. Features a responsive 2D virtual micrometer with cast-steel U-frame, carbide anvil and spindle tips, continuous rotating knurled thimble, spindle lock lever, and ratchet stop. Includes dual Teacher Demo and Student Practice modes, a real-time 4x optical zoom magnifier, audio ratchet clicks, live Main Scale (MSR) and Circular Scale (CSR) measurement analysis, positive and negative zero error offsets (+0.03 mm, -0.04 mm, custom), auto-clamping specimen tests (sphere, wire, block), and an interactive quiz test challenge.",
+    learningObjectives: [
+      "Understand the lead screw mechanism where 1 complete thimble revolution advances 0.50 mm across 50 circular divisions (least count = 0.50 mm / 50 = 0.01 mm)",
+      "Read Main Scale Reading (MSR) from whole mm (upper) and half mm (lower) sleeve datum marks",
+      "Read Circular Scale Reading (CSR) aligned with the sleeve datum line",
+      "Calculate observed measurement: Observed = MSR + (CSR × 0.01 mm)",
+      "Account for positive and negative zero error: Actual = Observed - Zero Error",
+      "Operate spindle lock nut, knurled drive wheel, and ratchet stop mechanism"
+    ],
+    thumbnailGradient: "from-slate-800 via-indigo-900 to-slate-950",
+    badgeColor: "bg-indigo-500/10 text-indigo-300 border-indigo-500/20",
+    iconName: "Gauge",
+    rating: 4.95,
+    reviewCount: 48,
+    teacherCount: 196,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 180,
+      districtUnlimited: 390
+    },
+    features: [
+      "Authentic 0–25 mm micrometer screw gauge with 0.01 mm resolution and cast-steel C-frame",
+      "Interactive canvas drag, mouse wheel, knurled thumbwheel roller, and precision nudge buttons",
+      "Teacher Demo mode with live MSR, CSR, Observed, and Corrected readout analysis",
+      "Student Assessment Quiz mode with randomized specimen challenges and step-by-step diagnostic feedback",
+      "Zero error calibration: None (0.00 mm), Positive (+0.03 mm), Negative (-0.04 mm), and custom sliders",
+      "Interactive 4x optical zoom magnifier tracking the sleeve datum and circular scale coincidence",
+      "Realistic web audio ratchet clicks and lock nut lever mechanics",
+      "Interactive specimens: spherical ball, extruded wire, and machined block with auto-clamping"
+    ],
+    parameterDefaults: {
+      spindlePos: 5.0,
+      zeroError: 0.0,
+      mode: "teacher"
+    },
+    parameterControls: [
+      {
+        key: "spindlePos",
+        label: "Spindle Opening",
+        min: 0.0,
+        max: 25.0,
+        step: 0.01,
+        unit: "mm",
+        description: "Physical gap distance between anvil and movable spindle"
+      },
+      {
+        key: "zeroError",
+        label: "Zero Error Offset",
+        min: -0.09,
+        max: 0.09,
+        step: 0.01,
+        unit: "mm",
+        description: "Zero alignment offset error before specimen insertion"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-micrometer-1",
+        title: "Measure 5.73 mm Ball Specimen",
+        instruction: "Adjust the spindle to clamp a 5.73 mm ball specimen. Check that the main scale reads 5.5 mm and division 23 aligns on the thimble.",
+        targetMetric: "Measured Thickness",
+        targetValue: 5.73,
+        tolerance: 0.01,
+        currentValueKey: "spindlePos",
+        rewardBadge: "Micrometer Precision Master"
+      },
+      {
+        id: "ch-micrometer-2",
+        title: "Zero Error Compensation",
+        instruction: "Configure a +0.03 mm positive zero error and calculate the true thickness of an object reading 7.50 mm observed.",
+        targetMetric: "Corrected Reading",
+        targetValue: 7.47,
+        tolerance: 0.01,
+        currentValueKey: "spindlePos",
+        rewardBadge: "Metrology Calibration Expert"
+      }
+    ],
+    previewFacts: [
+      "The micrometer was invented by William Gascoigne in 1638 as an enhancement to the telescope, and later adapted into handheld bench gauges by Jean Laurent Palmer in 1848.",
+      "A standard metric micrometer pitch is 0.5 mm per turn, split into 50 equal divisions on the thimble collar to measure down to 10 micrometers (0.01 mm)."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/micrometer-screw-gauge.html"
+  },
+  {
+    id: "sim-hookes-law-visualizer",
+    title: "Hooke's Law Visualizer",
+    tagline: "Interactive elasticity & harmonic motion lab: explore restoring forces (F = -kx), spring constants, damping, and real-time energy conservation",
+    discipline: "physics",
+    secondaryDisciplines: ["mathematics"],
+    gradeLevel: ["Middle School (6-8)", "High School (9-12)", "AP / IB STEM"],
+    standards: ["NGSS MS-PS2-2", "NGSS HS-PS2-1", "NGSS HS-PS3-1", "NGSS HS-PS3-2", "CCSS.MATH.HSA.CED.A.2"],
+    description: "An interactive laboratory exploring Hooke's Law of elasticity (F = -kx) and damped simple harmonic oscillation. Direct manipulation enables dragging the mass block across horizontal and vertical orientations to compress or extend the parametric helical spring. Real-time visual overlays display the restoring spring force vector (F_s), applied external force (F_ext), gravitational weight (W = mg), and equilibrium reference planes. Features a synchronized Force vs. Extension (F vs. x) graph displaying spring stiffness slope (k), along with real-time conservation of energy bar charts tracking elastic potential energy (U_e = 1/2 k x²) and kinetic energy (K = 1/2 m v²).",
+    learningObjectives: [
+      "Understand and verify Hooke's Law: restoring force F_s is directly proportional to displacement x (F = -kx)",
+      "Analyze the relationship between spring constant k, applied force, and elastic deformation",
+      "Observe simple harmonic motion (SHM) and calculate angular frequency ω = √(k / m)",
+      "Investigate energy transformation between elastic potential energy (U_e = ½kx²) and kinetic energy (K = ½mv²)",
+      "Examine how damping forces dissipate mechanical energy over time during oscillation"
+    ],
+    thumbnailGradient: "from-sky-700 via-indigo-700 to-slate-950",
+    badgeColor: "bg-sky-500/10 text-sky-300 border-sky-500/20",
+    iconName: "Activity",
+    rating: 4.9,
+    reviewCount: 46,
+    teacherCount: 168,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 180,
+      districtUnlimited: 390
+    },
+    features: [
+      "Interactive 2D spring mechanics: direct drag manipulation for compression and extension",
+      "Dynamic harmonic oscillation engine with adjustable damping coefficient (b)",
+      "Dual spatial orientation modes: horizontal (frictionless) and vertical with gravitational weight (g = 9.81 m/s²)",
+      "Real-time Force vs. Extension (F vs. x) Cartesian plot with dynamic spring stiffness slope readout",
+      "Live energy conservation dashboard tracking elastic potential energy (U_e) and kinetic energy (K)",
+      "Instantaneous vector arrows for spring restoring force (F_s), external force (F_ext), and weight (W)",
+      "Release-to-oscillate and reset-equilibrium simulation controls"
+    ],
+    parameterDefaults: {
+      k: 50.0,
+      m: 1.0,
+      x: 0.0,
+      damping: 0.2,
+      isVertical: false
+    },
+    parameterControls: [
+      {
+        key: "k",
+        label: "Spring Constant (k)",
+        min: 10,
+        max: 200,
+        step: 5,
+        unit: "N/m",
+        description: "Stiffness rating of the elastic spring"
+      },
+      {
+        key: "m",
+        label: "Attached Mass (m)",
+        min: 0.1,
+        max: 5.0,
+        step: 0.1,
+        unit: "kg",
+        description: "Mass attached to the end of the spring"
+      },
+      {
+        key: "x",
+        label: "Displacement (x)",
+        min: -2.0,
+        max: 2.0,
+        step: 0.05,
+        unit: "m",
+        description: "Displacement from the equilibrium position"
+      },
+      {
+        key: "damping",
+        label: "Damping Coefficient (b)",
+        min: 0.0,
+        max: 2.0,
+        step: 0.05,
+        unit: "",
+        description: "Viscous resistance factor dissipating kinetic energy"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-hooke-1",
+        title: "Achieve 50 N Restoring Force",
+        instruction: "Adjust spring constant k and displacement x to generate an instantaneous restoring force of exactly 50 N (or -50 N).",
+        targetMetric: "Restoring Force Magnitude |F_s|",
+        targetValue: 50,
+        tolerance: 2,
+        currentValueKey: "fs",
+        rewardBadge: "Restoring Force Specialist"
+      },
+      {
+        id: "ch-hooke-2",
+        title: "Store 25 Joules of Elastic Energy",
+        instruction: "Displace the spring to store at least 25 J of elastic potential energy (U_e = 1/2 k x²).",
+        targetMetric: "Elastic Potential Energy (U_e)",
+        targetValue: 25,
+        tolerance: 2,
+        currentValueKey: "pe",
+        rewardBadge: "Potential Energy Maestro"
+      }
+    ],
+    previewFacts: [
+      "Robert Hooke first stated the law of elasticity in 1676 as a Latin anagram 'ceiiinosssttuv', revealing two years later as 'Ut tensio, sic vis' ('As the extension, so the force').",
+      "Hooke's Law governs simple harmonic oscillators across physics, from atomic vibrations in crystal lattices to quartz clock resonators and automobile suspensions."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/hookes-law-visualizer.html"
+  },
+  {
+    id: "sim-calculus-grapher-visualizer",
+    title: "Calculus Grapher & Visualizer",
+    tagline: "Interactive differential & integral calculus lab: explore derivatives, tangent lines, linear approximations, and Riemann sum approximations in real time",
+    discipline: "mathematics",
+    gradeLevel: ["High School (9-12)", "AP / IB STEM", "Undergraduate"],
+    standards: ["CCSS.MATH.HSF.IF.B.4", "CCSS.MATH.HSF.IF.C.7", "CCSS.MATH.HSF.BF.A.1", "AP Calculus AB/BC", "CCSS.MATH.MP.4", "CCSS.MATH.MP.5"],
+    description: "An interactive differential and integral calculus laboratory and dynamic function visualizer. Plot arbitrary algebraic and transcendental functions f(x) or explore curated mathematical presets (Cubic Polynomials, Sinusoidal, Gaussian, Runge function, Parabolas). Directly examine instantaneous rates of change via dynamic numerical differentiation f'(x) and tangent line construction L(x) = f(x₀) + f'(x₀)(x - x₀) with draggable tangency points. Investigate definite integrals through Left, Right, Midpoint, and Trapezoidal Riemann sums with variable subintervals (n = 1 to 100) and compare directly against high-precision exact numerical integration (Simpson's rule). Features continuous canvas panning, scroll-wheel zooming, and draggable interval bounds.",
+    learningObjectives: [
+      "Connect the geometric tangent line to the formal derivative definition f'(x) as the limit of secant slopes",
+      "Construct and evaluate linear approximations L(x) = f(x₀) + f'(x₀)(x - x₀) for differentiable functions",
+      "Compare Left, Right, Midpoint, and Trapezoidal Riemann sums and investigate convergence toward the definite integral as n increases",
+      "Interpret negative signed area under the x-axis in definite integration",
+      "Explore non-polynomial transcendental functions (Gaussian, trigonometric) and observe inflection points and local extrema"
+    ],
+    thumbnailGradient: "from-indigo-700 via-purple-800 to-slate-950",
+    badgeColor: "bg-indigo-500/10 text-indigo-300 border-indigo-500/20",
+    iconName: "TrendingUp",
+    rating: 4.9,
+    reviewCount: 39,
+    teacherCount: 147,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 180,
+      districtUnlimited: 390
+    },
+    features: [
+      "Custom algebraic & transcendental function parser with real-time graph rendering",
+      "Curated function presets: Cubic polynomial, sin(x), x·cos(x), Gaussian bell curve, Runge function, Parabola",
+      "Numerical derivative curve f'(x) overlay with instantaneous slope readout",
+      "Interactive tangent line with draggable evaluation point x₀ and linear approximation L(x) formula",
+      "Riemann sum engine supporting Left, Right, Midpoint, and Trapezoidal approximations (n = 1 to 100)",
+      "High-precision exact definite integral comparison using Simpson's adaptive quadrature rule",
+      "Full canvas navigation: pan and zoom via scroll wheel, draggable interval bounds a and b"
+    ],
+    parameterDefaults: {
+      expr: "x^3 - 3*x",
+      x0: 1.0,
+      a: -2.0,
+      b: 2.0,
+      n: 12,
+      riemannMethod: "midpoint",
+      showDerivative: true,
+      showTangent: true,
+      showRiemann: true
+    },
+    parameterControls: [
+      {
+        key: "x0",
+        label: "Evaluation Point (x₀)",
+        min: -5,
+        max: 5,
+        step: 0.05,
+        unit: "",
+        description: "Point of tangency along the x-axis"
+      },
+      {
+        key: "a",
+        label: "Lower Bound (a)",
+        min: -5,
+        max: 5,
+        step: 0.1,
+        unit: "",
+        description: "Lower integration limit"
+      },
+      {
+        key: "b",
+        label: "Upper Bound (b)",
+        min: -5,
+        max: 5,
+        step: 0.1,
+        unit: "",
+        description: "Upper integration limit"
+      },
+      {
+        key: "n",
+        label: "Subintervals (n)",
+        min: 1,
+        max: 100,
+        step: 1,
+        unit: "partitions",
+        description: "Number of partition rectangles or trapezoids"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-calc-1",
+        title: "Find a Critical Point (f'(x) = 0)",
+        instruction: "Drag the evaluation point x₀ to a local maximum or minimum where the tangent line slope m equals exactly 0.",
+        targetMetric: "Tangent Slope (m)",
+        targetValue: 0,
+        tolerance: 0.05,
+        currentValueKey: "m",
+        rewardBadge: "Critical Point Finder"
+      },
+      {
+        id: "ch-calc-2",
+        title: "Converge to the Exact Integral",
+        instruction: "Increase the number of subintervals (n) to 50 or higher and observe how the Riemann sum approximates the exact definite integral.",
+        targetMetric: "Subintervals (n)",
+        targetValue: 50,
+        tolerance: 50,
+        currentValueKey: "n",
+        rewardBadge: "Riemann Integration Master"
+      }
+    ],
+    previewFacts: [
+      "The Fundamental Theorem of Calculus links differentiation and integration, showing that they are essentially inverse operations.",
+      "Bernhard Riemann formalized integration in 1854 by defining the definite integral as the limit of piecewise approximating sums as partition widths approach zero."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/calculus-grapher-visualizer.html"
+  },
+  {
+    id: "sim-vector-addition",
+    title: "Vector Addition Simulation",
+    tagline: "Interactive 2D vector addition visualizer: explore head-to-tail and parallelogram geometric addition methods, Cartesian components, polar coordinates, and dynamic resultant vectors",
+    discipline: "physics",
+    secondaryDisciplines: ["mathematics"],
+    gradeLevel: ["Middle School (6-8)", "High School (9-12)", "AP / IB STEM"],
+    standards: ["NGSS HS-PS2-1", "CCSS.MATH.HSN.VM.B.4", "CCSS.MATH.HSN.VM.B.4.A", "CCSS.MATH.HSN.VM.B.4.B", "CCSS.MATH.MP.4"],
+    description: "An interactive 2D vector addition visualizer and kinematic mechanics laboratory. Manipulate vector components (A_x, A_y, B_x, B_y) via intuitive sliders or drag vector tips directly on the coordinate grid with automatic 0.5-unit snapping. Compare geometric addition methods in real time using the Head-to-Tail tip-to-tail method and the Parallelogram construction method. Toggle orthogonal component projections, dynamic angle arcs with reference baselines, and inspect comprehensive step-by-step mathematical breakdowns including component summation (R_x = A_x + B_x, R_y = A_y + B_y), Pythagorean resultant magnitude (|R| = √(R_x² + R_y²)), and trigonometric direction angle formula substitution (θ_R = tan⁻¹(R_y / R_x)).",
+    learningObjectives: [
+      "Add two-dimensional vectors graphically using both the head-to-tail and parallelogram methods",
+      "Decompose vectors into orthogonal horizontal (x) and vertical (y) Cartesian components",
+      "Calculate resultant vector magnitude using the Pythagorean theorem |R| = √(R_x² + R_y²)",
+      "Determine vector direction angles in polar coordinates using inverse trigonometric functions θ = tan⁻¹(R_y / R_x)",
+      "Connect geometric vector addition to physical applications such as net force, displacement, and relative velocity"
+    ],
+    thumbnailGradient: "from-indigo-700 via-cyan-700 to-slate-950",
+    badgeColor: "bg-cyan-500/10 text-cyan-300 border-cyan-500/20",
+    iconName: "TrendingUp",
+    rating: 4.9,
+    reviewCount: 42,
+    teacherCount: 156,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 180,
+      districtUnlimited: 390
+    },
+    features: [
+      "Dual geometric vector addition methods: Head-to-Tail and Parallelogram constructions",
+      "Direct canvas manipulation: drag vector arrow tips with interactive 0.5-step grid snapping",
+      "Independent Cartesian component controls for Vector A (A_x, A_y) and Vector B (B_x, B_y)",
+      "Real-time polar coordinate conversion (|V| and θ) with dynamic on-canvas angle arcs",
+      "Orthogonal component dash lines (A_x, A_y, B_x, B_y) with subscript mathematical labels",
+      "Step-by-step mathematical breakdown for component addition, magnitude formula, and arctan direction angles",
+      "Reset vectors shortcut and responsive canvas coordinate scaling"
+    ],
+    parameterDefaults: {
+      ax: 4.0,
+      ay: 3.0,
+      bx: -3.0,
+      by: 3.0,
+      method: "head-tail",
+      showComponents: true,
+      showAngles: true,
+      showResultant: true
+    },
+    parameterControls: [
+      {
+        key: "ax",
+        label: "Vector A (x-component)",
+        min: -10,
+        max: 10,
+        step: 0.5,
+        unit: "u",
+        description: "Horizontal Cartesian component of Vector A"
+      },
+      {
+        key: "ay",
+        label: "Vector A (y-component)",
+        min: -10,
+        max: 10,
+        step: 0.5,
+        unit: "u",
+        description: "Vertical Cartesian component of Vector A"
+      },
+      {
+        key: "bx",
+        label: "Vector B (x-component)",
+        min: -10,
+        max: 10,
+        step: 0.5,
+        unit: "u",
+        description: "Horizontal Cartesian component of Vector B"
+      },
+      {
+        key: "by",
+        label: "Vector B (y-component)",
+        min: -10,
+        max: 10,
+        step: 0.5,
+        unit: "u",
+        description: "Vertical Cartesian component of Vector B"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-vec-1",
+        title: "Create Purely Horizontal Resultant",
+        instruction: "Adjust components such that R_y = 0, producing a resultant vector directed strictly along the horizontal axis.",
+        targetMetric: "R_y Component",
+        targetValue: 0,
+        tolerance: 0.1,
+        currentValueKey: "ry",
+        rewardBadge: "Horizontal Harmonizer"
+      },
+      {
+        id: "ch-vec-2",
+        title: "Create Opposite Cancelling Vectors",
+        instruction: "Set Vector B to be the exact negative of Vector A (B = -A) so that the resultant vector has zero magnitude (|R| = 0).",
+        targetMetric: "Resultant Magnitude |R|",
+        targetValue: 0,
+        tolerance: 0.1,
+        currentValueKey: "magR",
+        rewardBadge: "Equilibrium Master"
+      }
+    ],
+    previewFacts: [
+      "Vector addition is commutative: A + B = B + A yields the exact same resultant regardless of whether you draw A or B first.",
+      "In physics, Newton's second law F_net = m·a relies on the vector addition of all concurrent forces acting on a body."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/vector-addition-simulation.html"
+  },
+  {
+    id: "sim-blackbody-radiation-spectrum",
+    title: "Blackbody Radiation Spectrum Visualizer",
+    tagline: "Quantum thermodynamics & optics lab: explore Planck's radiation law, Wien's displacement law, Stefan-Boltzmann total radiance, and the classical Rayleigh-Jeans UV catastrophe",
+    discipline: "physics",
+    gradeLevel: ["High School (9-12)", "AP / IB STEM", "Undergraduate"],
+    standards: ["NGSS HS-PS4-1", "NGSS HS-PS4-3", "NGSS HS-PS3-2", "NGSS HS-ESS1-1", "CCSS.MATH.MP.4"],
+    description: "An interactive quantum thermodynamics and astrophysical optics simulator modeling blackbody radiation across temperatures from 2.7 K (CMB) to 12,000 K (Rigel). Dynamically plot Planck's spectral radiance curve, observe Wien's displacement law shifting peak wavelengths from infrared through the visible band to ultraviolet, integrate Stefan-Boltzmann total radiative power (P = σ·T⁴), and contrast against the classical Rayleigh-Jeans ultraviolet catastrophe. Includes an interactive hover probe, curve freezing comparison, chromatic temperature emitter preview, and projector mode.",
+    learningObjectives: [
+      "Analyze how blackbody spectral radiance distributions shift and scale with absolute temperature according to Planck's Law",
+      "Apply Wien's Displacement Law (λ_max = b / T) to determine peak emission wavelength and perceived chromatic color",
+      "Evaluate the Stefan-Boltzmann Law (P = σ·T⁴) demonstrating fourth-power radiative intensity scaling",
+      "Examine the classical Rayleigh-Jeans divergence and understand how Planck's quantum hypothesis resolved the Ultraviolet Catastrophe",
+      "Compare thermal emission curves of astronomical objects (CMB, Sun, Rigel) against terrestrial light sources"
+    ],
+    thumbnailGradient: "from-amber-600 via-rose-700 to-slate-950",
+    badgeColor: "bg-amber-500/10 text-amber-300 border-amber-500/20",
+    iconName: "Sun",
+    rating: 4.9,
+    reviewCount: 48,
+    teacherCount: 162,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 180,
+      districtUnlimited: 390
+    },
+    features: [
+      "Real-time Planck spectral radiance distribution engine across 10 to 3,000 nm",
+      "Wien's Displacement Law indicator with automatic EM spectrum categorization (UV, Visible, IR)",
+      "Stefan-Boltzmann total power intensity readout with formatted scientific notation",
+      "Curated presets: Cosmic Microwave Background (2.7 K), Human Body (310 K), Light Bulb (2800 K), Sun (5800 K), Rigel (10,000 K)",
+      "Classical Rayleigh-Jeans UV Catastrophe curve toggle for historical physics inquiry",
+      "Interactive cursor tooltip with dual-axis wavelength and radiance inspection",
+      "Reference curve freeze capability for direct side-by-side temperature comparison",
+      "Projector / high-contrast classroom presentation mode"
+    ],
+    parameterDefaults: {
+      temperature: 5800,
+      showVisibleBand: true,
+      showArea: true,
+      showClassical: false,
+      autoScale: true
+    },
+    parameterControls: [
+      {
+        key: "temperature",
+        label: "Absolute Temperature (T)",
+        min: 100,
+        max: 12000,
+        step: 10,
+        unit: "K",
+        description: "Surface temperature of the blackbody thermal radiator"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-blackbody-1",
+        title: "Match Solar Photosphere Peak",
+        instruction: "Adjust the temperature slider until peak emission λ_max falls within the visible green-yellow band around 500 nm.",
+        targetMetric: "Temperature (T)",
+        targetValue: 5800,
+        tolerance: 100,
+        currentValueKey: "temperature",
+        rewardBadge: "Solar Heliophysicist"
+      },
+      {
+        id: "ch-blackbody-2",
+        title: "Observe the UV Catastrophe",
+        instruction: "Enable the Rayleigh-Jeans classical curve to see how classical equipartition theory drastically overpredicted ultraviolet emission.",
+        targetMetric: "Classical Model",
+        targetValue: 1,
+        tolerance: 0,
+        currentValueKey: "showClassical",
+        rewardBadge: "Quantum Pioneer"
+      }
+    ],
+    previewFacts: [
+      "Max Planck's 1900 assumption that electromagnetic energy is absorbed and emitted in discrete 'quanta' (E = h·ν) marked the birth of Quantum Mechanics.",
+      "The Cosmic Microwave Background radiation is the most perfect blackbody measured in nature, fitting a Planck curve at T = 2.7255 K with extreme precision."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/blackbody-radiation-spectrum.html"
+  },
+  {
     id: "sim-monte-carlo-concept-explorer",
     title: "Monte Carlo Simulation & Concept Explorer",
     tagline: "Probabilistic numerical simulation engine: estimate π and calculate definite integrals via high-volume stochastic sampling, live dual-layer canvas rendering, and real-time convergence tracking",
@@ -12901,550 +13695,6 @@ resizeCanvas();
         updateParams();
         loop();
     </script>
-</body>
-</html>`,
-    isCustomImport: true,
-    authorEmail: "ndunj123@gmail.com",
-    authorName: "Axiom Creator",
-    createdAt: "2026-08-16"
-  },
-  {
-    id: "sim-micrometer-screw-gauge",
-    title: "Micrometer Screw Gauge Teaching Simulator",
-    tagline: "Precision Metrology, Main Scale (Sleeve) & 0.01mm Circular Thimble Vernier Reading",
-    discipline: "physics",
-    gradeLevel: ["Middle School (6-8)", "High School (9-12)", "AP / IB STEM"],
-    standards: ["HS-PS1-2", "IB Physics (Topic 1: Measurement & Uncertainties)", "CCSS.MATH.HSN.Q.A.1", "MS-ETS1-4"],
-    description: "Master precise physical metrology and dimensional measurement using an interactive micrometer screw gauge. Measure thicknesses down to 0.01 mm (10 micrometers) by combining the Sleeve Main Scale Reading (MSR with 0.5 mm subdivisions) and Circular Thimble Scale Reading (CSR). Features interactive anvil/spindle gap rendering, object measurement display, answer hiding for formative student quizzes, and graduated pitch calibrations.",
-    learningObjectives: [
-      "Interpret linear Main Scale Readings (MSR) on the sleeve barrel including 1.0 mm and 0.5 mm pitch marks",
-      "Read the 50-division circular Thimble Scale (CSR) with 0.01 mm least count precision",
-      "Calculate total thickness (Total = MSR + CSR × 0.01 mm) for physical specimens clamped in the spindle gap",
-      "Practice formative self-assessment using the interactive hide/show answer classroom mode"
-    ],
-    thumbnailGradient: "from-slate-700 via-blue-700 to-indigo-950",
-    badgeColor: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-    iconName: "Ruler",
-    rating: 5.0,
-    reviewCount: 54,
-    teacherCount: 285,
-    licenseType: "Academic STEM Classroom & Institutional License",
-    pricing: {
-      singleTeacher: 19,
-      schoolDepartment: 200,
-      districtUnlimited: 400
-    },
-    features: [
-      "Interactive mechanical micrometer with C-frame, anvil, moving spindle, datum line sleeve, and knurled thimble",
-      "Dual-range controls for Main Sleeve Scale (0 to 25 mm at 0.5 mm steps) and Circular Thimble Scale (0 to 49 divisions)",
-      "Dynamic clamped specimen thickness visualization with real-time gap scaling",
-      "Formative classroom assessment mode with Toggle/Hide Answer button and instant reset",
-      "MSR, CSR, and Total Reading telemetry cards with least-count breakdown"
-    ],
-    parameterDefaults: {
-      mainScale: 7.0,
-      thimbleDivs: 38
-    },
-    parameterControls: [
-      {
-        key: "mainScale",
-        label: "Main Scale (Sleeve)",
-        min: 0,
-        max: 25,
-        step: 0.5,
-        unit: "mm",
-        description: "Coarse measurement reading along the horizontal datum sleeve"
-      },
-      {
-        key: "thimbleDivs",
-        label: "Thimble Scale (0.01 mm/div)",
-        min: 0,
-        max: 49,
-        step: 1,
-        unit: "div",
-        description: "Fine circular scale divisions on the rotating bevel thimble"
-      }
-    ],
-    sampleChallenges: [
-      {
-        id: "ch-micro-1",
-        title: "Measure 12.84 mm Thickness",
-        instruction: "Set the Main Scale to 12.50 mm and adjust the Circular Thimble Scale to 34 divisions to measure a specimen of exactly 12.84 mm.",
-        targetMetric: "Total Reading",
-        targetValue: 12.84,
-        tolerance: 0.005,
-        currentValueKey: "totalMm",
-        rewardBadge: "Metrologist"
-      }
-    ],
-    previewFacts: [
-      "A standard micrometer screw gauge has a thread pitch of 0.5 mm and 50 circular divisions on the thimble, providing a precision (least count) of 0.5 mm / 50 = 0.01 mm (10 µm).",
-      "Micrometers were invented in the 17th century by William Gascoigne as an enhancement to the astronomical telescope, later adapted for benchtop machining by Palmer and Brown & Sharpe."
-    ],
-    isHtmlApp: true,
-    htmlContent: `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Micrometer Screw Gauge Teaching Simulation</title>
-    <style>
-        :root {
-            --bg-color: #f8fafc;
-            --card-bg: #ffffff;
-            --primary: #2563eb;
-            --primary-hover: #1d4ed8;
-            --text-dark: #0f172a;
-            --text-muted: #64748b;
-            --metal-dark: #334155;
-            --metal-light: #94a3b8;
-            --thimble-bg: #cbd5e1;
-            --accent-red: #dc2626;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-dark);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 900px;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        header {
-            text-align: center;
-            border-bottom: 2px solid #f1f5f9;
-            padding-bottom: 12px;
-        }
-
-        header h1 {
-            font-size: 1.5rem;
-            color: var(--text-dark);
-        }
-
-        header p {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
-
-        .canvas-container {
-            width: 100%;
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
-
-        canvas {
-            width: 100%;
-            max-width: 800px;
-            height: auto;
-        }
-
-        .controls {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 16px;
-            background-color: #f8fafc;
-            padding: 16px;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-        }
-
-        .control-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .control-group label {
-            font-size: 0.875rem;
-            font-weight: 600;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        input[type="range"] {
-            width: 100%;
-            height: 6px;
-            border-radius: 3px;
-            background: #cbd5e1;
-            outline: none;
-            accent-color: var(--primary);
-            cursor: pointer;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            margin-top: 4px;
-        }
-
-        .btn {
-            padding: 8px 16px;
-            border-radius: 6px;
-            border: none;
-            font-weight: 600;
-            font-size: 0.875rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-primary {
-            background-color: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background-color: var(--primary-hover);
-        }
-
-        .btn-secondary {
-            background-color: #e2e8f0;
-            color: var(--text-dark);
-        }
-
-        .btn-secondary:hover {
-            background-color: #cbd5e1;
-        }
-
-        .readout {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 12px;
-            text-align: center;
-        }
-
-        .readout-card {
-            background: #f1f5f9;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-        }
-
-        .readout-card.total {
-            background: #eff6ff;
-            border-color: #bfdbfe;
-        }
-
-        .readout-card .title {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            font-weight: 700;
-            color: var(--text-muted);
-            margin-bottom: 4px;
-        }
-
-        .readout-card .value {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--text-dark);
-        }
-
-        .readout-card.total .value {
-            color: var(--primary);
-        }
-
-        .hidden-value {
-            filter: blur(5px);
-            user-select: none;
-        }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <header>
-        <h1>Micrometer Screw Gauge Interactive Simulator</h1>
-        <p>Interactive instructional tool for teaching main scale and thimble readings</p>
-    </header>
-
-    <div class="canvas-container">
-        <canvas id="micrometerCanvas" width="800" height="300"></canvas>
-    </div>
-
-    <div class="controls">
-        <div class="control-group">
-            <label for="mainScaleInput">
-                <span>Main Scale (Sleeve)</span>
-                <span id="mainScaleVal">7.00 mm</span>
-            </label>
-            <input type="range" id="mainScaleInput" min="0" max="25" step="0.5" value="7">
-        </div>
-
-        <div class="control-group">
-            <label for="thimbleInput">
-                <span>Thimble Scale (0.01 mm / div)</span>
-                <span id="thimbleVal">38 div (0.38 mm)</span>
-            </label>
-            <input type="range" id="thimbleInput" min="0" max="49" step="1" value="38">
-        </div>
-    </div>
-
-    <div class="button-group">
-        <button class="btn btn-secondary" id="toggleAnswerBtn">Hide Answer</button>
-        <button class="btn btn-primary" id="resetBtn">Reset to Default</button>
-    </div>
-
-    <div class="readout">
-        <div class="readout-card">
-            <div class="title">Main Scale Reading (MSR)</div>
-            <div class="value" id="msrDisplay">7.00 mm</div>
-        </div>
-        <div class="readout-card">
-            <div class="title">Circular Scale Reading (CSR)</div>
-            <div class="value" id="csrDisplay">0.38 mm</div>
-        </div>
-        <div class="readout-card total">
-            <div class="title">Total Reading</div>
-            <div class="value" id="totalDisplay">7.38 mm</div>
-        </div>
-    </div>
-</div>
-
-<script>
-    const canvas = document.getElementById('micrometerCanvas');
-    const ctx = canvas.getContext('2d');
-
-    const mainScaleInput = document.getElementById('mainScaleInput');
-    const thimbleInput = document.getElementById('thimbleInput');
-    const mainScaleVal = document.getElementById('mainScaleVal');
-    const thimbleVal = document.getElementById('thimbleVal');
-
-    const msrDisplay = document.getElementById('msrDisplay');
-    const csrDisplay = document.getElementById('csrDisplay');
-    const totalDisplay = document.getElementById('totalDisplay');
-
-    const toggleAnswerBtn = document.getElementById('toggleAnswerBtn');
-    const resetBtn = document.getElementById('resetBtn');
-
-    let showAnswer = true;
-
-    function drawMicrometer() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        const msr = parseFloat(mainScaleInput.value);
-        const csr = parseInt(thimbleInput.value, 10);
-        const totalMm = msr + (csr * 0.01);
-
-        // Scale factors
-        const pxPerMm = 14; 
-        const originX = 120;
-        const originY = 150;
-
-        // 1. Draw Frame
-        ctx.fillStyle = '#334155';
-        ctx.beginPath();
-        ctx.arc(originX, originY, 90, 0.4 * Math.PI, 1.6 * Math.PI, false);
-        ctx.lineTo(originX + 100, originY - 90);
-        ctx.lineTo(originX + 100, originY + 90);
-        ctx.closePath();
-        ctx.fill();
-
-        // Inner frame cutout
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(originX + 20, originY, 65, 0.4 * Math.PI, 1.6 * Math.PI, false);
-        ctx.lineTo(originX + 80, originY - 65);
-        ctx.lineTo(originX + 80, originY + 65);
-        ctx.closePath();
-        ctx.fill();
-
-        // 2. Anvil (Left)
-        ctx.fillStyle = '#64748b';
-        ctx.fillRect(originX - 90, originY - 15, 20, 30);
-
-        // 3. Spindle (Gap based on measurement)
-        const gapPx = totalMm * pxPerMm;
-        const sleeveStartX = originX - 5;
-        
-        ctx.fillStyle = '#94a3b8';
-        ctx.fillRect(sleeveStartX - gapPx - 10, originY - 12, gapPx + 10, 24);
-
-        // Object measured in gap (if gap > 0)
-        if (totalMm > 0) {
-            ctx.fillStyle = 'rgba(220, 38, 38, 0.2)';
-            ctx.strokeStyle = '#dc2626';
-            ctx.lineWidth = 1;
-            ctx.fillRect(originX - 70, originY - 20, gapPx, 40);
-            ctx.strokeRect(originX - 70, originY - 20, gapPx, 40);
-        }
-
-        // 4. Sleeve / Main Scale Barrel
-        const sleeveWidth = 25 * pxPerMm + 60;
-        ctx.fillStyle = '#cbd5e1';
-        ctx.fillRect(sleeveStartX, originY - 22, sleeveWidth, 44);
-        ctx.strokeStyle = '#475569';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(sleeveStartX, originY - 22, sleeveWidth, 44);
-
-        // Main Datum Line
-        ctx.beginPath();
-        ctx.strokeStyle = '#0f172a';
-        ctx.lineWidth = 1.5;
-        ctx.moveTo(sleeveStartX, originY);
-        ctx.lineTo(sleeveStartX + sleeveWidth - 10, originY);
-        ctx.stroke();
-
-        // Sleeve Graduation Marks
-        ctx.fillStyle = '#0f172a';
-        ctx.font = '10px sans-serif';
-        ctx.textAlign = 'center';
-
-        for (let i = 0; i <= 25; i++) {
-            const x = sleeveStartX + (i * pxPerMm);
-
-            // Upper marks (1mm)
-            ctx.beginPath();
-            ctx.moveTo(x, originY);
-            ctx.lineTo(x, originY - 12);
-            ctx.stroke();
-
-            if (i % 5 === 0) {
-                ctx.fillText(i.toString(), x, originY - 15);
-            }
-
-            // Lower marks (0.5mm)
-            if (i < 25) {
-                const xHalf = x + (pxPerMm / 2);
-                ctx.beginPath();
-                ctx.moveTo(xHalf, originY);
-                ctx.lineTo(xHalf, originY + 10);
-                ctx.stroke();
-            }
-        }
-
-        // 5. Thimble Position (Moves right with total mm)
-        const thimbleX = sleeveStartX + (totalMm * pxPerMm);
-        const thimbleWidth = 110;
-        const thimbleRadius = 32;
-
-        // Thimble Bevel (Conical Part)
-        ctx.fillStyle = '#94a3b8';
-        ctx.beginPath();
-        ctx.moveTo(thimbleX, originY - thimbleRadius);
-        ctx.lineTo(thimbleX + 25, originY - thimbleRadius - 5);
-        ctx.lineTo(thimbleX + 25, originY + thimbleRadius + 5);
-        ctx.lineTo(thimbleX, originY + thimbleRadius);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // Thimble Handle
-        ctx.fillStyle = '#64748b';
-        ctx.fillRect(thimbleX + 25, originY - thimbleRadius - 5, thimbleWidth, (thimbleRadius + 5) * 2);
-        ctx.strokeRect(thimbleX + 25, originY - thimbleRadius - 5, thimbleWidth, (thimbleRadius + 5) * 2);
-
-        // Thimble Knurling Grip Effect
-        ctx.strokeStyle = '#475569';
-        ctx.lineWidth = 1;
-        for (let k = thimbleX + 35; k < thimbleX + 25 + thimbleWidth - 10; k += 6) {
-            ctx.beginPath();
-            ctx.moveTo(k, originY - thimbleRadius - 4);
-            ctx.lineTo(k, originY + thimbleRadius + 4);
-            ctx.stroke();
-        }
-
-        // 6. Thimble Circular Scale Divisions
-        ctx.strokeStyle = '#0f172a';
-        ctx.fillStyle = '#0f172a';
-        ctx.font = '10px sans-serif';
-        ctx.textAlign = 'right';
-
-        // Draw divisions on the bevel edge
-        const pxPerDiv = 3.2; // Vertical distance per division on thimble
-        for (let d = -10; d <= 10; d++) {
-            let divNum = (csr + d) % 50;
-            if (divNum < 0) divNum += 50;
-
-            const yPos = originY - (d * pxPerDiv);
-
-            // Keep within visual bounds of the bevel
-            if (yPos >= originY - thimbleRadius + 2 && yPos <= originY + thimbleRadius - 2) {
-                const isMajor = divNum % 5 === 0;
-                const lineLen = isMajor ? 12 : 7;
-
-                ctx.beginPath();
-                ctx.moveTo(thimbleX, yPos);
-                ctx.lineTo(thimbleX + lineLen, yPos);
-                ctx.stroke();
-
-                if (isMajor) {
-                    ctx.fillText(divNum.toString(), thimbleX + 22, yPos + 3);
-                }
-            }
-        }
-    }
-
-    function updateValues() {
-        const msr = parseFloat(mainScaleInput.value);
-        const csr = parseInt(thimbleInput.value, 10);
-        const totalMm = msr + (csr * 0.01);
-
-        mainScaleVal.textContent = msr.toFixed(2) + ' mm';
-        thimbleVal.textContent = \`\${csr} div (\${(csr * 0.01).toFixed(2)} mm)\`;
-
-        msrDisplay.textContent = msr.toFixed(2) + ' mm';
-        csrDisplay.textContent = (csr * 0.01).toFixed(2) + ' mm';
-        totalDisplay.textContent = totalMm.toFixed(2) + ' mm';
-
-        drawMicrometer();
-    }
-
-    // Toggle Answer Visibility
-    toggleAnswerBtn.addEventListener('click', () => {
-        showAnswer = !showAnswer;
-        if (showAnswer) {
-            totalDisplay.classList.remove('hidden-value');
-            toggleAnswerBtn.textContent = 'Hide Answer';
-        } else {
-            totalDisplay.classList.add('hidden-value');
-            toggleAnswerBtn.textContent = 'Show Answer';
-        }
-    });
-
-    // Reset Controls
-    resetBtn.addEventListener('click', () => {
-        mainScaleInput.value = 7.0;
-        thimbleInput.value = 38;
-        showAnswer = true;
-        totalDisplay.classList.remove('hidden-value');
-        toggleAnswerBtn.textContent = 'Hide Answer';
-        updateValues();
-    });
-
-    mainScaleInput.addEventListener('input', updateValues);
-    thimbleInput.addEventListener('input', updateValues);
-
-    // Initial render
-    updateValues();
-</script>
-
 </body>
 </html>`,
     isCustomImport: true,

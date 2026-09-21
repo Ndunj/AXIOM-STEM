@@ -24,7 +24,6 @@ import {
   Lock,
   Unlock,
   PlusCircle,
-  FolderDown,
   Share2,
   LogIn,
   LogOut,
@@ -56,7 +55,6 @@ interface HeaderProps {
   activeView: "marketplace" | "dashboard";
   isCreatorMode: boolean;
   onToggleCreatorMode: () => void;
-  onExportBackup?: () => void;
   currentUser?: UserProfile | null;
   onOpenAuthModal: () => void;
   onAuthSuccess?: (user: UserProfile) => void;
@@ -81,7 +79,6 @@ export const Header: React.FC<HeaderProps> = ({
   activeView,
   isCreatorMode,
   onToggleCreatorMode,
-  onExportBackup,
   currentUser,
   onOpenAuthModal,
   onAuthSuccess,
@@ -167,17 +164,6 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Sparkles className="w-3 h-3 text-amber-400" />
               <span>{t("lemonStorePayouts")}</span>
-            </button>
-          )}
-
-          {isCreatorMode && onExportBackup && (
-            <button
-              onClick={onExportBackup}
-              className="text-[11px] text-slate-300 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
-              title="Backup simulation library and standards as JSON"
-            >
-              <FolderDown className="w-3 h-3 text-indigo-400" />
-              <span>{t("exportBackup")}</span>
             </button>
           )}
 

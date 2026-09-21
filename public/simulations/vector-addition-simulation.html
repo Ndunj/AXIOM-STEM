@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-900 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vector Addition Simulation</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Custom scrollbar styling for dark UI */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col font-sans antialiased bg-slate-950 text-slate-100 overflow-hidden">
+
+  <!-- Header -->
+  <header class="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between shrink-0 shadow-md">
+    <div class="flex items-center space-x-3">
+      <div class="p-2 bg-indigo-600/20 text-indigo-400 rounded-lg border border-indigo-500/30">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+        </svg>
+      </div>
+      <div>
+        <h1 class="font-bold text-lg text-white leading-tight">Vector Addition Simulation</h1>
+        <p class="text-xs text-slate-400">Interactive 2D Vector Addition Visualizer</p>
+      </div>
+    </div>
+    <div class="flex items-center space-x-2">
+      <button id="reset-btn" class="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+        </svg>
+        Reset Vectors
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <div class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+    
+    <!-- Canvas Container (Left/Center) -->
+    <div class="flex-1 relative bg-slate-950 flex items-center justify-center overflow-hidden min-h-[350px]">
+      <canvas id="sim-canvas" class="w-full h-full block cursor-crosshair"></canvas>
+      
+      <!-- On-canvas Method Indicator Badge -->
+      <div class="absolute top-4 left-4 bg-slate-900/80 backdrop-blur border border-slate-800 rounded-lg px-3 py-2 text-xs flex items-center gap-3 shadow-lg pointer-events-none">
+        <div class="flex items-center gap-1.5">
+          <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block"></span>
+          <span class="text-cyan-300 font-semibold">Vector A</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span>
+          <span class="text-amber-300 font-semibold">Vector B</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"></span>
+          <span class="text-emerald-300 font-semibold">Resultant R</span>
+        </div>
+      </div>
+
+      <!-- Instruction Overlay -->
+      <div class="absolute bottom-4 left-4 bg-slate-900/70 backdrop-blur border border-slate-800/80 rounded px-2.5 py-1 text-[11px] text-slate-400 pointer-events-none">
+        💡 Drag vector tips directly on the canvas to adjust.
+      </div>
+    </div>
+
+    <!-- Controls & Math Panel (Right Sidebar) -->
+    <div class="w-full lg:w-[420px] bg-slate-900 border-t lg:border-t-0 lg:border-l border-slate-800 flex flex-col overflow-y-auto shrink-0 shadow-xl">
+      
+      <div class="p-5 space-y-6">
+        
+        <!-- DISPLAY & METHOD OPTIONS -->
+        <section class="space-y-3">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Method & Display Options</h2>
+          
+          <div class="grid grid-cols-2 gap-2">
+            <button id="method-head-tail" class="px-3 py-2 text-xs font-semibold rounded-lg border transition text-center bg-indigo-600/30 text-indigo-300 border-indigo-500/50">
+              Head-to-Tail
+            </button>
+            <button id="method-tail-tail" class="px-3 py-2 text-xs font-semibold rounded-lg border transition text-center bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-750">
+              Parallelogram
+            </button>
+          </div>
+
+          <!-- Visual Toggles -->
+          <div class="bg-slate-950/60 p-3 rounded-lg border border-slate-800/80 space-y-2">
+            <label class="flex items-center justify-between text-xs text-slate-300 cursor-pointer">
+              <span>Show Construction Lines</span>
+              <input type="checkbox" id="toggle-construction" checked class="rounded border-slate-700 bg-slate-800 text-indigo-500 focus:ring-indigo-500/40">
+            </label>
+            <label class="flex items-center justify-between text-xs text-slate-300 cursor-pointer">
+              <span>Show Components (A<sub>x</sub>, A<sub>y</sub>, B<sub>x</sub>, B<sub>y</sub>)</span>
+              <input type="checkbox" id="toggle-components" checked class="rounded border-slate-700 bg-slate-800 text-indigo-500 focus:ring-indigo-500/40">
+            </label>
+            <label class="flex items-center justify-between text-xs text-slate-300 cursor-pointer">
+              <span>Show Angle Arcs & Values</span>
+              <input type="checkbox" id="toggle-angles" checked class="rounded border-slate-700 bg-slate-800 text-indigo-500 focus:ring-indigo-500/40">
+            </label>
+            <label class="flex items-center justify-between text-xs text-slate-300 cursor-pointer">
+              <span>Show Resultant Vector (R)</span>
+              <input type="checkbox" id="toggle-resultant" checked class="rounded border-slate-700 bg-slate-800 text-indigo-500 focus:ring-indigo-500/40">
+            </label>
+            <label class="flex items-center justify-between text-xs text-slate-300 cursor-pointer">
+              <span>Snap to Grid Increments (0.5)</span>
+              <input type="checkbox" id="toggle-snap" checked class="rounded border-slate-700 bg-slate-800 text-indigo-500 focus:ring-indigo-500/40">
+            </label>
+          </div>
+        </section>
+
+        <!-- VECTOR A CONTROLS -->
+        <section class="space-y-3 bg-slate-950/40 p-3.5 rounded-xl border border-cyan-500/20">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-cyan-400"></span> Vector A
+            </h3>
+            <span id="vecA-polar-label" class="text-xs font-mono text-cyan-300/80">|A| = 5.0, θ = 36.9°</span>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                <span>A<sub>x</sub> Component</span>
+                <span id="val-Ax" class="font-mono text-cyan-300">4.0</span>
+              </div>
+              <input type="range" id="slider-Ax" min="-10" max="10" step="0.5" value="4" class="w-full accent-cyan-400 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                <span>A<sub>y</sub> Component</span>
+                <span id="val-Ay" class="font-mono text-cyan-300">3.0</span>
+              </div>
+              <input type="range" id="slider-Ay" min="-10" max="10" step="0.5" value="3" class="w-full accent-cyan-400 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+            </div>
+          </div>
+        </section>
+
+        <!-- VECTOR B CONTROLS -->
+        <section class="space-y-3 bg-slate-950/40 p-3.5 rounded-xl border border-amber-500/20">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-amber-400"></span> Vector B
+            </h3>
+            <span id="vecB-polar-label" class="text-xs font-mono text-amber-300/80">|B| = 4.2, θ = 135.0°</span>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                <span>B<sub>x</sub> Component</span>
+                <span id="val-Bx" class="font-mono text-amber-300">-3.0</span>
+              </div>
+              <input type="range" id="slider-Bx" min="-10" max="10" step="0.5" value="-3" class="w-full accent-amber-400 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                <span>B<sub>y</sub> Component</span>
+                <span id="val-By" class="font-mono text-amber-300">3.0</span>
+              </div>
+              <input type="range" id="slider-By" min="-10" max="10" step="0.5" value="3" class="w-full accent-amber-400 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+            </div>
+          </div>
+        </section>
+
+        <!-- MATHEMATICAL BREAKDOWN DASHBOARD -->
+        <section class="space-y-3 bg-slate-950/80 p-4 rounded-xl border border-slate-800">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+            <span>Mathematical Analysis</span>
+            <span class="text-[10px] text-slate-500 font-normal">Real-time Calculations</span>
+          </h2>
+
+          <div class="space-y-2 font-mono text-xs">
+            <!-- Vector Addition Equation -->
+            <div class="p-2.5 bg-slate-900/90 rounded border border-slate-800/80 space-y-1">
+              <div class="text-slate-400 text-[11px]">Component Addition:</div>
+              <div class="flex justify-between items-center text-slate-200">
+                <span>R<sub>x</sub> = A<sub>x</sub> + B<sub>x</sub></span>
+                <span id="calc-Rx" class="text-emerald-400 font-bold">4.0 + (-3.0) = 1.0</span>
+              </div>
+              <div class="flex justify-between items-center text-slate-200">
+                <span>R<sub>y</sub> = A<sub>y</sub> + B<sub>y</sub></span>
+                <span id="calc-Ry" class="text-emerald-400 font-bold">3.0 + 3.0 = 6.0</span>
+              </div>
+            </div>
+
+            <!-- Detailed Angle Calculation Card -->
+            <div class="p-2.5 bg-slate-900/90 rounded border border-slate-800/80 space-y-1">
+              <div class="text-slate-400 text-[11px]">Angle Calculation:</div>
+              <div class="flex justify-between items-center text-slate-200">
+                <span>Formula:</span>
+                <span class="text-indigo-300 font-bold">θ<sub>R</sub> = tan⁻¹(R<sub>y</sub> / R<sub>x</sub>)</span>
+              </div>
+              <div class="flex justify-between items-center text-slate-200">
+                <span>Substitution:</span>
+                <span id="calc-ang-sub" class="text-indigo-300 font-bold">tan⁻¹(6.0 / 1.0)</span>
+              </div>
+              <div class="flex justify-between items-center text-slate-200">
+                <span>Direction Angle:</span>
+                <span id="calc-ang-res" class="text-emerald-400 font-bold">80.54°</span>
+              </div>
+            </div>
+
+            <!-- Resultant Summary Card -->
+            <div class="p-3 bg-emerald-950/20 rounded border border-emerald-500/30 space-y-1.5">
+              <div class="text-emerald-400 font-sans text-xs font-bold uppercase tracking-wider">Resultant Vector (R)</div>
+              <div class="flex justify-between text-slate-300">
+                <span>Component Form:</span>
+                <span id="math-comp" class="text-emerald-300 font-bold">R = (1.0, 6.0)</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>Magnitude |R|:</span>
+                <span id="math-mag" class="text-emerald-300 font-bold">√(1.0² + 6.0²) = 6.08</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>Direction Angle θ<sub>R</sub>:</span>
+                <span id="math-ang" class="text-emerald-300 font-bold">80.54°</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Visualizer Logic -->
+  <script>
+    // --- Application State ---
+    const state = {
+      vectorA: { x: 4.0, y: 3.0 },
+      vectorB: { x: -3.0, y: 3.0 },
+      method: 'head-tail',
+      showConstruction: true,
+      showComponents: true,
+      showAngles: true,
+      showResultant: true,
+      snapToGrid: true,
+      gridScale: 32,
+      dragging: null,
+      hovered: null
+    };
+
+    // --- DOM Elements ---
+    const canvas = document.getElementById('sim-canvas');
+    const ctx = canvas.getContext('2d');
+
+    const sliderAx = document.getElementById('slider-Ax');
+    const sliderAy = document.getElementById('slider-Ay');
+    const sliderBx = document.getElementById('slider-Bx');
+    const sliderBy = document.getElementById('slider-By');
+
+    const valAx = document.getElementById('val-Ax');
+    const valAy = document.getElementById('val-Ay');
+    const valBx = document.getElementById('val-Bx');
+    const valBy = document.getElementById('val-By');
+
+    const vecAPolarLabel = document.getElementById('vecA-polar-label');
+    const vecBPolarLabel = document.getElementById('vecB-polar-label');
+
+    const calcRx = document.getElementById('calc-Rx');
+    const calcRy = document.getElementById('calc-Ry');
+    const calcAngSub = document.getElementById('calc-ang-sub');
+    const calcAngRes = document.getElementById('calc-ang-res');
+    
+    const mathComp = document.getElementById('math-comp');
+    const mathMag = document.getElementById('math-mag');
+    const mathAng = document.getElementById('math-ang');
+
+    const toggleConstruction = document.getElementById('toggle-construction');
+    const toggleComponents = document.getElementById('toggle-components');
+    const toggleAngles = document.getElementById('toggle-angles');
+    const toggleResultant = document.getElementById('toggle-resultant');
+    const toggleSnap = document.getElementById('toggle-snap');
+
+    const btnHeadTail = document.getElementById('method-head-tail');
+    const btnTailTail = document.getElementById('method-tail-tail');
+    const btnReset = document.getElementById('reset-btn');
+
+    // --- Canvas Resize Handling ---
+    let width, height, originX, originY;
+
+    function resizeCanvas() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      width = rect.width;
+      height = rect.height;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.scale(dpr, dpr);
+      
+      originX = width / 2;
+      originY = height / 2;
+      
+      state.gridScale = Math.max(24, Math.min(width, height) / 24);
+      requestAnimationFrame(render);
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    // --- Coordinate Conversion Helpers ---
+    function worldToScreen(wx, wy) {
+      return {
+        x: originX + wx * state.gridScale,
+        y: originY - wy * state.gridScale
+      };
+    }
+
+    function screenToWorld(sx, sy) {
+      return {
+        x: (sx - originX) / state.gridScale,
+        y: (originY - sy) / state.gridScale
+      };
+    }
+
+    function drawSubscriptText(base, sub, x, y, color) {
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.font = 'bold 13px sans-serif';
+      ctx.fillText(base, x, y);
+      const baseWidth = ctx.measureText(base).width;
+      ctx.font = 'bold 10px sans-serif';
+      ctx.fillText(sub, x + baseWidth + 1, y + 4);
+      ctx.restore();
+    }
+
+    // --- Drawing Utilities ---
+    function drawGrid() {
+      ctx.clearRect(0, 0, width, height);
+
+      const step = state.gridScale;
+      ctx.lineWidth = 1;
+
+      // Minor grid lines
+      ctx.strokeStyle = '#1e293b';
+      ctx.beginPath();
+      for (let x = originX % step; x < width; x += step) {
+        ctx.moveTo(x, 0); ctx.lineTo(x, height);
+      }
+      for (let y = originY % step; y < height; y += step) {
+        ctx.moveTo(0, y); ctx.lineTo(width, y);
+      }
+      ctx.stroke();
+
+      // Main Axes
+      ctx.strokeStyle = '#475569';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(0, originY); ctx.lineTo(width, originY);
+      ctx.moveTo(originX, 0); ctx.lineTo(originX, height);
+      ctx.stroke();
+
+      // Axis Numbers / Ticks
+      ctx.fillStyle = '#64748b';
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+
+      const maxUnitsX = Math.ceil(width / (2 * step));
+      for (let i = -maxUnitsX; i <= maxUnitsX; i++) {
+        if (i === 0) continue;
+        const pos = worldToScreen(i, 0);
+        ctx.fillText(i.toString(), pos.x, pos.y + 4);
+      }
+
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      const maxUnitsY = Math.ceil(height / (2 * step));
+      for (let i = -maxUnitsY; i <= maxUnitsY; i++) {
+        if (i === 0) continue;
+        const pos = worldToScreen(0, i);
+        ctx.fillText(i.toString(), pos.x - 6, pos.y);
+      }
+
+      ctx.fillText('0', originX - 6, originY + 12);
+    }
+
+    function drawAngleArc(center, vx, vy, color, labelObj, radius = 32) {
+      if (!state.showAngles) return;
+      if (vx === 0 && vy === 0) return;
+
+      const screenCenter = worldToScreen(center.x, center.y);
+      let radAngle = Math.atan2(vy, vx); // Standard counter-clockwise angle from positive x-axis
+      
+      let degAngle = radAngle * 180 / Math.PI;
+      if (degAngle < 0) degAngle += 360;
+
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 1.5;
+
+      // Draw dashed reference baseline (horizontal right axis) at the arc center
+      ctx.setLineDash([2, 2]);
+      ctx.beginPath();
+      ctx.moveTo(screenCenter.x, screenCenter.y);
+      ctx.lineTo(screenCenter.x + radius + 12, screenCenter.y);
+      ctx.stroke();
+
+      // Draw arc from 0 to radAngle (note Canvas y-axis is inverted)
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(screenCenter.x, screenCenter.y, radius, 0, -radAngle, vy > 0);
+      ctx.stroke();
+
+      // Draw label & numerical angle value dynamically
+      const midRad = radAngle / 2;
+      const labelDistance = radius + 20;
+      const labelX = screenCenter.x + Math.cos(-midRad) * labelDistance;
+      const labelY = screenCenter.y + Math.sin(-midRad) * labelDistance;
+
+      const textVal = `${degAngle.toFixed(1)}°`;
+
+      if (typeof labelObj === 'object' && labelObj.base) {
+        // Draw label (e.g. θ_R = 80.5°)
+        ctx.font = 'bold 11px sans-serif';
+        const labelText = `${labelObj.base}${labelObj.sub || ''} = ${textVal}`;
+        ctx.fillText(labelText, labelX - 16, labelY);
+      } else {
+        ctx.font = 'bold 11px monospace';
+        ctx.fillText(textVal, labelX - 12, labelY);
+      }
+
+      ctx.restore();
+    }
+
+    function drawArrow(from, to, color, width = 2.5, isDashed = false, headSize = 10, label = null) {
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const angle = Math.atan2(dy, dx);
+      const length = Math.hypot(dx, dy);
+
+      if (length < 2) return;
+
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = width;
+
+      if (isDashed) {
+        ctx.setLineDash([5, 4]);
+      } else {
+        ctx.setLineDash([]);
+      }
+
+      // Shaft
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(to.x - headSize * 0.8 * Math.cos(angle), to.y - headSize * 0.8 * Math.sin(angle));
+      ctx.stroke();
+
+      // Arrowhead
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(to.x, to.y);
+      ctx.lineTo(
+        to.x - headSize * Math.cos(angle - Math.PI / 6),
+        to.y - headSize * Math.sin(angle - Math.PI / 6)
+      );
+      ctx.lineTo(
+        to.x - headSize * Math.cos(angle + Math.PI / 6),
+        to.y - headSize * Math.sin(angle + Math.PI / 6)
+      );
+      ctx.closePath();
+      ctx.fill();
+
+      if (label) {
+        const offset = 14;
+        const labelX = to.x + Math.cos(angle) * offset;
+        const labelY = to.y + Math.sin(angle) * offset;
+
+        if (typeof label === 'object' && label.base) {
+          drawSubscriptText(label.base, label.sub || '', labelX, labelY, color);
+        } else {
+          ctx.font = 'bold 12px sans-serif';
+          ctx.fillText(label, labelX, labelY);
+        }
+      }
+
+      ctx.restore();
+    }
+
+    function drawComponentDashes(start, vec, color, labelPrefix) {
+      if (!state.showComponents) return;
+
+      const pStart = worldToScreen(start.x, start.y);
+      const pMid = worldToScreen(start.x + vec.x, start.y);
+      const pEnd = worldToScreen(start.x + vec.x, start.y + vec.y);
+
+      ctx.save();
+      ctx.setLineDash([3, 3]);
+      ctx.lineWidth = 1.2;
+      ctx.strokeStyle = color;
+
+      // Horizontal component line
+      ctx.beginPath();
+      ctx.moveTo(pStart.x, pStart.y);
+      ctx.lineTo(pMid.x, pMid.y);
+      ctx.stroke();
+
+      const midX = (pStart.x + pMid.x) / 2;
+      const offsetY = vec.y >= 0 ? 12 : -12;
+      drawSubscriptText(labelPrefix, 'x', midX - 6, pStart.y + offsetY, color);
+
+      // Vertical component line
+      ctx.beginPath();
+      ctx.moveTo(pMid.x, pMid.y);
+      ctx.lineTo(pEnd.x, pEnd.y);
+      ctx.stroke();
+
+      const midY = (pMid.y + pEnd.y) / 2;
+      const offsetX = vec.x >= 0 ? 8 : -22;
+      drawSubscriptText(labelPrefix, 'y', pMid.x + offsetX, midY, color);
+
+      ctx.restore();
+    }
+
+    function drawInteractiveHandle(screenPos, isHovered, color) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(screenPos.x, screenPos.y, isHovered ? 8 : 5, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // --- Main Rendering Loop ---
+    function render() {
+      drawGrid();
+
+      const origin = { x: 0, y: 0 };
+      const vecA = state.vectorA;
+      const vecB = state.vectorB;
+      const vecR = { x: vecA.x + vecB.x, y: vecA.y + vecB.y };
+
+      const pOrigin = worldToScreen(0, 0);
+
+      if (state.method === 'head-tail') {
+        const pTipA = worldToScreen(vecA.x, vecA.y);
+        const pTipR = worldToScreen(vecR.x, vecR.y);
+
+        drawComponentDashes(origin, vecA, '#22d3ee88', 'A');
+        drawComponentDashes(vecA, vecB, '#fbbf2488', 'B');
+
+        // Draw Angle Arcs with dynamic values in diagram
+        drawAngleArc(origin, vecA.x, vecA.y, '#22d3ee', { base: 'θ', sub: 'A' }, 28);
+        drawAngleArc(vecA, vecB.x, vecB.y, '#fbbf24', { base: 'θ', sub: 'B' }, 24);
+
+        // Vector A: Origin -> Tip A
+        drawArrow(pOrigin, pTipA, '#22d3ee', 3, false, 10, { base: 'A' });
+        
+        // Vector B: Tip A -> Tip R
+        drawArrow(pTipA, pTipR, '#fbbf24', 3, false, 10, { base: 'B' });
+
+        // Resultant Vector R
+        if (state.showResultant) {
+          drawAngleArc(origin, vecR.x, vecR.y, '#34d399', { base: 'θ', sub: 'R' }, 44);
+          drawArrow(pOrigin, pTipR, '#34d399', 4, false, 12, { base: 'R' });
+        }
+
+        drawInteractiveHandle(pTipA, state.hovered === 'A', '#22d3ee');
+        drawInteractiveHandle(pTipR, state.hovered === 'B', '#fbbf24');
+
+      } else {
+        const pTipA = worldToScreen(vecA.x, vecA.y);
+        const pTipB = worldToScreen(vecB.x, vecB.y);
+        const pTipR = worldToScreen(vecR.x, vecR.y);
+
+        drawComponentDashes(origin, vecA, '#22d3ee88', 'A');
+        drawComponentDashes(origin, vecB, '#fbbf2488', 'B');
+
+        if (state.showConstruction) {
+          drawArrow(pTipA, pTipR, '#fbbf24aa', 1.5, true, 8);
+          drawArrow(pTipB, pTipR, '#22d3eeaa', 1.5, true, 8);
+        }
+
+        // Draw Angle Arcs from origin with dynamic values
+        drawAngleArc(origin, vecA.x, vecA.y, '#22d3ee', { base: 'θ', sub: 'A' }, 28);
+        drawAngleArc(origin, vecB.x, vecB.y, '#fbbf24', { base: 'θ', sub: 'B' }, 36);
+
+        drawArrow(pOrigin, pTipA, '#22d3ee', 3, false, 10, { base: 'A' });
+        drawArrow(pOrigin, pTipB, '#fbbf24', 3, false, 10, { base: 'B' });
+
+        if (state.showResultant) {
+          drawAngleArc(origin, vecR.x, vecR.y, '#34d399', { base: 'θ', sub: 'R' }, 48);
+          drawArrow(pOrigin, pTipR, '#34d399', 4, false, 12, { base: 'R' });
+        }
+
+        drawInteractiveHandle(pTipA, state.hovered === 'A', '#22d3ee');
+        drawInteractiveHandle(pTipB, state.hovered === 'B', '#fbbf24');
+      }
+
+      updateUI();
+    }
+
+    // --- State & Mathematical UI Updates ---
+    function updateUI() {
+      const A = state.vectorA;
+      const B = state.vectorB;
+      const R = { x: A.x + B.x, y: A.y + B.y };
+
+      const magA = Math.hypot(A.x, A.y);
+      let angA = (Math.atan2(A.y, A.x) * 180 / Math.PI);
+      if (angA < 0) angA += 360;
+
+      const magB = Math.hypot(B.y, B.x);
+      let angB = (Math.atan2(B.y, B.x) * 180 / Math.PI);
+      if (angB < 0) angB += 360;
+
+      const magR = Math.hypot(R.x, R.y);
+      let angR = (Math.atan2(R.y, R.x) * 180 / Math.PI);
+      if (angR < 0) angR += 360;
+
+      sliderAx.value = A.x;
+      sliderAy.value = A.y;
+      sliderBx.value = B.x;
+      sliderBy.value = B.y;
+
+      valAx.textContent = A.x.toFixed(1);
+      valAy.textContent = A.y.toFixed(1);
+      valBx.textContent = B.x.toFixed(1);
+      valBy.textContent = B.y.toFixed(1);
+
+      vecAPolarLabel.textContent = `|A| = ${magA.toFixed(1)}, θ = ${angA.toFixed(1)}°`;
+      vecBPolarLabel.textContent = `|B| = ${magB.toFixed(1)}, θ = ${angB.toFixed(1)}°`;
+
+      calcRx.textContent = `${A.x.toFixed(1)} + (${B.x.toFixed(1)}) = ${R.x.toFixed(1)}`;
+      calcRy.textContent = `${A.y.toFixed(1)} + (${B.y.toFixed(1)}) = ${R.y.toFixed(1)}`;
+
+      // Detailed Angle Formula Substitution
+      calcAngSub.textContent = `tan⁻¹(${R.y.toFixed(1)} / ${R.x.toFixed(1)})`;
+      calcAngRes.textContent = `${angR.toFixed(2)}°`;
+
+      mathComp.textContent = `R = (${R.x.toFixed(1)}, ${R.y.toFixed(1)})`;
+      mathMag.textContent = `√(${R.x.toFixed(1)}² + ${R.y.toFixed(1)}²) = ${magR.toFixed(2)}`;
+      mathAng.textContent = `${angR.toFixed(2)}°`;
+    }
+
+    // Event Listeners
+    sliderAx.addEventListener('input', (e) => { state.vectorA.x = parseFloat(e.target.value); render(); });
+    sliderAy.addEventListener('input', (e) => { state.vectorA.y = parseFloat(e.target.value); render(); });
+    sliderBx.addEventListener('input', (e) => { state.vectorB.x = parseFloat(e.target.value); render(); });
+    sliderBy.addEventListener('input', (e) => { state.vectorB.y = parseFloat(e.target.value); render(); });
+
+    btnHeadTail.addEventListener('click', () => {
+      state.method = 'head-tail';
+      btnHeadTail.className = "px-3 py-2 text-xs font-semibold rounded-lg border transition text-center bg-indigo-600/30 text-indigo-300 border-indigo-500/50";
+      btnTailTail.className = "px-3 py-2 text-xs font-semibold rounded-lg border transition text-center bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-750";
+      render();
+    });
+
+    btnTailTail.addEventListener('click', () => {
+      state.method = 'tail-tail';
+      btnTailTail.className = "px-3 py-2 text-xs font-semibold rounded-lg border transition text-center bg-indigo-600/30 text-indigo-300 border-indigo-500/50";
+      btnHeadTail.className = "px-3 py-2 text-xs font-semibold rounded-lg border transition text-center bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-750";
+      render();
+    });
+
+    toggleConstruction.addEventListener('change', (e) => { state.showConstruction = e.target.checked; render(); });
+    toggleComponents.addEventListener('change', (e) => { state.showComponents = e.target.checked; render(); });
+    toggleAngles.addEventListener('change', (e) => { state.showAngles = e.target.checked; render(); });
+    toggleResultant.addEventListener('change', (e) => { state.showResultant = e.target.checked; render(); });
+    toggleSnap.addEventListener('change', (e) => { state.snapToGrid = e.target.checked; render(); });
+
+    btnReset.addEventListener('click', () => {
+      state.vectorA = { x: 4.0, y: 3.0 };
+      state.vectorB = { x: -3.0, y: 3.0 };
+      render();
+    });
+
+    function getHandlePositions() {
+      const A = state.vectorA;
+      const B = state.vectorB;
+
+      if (state.method === 'head-tail') {
+        return {
+          A: worldToScreen(A.x, A.y),
+          B: worldToScreen(A.x + B.x, A.y + B.y)
+        };
+      } else {
+        return {
+          A: worldToScreen(A.x, A.y),
+          B: worldToScreen(B.x, B.y)
+        };
+      }
+    }
+
+    function checkHitHandle(mx, my) {
+      const handles = getHandlePositions();
+      const radius = 16;
+      if (Math.hypot(mx - handles.A.x, my - handles.A.y) < radius) return 'A';
+      if (Math.hypot(mx - handles.B.x, my - handles.B.y) < radius) return 'B';
+      return null;
+    }
+
+    canvas.addEventListener('pointerdown', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+
+      const hit = checkHitHandle(mx, my);
+      if (hit) {
+        state.dragging = hit;
+        canvas.setPointerCapture(e.pointerId);
+        canvas.style.cursor = 'grabbing';
+      }
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+
+      if (state.dragging) {
+        let world = screenToWorld(mx, my);
+
+        if (state.snapToGrid) {
+          world.x = Math.round(world.x * 2) / 2;
+          world.y = Math.round(world.y * 2) / 2;
+        }
+
+        world.x = Math.max(-10, Math.min(10, world.x));
+        world.y = Math.max(-10, Math.min(10, world.y));
+
+        if (state.dragging === 'A') {
+          state.vectorA.x = world.x;
+          state.vectorA.y = world.y;
+        } else if (state.dragging === 'B') {
+          if (state.method === 'head-tail') {
+            let bx = world.x - state.vectorA.x;
+            let by = world.y - state.vectorA.y;
+            state.vectorB.x = Math.max(-10, Math.min(10, bx));
+            state.vectorB.y = Math.max(-10, Math.min(10, by));
+          } else {
+            state.vectorB.x = world.x;
+            state.vectorB.y = world.y;
+          }
+        }
+        render();
+      } else {
+        const hit = checkHitHandle(mx, my);
+        if (hit !== state.hovered) {
+          state.hovered = hit;
+          canvas.style.cursor = hit ? 'grab' : 'crosshair';
+          render();
+        }
+      }
+    });
+
+    canvas.addEventListener('pointerup', (e) => {
+      if (state.dragging) {
+        state.dragging = null;
+        canvas.releasePointerCapture(e.pointerId);
+        canvas.style.cursor = state.hovered ? 'grab' : 'crosshair';
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      resizeCanvas();
+    });
+  </script>
+</body>
+</html>
