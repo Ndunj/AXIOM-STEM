@@ -969,5 +969,105 @@ export const RESTORED_SIMULATIONS: SimulationItem[] = [
     ],
     isHtmlApp: true,
     htmlUrl: "/simulations/vsepr-3d-geometry.html"
+  },
+
+  // 15. PHYSICS / ASTROPHYSICS: Black Hole & General Relativity Virtual Lab
+  {
+    id: "sim-black-hole-general-relativity",
+    title: "Black Hole & General Relativity Virtual Lab",
+    tagline: "Schwarzschild metric, relativistic gravitational lensing, Doppler boosted accretion disk, and geodesic orbital trajectories",
+    discipline: "physics",
+    gradeLevel: ["High School (9-12)", "AP / IB STEM", "Undergraduate"],
+    standards: ["NGSS HS-PS2-4", "NGSS HS-ESS1-1", "AP Physics C: Gravitation", "NGSS SEP-2", "NGSS SEP-5"],
+    description: "An interactive astrophysics and general relativity laboratory exploring the physics of curved spacetime around black holes. Investigate Schwarzschild and Kerr metrics, relativistic gravitational lensing with Einstein rings, asymmetric Doppler beaming of turbulent accretion disks, and numerical integration of null (photon) and timelike (matter probe) geodesic trajectories around the event horizon, photon sphere, and ISCO.",
+    learningObjectives: [
+      "Calculate the Schwarzschild radius r_s = 2GM/c² and analyze spacetime curvature around compact gravitational masses",
+      "Explain the formation of the photon sphere at r = 1.5 r_s where light rays are trapped in circular orbits",
+      "Demonstrate relativistic Doppler beaming and gravitational redshift across inclined accretion disks",
+      "Distinguish between stable Keplerian orbits, relativistic perihelion advance (rosette precession), and sub-ISCO plunge states",
+      "Interpret observational data from the Event Horizon Telescope (EHT) imaging of Sagittarius A* and M87*"
+    ],
+    thumbnailGradient: "from-sky-700 via-indigo-900 to-slate-950",
+    badgeColor: "bg-sky-500/10 text-sky-300 border-sky-500/20",
+    iconName: "Globe",
+    rating: 4.99,
+    reviewCount: 88,
+    teacherCount: 342,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 200,
+      districtUnlimited: 400
+    },
+    features: [
+      "Real-time dual-mode visualization: Observer gravitational lensing view and equatorial geodesic orbital plane",
+      "Dynamic Schwarzschild and Kerr spin parameters with mass scaling from stellar-mass (Cygnus X-1) to supermassive (Sgr A*, M87*)",
+      "Numerical Runge-Kutta relativistic geodesic integrator with photon and massive probe trajectory tracking",
+      "Relativistic Doppler beaming and gravitational redshift toggles displaying asymmetric disk radiance",
+      "Live mathematical metrics: Schwarzschild radius (km), photon sphere radius, ISCO boundary, and Hawking temperature"
+    ],
+    parameterDefaults: {
+      massSolar: 4150000,
+      spin: 0.0,
+      inclination: 75,
+      impactParam: 2.6
+    },
+    parameterControls: [
+      {
+        key: "massSolar",
+        label: "Black Hole Mass (M)",
+        min: 5,
+        max: 6500000000,
+        step: 100,
+        unit: "M☉",
+        description: "Mass of the central black hole in solar masses"
+      },
+      {
+        key: "spin",
+        label: "Kerr Spin Parameter (a*)",
+        min: 0.0,
+        max: 0.98,
+        step: 0.02,
+        unit: "",
+        description: "Dimensionless angular momentum parameter"
+      },
+      {
+        key: "impactParam",
+        label: "Impact Parameter (b)",
+        min: 0.5,
+        max: 6.0,
+        step: 0.1,
+        unit: "rₛ",
+        description: "Perpendicular distance of approaching photon to central singularity"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-bh-1",
+        title: "Achieve Photon Sphere Orbital Capture",
+        instruction: "Set impact parameter b = 2.60 rₛ and fire a photon to observe the ray wrap into multiple circular orbits around r = 1.5 rₛ.",
+        targetMetric: "Impact Parameter",
+        targetValue: 2.6,
+        tolerance: 0.05,
+        currentValueKey: "impact_param",
+        rewardBadge: "Relativity Master"
+      },
+      {
+        id: "ch-bh-2",
+        title: "Observe Relativistic Rosette Orbit",
+        instruction: "Launch a massive probe at v = 0.5c with b = 4.2 rₛ and inspect the advance of perihelion over multiple orbits.",
+        targetMetric: "Precession Observed",
+        targetValue: 1,
+        tolerance: 0,
+        currentValueKey: "precession_state",
+        rewardBadge: "Einstein Geodesist"
+      }
+    ],
+    previewFacts: [
+      "The Event Horizon Telescope (EHT) captured the first direct image of a black hole shadow in M87* in 2019, confirming Einstein's General Relativity predictions.",
+      "At the photon sphere (1.5 r_s), if you stood facing sideways, you could theoretically see the back of your own head via light rays orbiting the black hole."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/black-hole-general-relativity.html"
   }
 ];

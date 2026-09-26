@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Interactive Black Hole Physics Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #030712;
+            color: #e2e8f0;
+            user-select: none;
+            overflow: hidden;
+        }
+        .mono {
+            font-family: 'Fira Code', monospace;
+        }
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0f19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.82);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+        }
+        canvas {
+            touch-action: none;
+            outline: none;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col">
+
+    <!-- Header / Navbar -->
+    <header class="h-14 border-b border-slate-800 bg-slate-950/90 px-4 flex items-center justify-between z-20 flex-shrink-0">
+        <div class="flex items-center space-x-3">
+            <div class="p-2 bg-indigo-600/20 border border-indigo-500/40 rounded-lg text-indigo-400">
+                <i data-lucide="disc" class="w-5 h-5 animate-spin" style="animation-duration: 12s;"></i>
+            </div>
+            <div>
+                <h1 class="text-base font-bold text-white tracking-wide flex items-center gap-2">
+                    EVENT HORIZON 3D <span class="text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-mono border border-indigo-500/30">v3.0 3D Lab</span>
+                </h1>
+                <p class="text-[10px] text-slate-400">Interactive 3D General Relativity & Geodesic Simulator</p>
+            </div>
+        </div>
+
+        <!-- Mode Toggle Switcher -->
+        <div class="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-1 space-x-1">
+            <button id="mode-teacher-btn" onclick="setMode('teacher')" class="px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 bg-indigo-600 text-white shadow">
+                <i data-lucide="presentation" class="w-3.5 h-3.5"></i>
+                Teacher Demo
+            </button>
+            <button id="mode-student-btn" onclick="setMode('student')" class="px-3 py-1 text-xs font-medium rounded-md text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5">
+                <i data-lucide="compass" class="w-3.5 h-3.5"></i>
+                Student Sandbox & Quizzes
+            </button>
+        </div>
+
+        <!-- Action Quick Buttons -->
+        <div class="flex items-center space-x-2">
+            <button onclick="toggleGuideModal()" class="px-3 py-1.5 rounded-lg bg-indigo-600/20 border border-indigo-500/40 text-indigo-300 hover:bg-indigo-600/30 text-xs font-semibold flex items-center gap-1.5 transition">
+                <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
+                <span>Science Guide</span>
+            </button>
+            <button id="voiceover-trigger-btn" onclick="toggleVoiceoverMenu()" class="px-3 py-1.5 rounded-lg bg-purple-600/20 border border-purple-500/40 text-purple-300 hover:bg-purple-600/30 text-xs font-semibold flex items-center gap-1.5 transition relative">
+                <i data-lucide="volume-2" class="w-3.5 h-3.5 animate-pulse"></i>
+                <span>Audio Tour</span>
+                <span id="voiceover-active-dot" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full animate-ping"></span>
+            </button>
+            <button id="btn-play-pause" onclick="togglePlay()" class="px-3 py-1.5 rounded-lg bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-600/30 text-xs font-semibold flex items-center gap-1.5 transition">
+                <i id="play-icon" data-lucide="pause" class="w-3.5 h-3.5"></i>
+                <span id="play-text">Pause</span>
+            </button>
+            <button onclick="resetSimulation()" class="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 text-xs font-semibold flex items-center gap-1.5 transition">
+                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                Reset
+            </button>
+            <button onclick="clearTrajectories()" class="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 text-xs font-semibold flex items-center gap-1.5 transition">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                Clear Rays
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="flex-1 flex overflow-hidden relative">
+
+        <!-- Left Controls Sidebar -->
+        <aside class="w-80 border-r border-slate-800 bg-slate-950/90 flex flex-col z-10 flex-shrink-0 overflow-y-auto">
+            
+            <!-- Section 1: Black Hole Parameters -->
+            <div class="p-4 border-b border-slate-800 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                        <i data-lucide="sliders" class="w-3.5 h-3.5 text-indigo-400"></i> 3D Spacetime Parameters
+                    </h2>
+                    <span id="bh-metric-badge" class="text-[10px] px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono">Schwarzschild</span>
+                </div>
+
+                <!-- Mass Slider -->
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <label class="text-slate-300 font-medium">Mass (M)</label>
+                        <span id="mass-val-display" class="text-indigo-400 font-mono font-semibold">10 M☉</span>
+                    </div>
+                    <input type="range" id="mass-slider" min="3" max="100" value="10" step="1" class="w-full accent-indigo-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer">
+                    <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+                        <span>3 M☉ (Stellar)</span>
+                        <span>100 M☉ (Intermediate)</span>
+                    </div>
+                </div>
+
+                <!-- Spin (Angular Momentum a) -->
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <label class="text-slate-300 font-medium">Spin / Angular Momentum (a)</label>
+                        <span id="spin-val-display" class="text-amber-400 font-mono font-semibold">0.00 (Static)</span>
+                    </div>
+                    <input type="range" id="spin-slider" min="0" max="0.99" value="0" step="0.01" class="w-full accent-amber-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer">
+                    <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+                        <span>0.0 (Schwarzschild)</span>
+                        <span>0.99 (Extreme Kerr)</span>
+                    </div>
+                </div>
+
+                <!-- Accretion Disk Brightness -->
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <label class="text-slate-300 font-medium">3D Accretion Disk Density</label>
+                        <span id="disk-val-display" class="text-slate-400 font-mono">80%</span>
+                    </div>
+                    <input type="range" id="disk-slider" min="0" max="100" value="80" step="5" class="w-full accent-emerald-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer">
+                </div>
+            </div>
+
+            <!-- Section 2: Relativistic Boundaries Toggles -->
+            <div class="p-4 border-b border-slate-800 space-y-3">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <i data-lucide="layers" class="w-3.5 h-3.5 text-indigo-400"></i> 3D Boundaries & Mesh Overlays
+                </h2>
+
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <label class="flex items-center space-x-2 bg-slate-900/60 border border-slate-800 p-2 rounded-lg cursor-pointer hover:border-slate-700">
+                        <input type="checkbox" id="toggle-horizon" checked class="rounded border-slate-700 text-indigo-600 focus:ring-0">
+                        <span class="text-rose-400 font-medium">Event Horizon</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-slate-900/60 border border-slate-800 p-2 rounded-lg cursor-pointer hover:border-slate-700">
+                        <input type="checkbox" id="toggle-ergosphere" checked class="rounded border-slate-700 text-indigo-600 focus:ring-0">
+                        <span class="text-amber-400 font-medium">Ergosphere</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-slate-900/60 border border-slate-800 p-2 rounded-lg cursor-pointer hover:border-slate-700">
+                        <input type="checkbox" id="toggle-photon-sphere" checked class="rounded border-slate-700 text-indigo-600 focus:ring-0">
+                        <span class="text-sky-400 font-medium">Photon Sphere</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-slate-900/60 border border-slate-800 p-2 rounded-lg cursor-pointer hover:border-slate-700">
+                        <input type="checkbox" id="toggle-isco" checked class="rounded border-slate-700 text-indigo-600 focus:ring-0">
+                        <span class="text-emerald-400 font-medium">ISCO Ring</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-slate-900/60 border border-slate-800 p-2 rounded-lg cursor-pointer hover:border-slate-700">
+                        <input type="checkbox" id="toggle-disk" checked class="rounded border-slate-700 text-indigo-600 focus:ring-0">
+                        <span class="text-orange-400 font-medium">Accretion Disk</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-slate-900/60 border border-slate-800 p-2 rounded-lg cursor-pointer hover:border-slate-700">
+                        <input type="checkbox" id="toggle-grid" checked class="rounded border-slate-700 text-indigo-600 focus:ring-0">
+                        <span class="text-purple-400 font-medium">Spacetime Grid</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Section 3: Ray/Particle Launcher Controls -->
+            <div class="p-4 border-b border-slate-800 space-y-3">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <i data-lucide="send" class="w-3.5 h-3.5 text-indigo-400"></i> 3D Geodesic Launcher
+                </h2>
+                
+                <div class="flex gap-2">
+                    <button onclick="setLaunchType('photon')" id="launch-photon-btn" class="flex-1 py-1.5 px-2 rounded-md bg-sky-500/20 border border-sky-500/40 text-sky-300 text-xs font-semibold text-center hover:bg-sky-500/30">
+                        Photon Ray (Light)
+                    </button>
+                    <button onclick="setLaunchType('probe')" id="launch-probe-btn" class="flex-1 py-1.5 px-2 rounded-md bg-slate-800 border border-slate-700 text-slate-400 text-xs font-semibold text-center hover:bg-slate-700">
+                        Massive Probe
+                    </button>
+                </div>
+
+                <div class="space-y-2 text-xs">
+                    <div>
+                        <div class="flex justify-between text-slate-300">
+                            <span>Launch Radial Distance (r)</span>
+                            <span id="launch-r-display" class="font-mono text-indigo-400">6.0 rs</span>
+                        </div>
+                        <input type="range" id="launch-r-slider" min="1.5" max="15" value="6" step="0.1" class="w-full accent-indigo-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-slate-300">
+                            <span>Deflection Angle (θ)</span>
+                            <span id="launch-angle-display" class="font-mono text-indigo-400">0°</span>
+                        </div>
+                        <input type="range" id="launch-angle-slider" min="-90" max="90" value="0" step="1" class="w-full accent-indigo-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-slate-300">
+                            <span>3D Inclination Angle (φ)</span>
+                            <span id="launch-phi-display" class="font-mono text-indigo-400">0°</span>
+                        </div>
+                        <input type="range" id="launch-phi-slider" min="-60" max="60" value="0" step="1" class="w-full accent-indigo-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer">
+                    </div>
+                </div>
+
+                <button onclick="fireTestRay()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-lg transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2">
+                    <i data-lucide="crosshair" class="w-4 h-4"></i> Fire 3D Ray / Probe
+                </button>
+                <button onclick="fireRayBeam()" class="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-300 font-semibold text-xs rounded-lg border border-slate-700 flex items-center justify-center gap-2">
+                    <i data-lucide="grid" class="w-3.5 h-3.5"></i> Fire Parallel Light Fan (8 Rays)
+                </button>
+            </div>
+
+            <!-- Section 4: Dynamic Instructional Presets (Teacher Mode) / Challenges (Student Mode) -->
+            <div id="sidebar-context-panel" class="p-4 flex-1 space-y-3">
+                <!-- Dynamically filled by JS -->
+            </div>
+        </aside>
+
+        <!-- Center 3D WebGL Canvas Viewport -->
+        <main class="flex-1 relative bg-slate-950 flex items-center justify-center overflow-hidden">
+            
+            <!-- 3D Canvas Container -->
+            <div id="canvas-container" class="w-full h-full"></div>
+
+            <!-- Camera View Presets Top Bar -->
+            <div class="absolute top-4 left-4 flex gap-2 pointer-events-auto">
+                <button onclick="setCameraView('perspective')" class="px-2.5 py-1 rounded-lg bg-slate-900/80 border border-slate-700/80 text-slate-200 text-xs hover:bg-slate-800 flex items-center gap-1 shadow">
+                    <i data-lucide="box" class="w-3.5 h-3.5 text-indigo-400"></i> Free 3D Orbit
+                </button>
+                <button onclick="setCameraView('top')" class="px-2.5 py-1 rounded-lg bg-slate-900/80 border border-slate-700/80 text-slate-200 text-xs hover:bg-slate-800 flex items-center gap-1 shadow">
+                    <i data-lucide="arrow-down" class="w-3.5 h-3.5 text-indigo-400"></i> Top-Down (Polar)
+                </button>
+                <button onclick="setCameraView('edge')" class="px-2.5 py-1 rounded-lg bg-slate-900/80 border border-slate-700/80 text-slate-200 text-xs hover:bg-slate-800 flex items-center gap-1 shadow">
+                    <i data-lucide="eye" class="w-3.5 h-3.5 text-indigo-400"></i> Edge-On (Disk)
+                </button>
+                <button onclick="setCameraView('close')" class="px-2.5 py-1 rounded-lg bg-slate-900/80 border border-slate-700/80 text-slate-200 text-xs hover:bg-slate-800 flex items-center gap-1 shadow">
+                    <i data-lucide="zoom-in" class="w-3.5 h-3.5 text-indigo-400"></i> Horizon Inspection
+                </button>
+            </div>
+
+            <!-- Floating Top Math & Metric Readout Bar -->
+            <div class="absolute top-4 right-4 flex flex-col items-end gap-3 pointer-events-none">
+                <!-- Readout Panel -->
+                <div class="glass-panel p-3 rounded-xl space-y-1 text-xs pointer-events-auto border border-slate-700/60 shadow-xl min-w-[240px]">
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-800 pb-1 mb-1">Critical 3D Radii</div>
+                    <div class="grid grid-cols-2 gap-x-4 gap-y-1 font-mono">
+                        <span class="text-rose-400">Event Horizon (r_s):</span>
+                        <span id="readout-rs" class="text-right font-bold text-white">29.5 km</span>
+                        <span class="text-amber-400">Ergosphere (r_ergo):</span>
+                        <span id="readout-rergo" class="text-right font-bold text-white">29.5 km</span>
+                        <span class="text-sky-400">Photon Sphere (r_ph):</span>
+                        <span id="readout-rph" class="text-right font-bold text-white">44.3 km</span>
+                        <span class="text-emerald-400">ISCO Radius (r_isco):</span>
+                        <span id="readout-risco" class="text-right font-bold text-white">88.6 km</span>
+                    </div>
+                </div>
+
+                <!-- Dual Time Dilation Clocks Panel -->
+                <div class="glass-panel p-3 rounded-xl border border-slate-700/60 shadow-xl pointer-events-auto min-w-[240px]">
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-800 pb-1 mb-2 flex justify-between items-center">
+                        <span>Dual Relativistic Clocks</span>
+                        <span class="text-indigo-400 font-mono text-[9px]">General Relativity</span>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                            <div class="flex items-center gap-1.5 text-xs text-slate-300">
+                                <i data-lucide="clock" class="w-3.5 h-3.5 text-sky-400"></i>
+                                <span>Far Observer (t_∞)</span>
+                            </div>
+                            <span id="clock-far" class="font-mono text-sm font-bold text-sky-400">00:00.00</span>
+                        </div>
+                        <div class="flex items-center justify-between bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                            <div class="flex items-center gap-1.5 text-xs text-slate-300">
+                                <i data-lucide="timer" class="w-3.5 h-3.5 text-amber-400"></i>
+                                <span>Probe Proper (τ)</span>
+                            </div>
+                            <span id="clock-probe" class="font-mono text-sm font-bold text-amber-400">00:00.00</span>
+                        </div>
+                        <div class="flex justify-between items-center text-[11px] pt-1 border-t border-slate-800/80">
+                            <span class="text-slate-400">Time Dilation Factor (γ_gr):</span>
+                            <span id="dilation-factor" class="font-mono font-bold text-indigo-300">1.00x</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Math Formula Overlay -->
+            <div id="math-formula-overlay" class="absolute bottom-4 left-4 glass-panel p-3 rounded-xl max-w-sm text-xs space-y-1.5 border border-slate-700/60 shadow-xl pointer-events-auto">
+                <div class="font-bold text-indigo-300 flex items-center justify-between border-b border-slate-800 pb-1">
+                    <span>Schwarzschild Metric Dilation Equation</span>
+                    <i data-lucide="book-open" class="w-3.5 h-3.5 text-indigo-400"></i>
+                </div>
+                <div class="font-mono bg-slate-900/90 p-2 rounded text-center text-amber-300 text-[11px]">
+                    dτ = dt · √(1 - r_s / r)
+                </div>
+                <p class="text-[10px] text-slate-400 leading-tight">
+                    As r → r_s, gravitational redshift approaches infinity. To a far observer, an infalling probe freezes at the event horizon indefinitely!
+                </p>
+            </div>
+
+            <!-- 3D Navigation Tip Overlay -->
+            <div class="absolute bottom-4 right-4 glass-panel p-2.5 rounded-xl text-[10px] space-y-1 border border-slate-700/60 pointer-events-auto">
+                <div class="font-bold text-slate-400 uppercase tracking-wider mb-1">3D Controls Tip</div>
+                <div class="text-slate-300 flex items-center gap-1.5"><i data-lucide="mouse-pointer" class="w-3 h-3 text-indigo-400"></i> Drag mouse to rotate view</div>
+                <div class="text-slate-300 flex items-center gap-1.5"><i data-lucide="move" class="w-3 h-3 text-indigo-400"></i> Right-click drag to pan</div>
+                <div class="text-slate-300 flex items-center gap-1.5"><i data-lucide="maximize-2" class="w-3 h-3 text-indigo-400"></i> Scroll wheel to zoom</div>
+            </div>
+
+            <!-- Student Quiz Banner -->
+            <div id="quiz-banner" class="hidden absolute top-20 left-1/2 -translate-x-1/2 glass-panel p-4 rounded-xl border border-indigo-500/40 shadow-2xl max-w-md w-full space-y-2 pointer-events-auto z-30">
+                <div class="flex items-center justify-between">
+                    <span id="quiz-badge" class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-bold uppercase tracking-wider border border-indigo-500/30">Active Mission</span>
+                    <button onclick="dismissQuizBanner()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+                </div>
+                <h3 id="quiz-title" class="text-sm font-bold text-white">Mission 1: Stable Light Orbit</h3>
+                <p id="quiz-desc" class="text-xs text-slate-300">Adjust the photon launcher distance and angle to capture a light ray in a circular photon sphere orbit at r = 1.5 r_s!</p>
+                <div class="pt-2 flex items-center justify-between border-t border-slate-800">
+                    <span id="quiz-status" class="text-xs font-semibold text-amber-400">Status: Incomplete</span>
+                    <button id="quiz-action-btn" onclick="checkQuizGoal()" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs font-semibold shadow">Verify Trajectory</button>
+                </div>
+            </div>
+
+            <!-- Voiceover Topic Dropdown Menu -->
+            <div id="voiceover-menu" class="hidden absolute top-16 right-24 glass-panel p-3 rounded-xl border border-purple-500/40 shadow-2xl w-72 space-y-2 z-40 pointer-events-auto">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <div class="flex items-center gap-2 text-xs font-bold text-purple-300">
+                        <i data-lucide="headphones" class="w-4 h-4 text-purple-400"></i>
+                        <span>Audio Tour & Narrator</span>
+                    </div>
+                    <button onclick="toggleVoiceoverMenu()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+                </div>
+                <p class="text-[11px] text-slate-400 leading-snug">Listen to AI audio explanations about black hole physics and interactive controls.</p>
+                <div class="space-y-1.5 pt-1">
+                    <button onclick="startVoiceover('full')" class="w-full text-left p-2 rounded-lg bg-purple-900/30 border border-purple-500/30 hover:bg-purple-800/40 text-xs font-medium text-purple-200 flex items-center justify-between group">
+                        <span class="flex items-center gap-1.5"><i data-lucide="sparkles" class="w-3.5 h-3.5 text-purple-400"></i> Complete Guided Tour</span>
+                        <i data-lucide="play" class="w-3 h-3 text-purple-400 opacity-0 group-hover:opacity-100 transition"></i>
+                    </button>
+                    <button onclick="startVoiceover('physics')" class="w-full text-left p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-purple-500/40 text-xs font-medium text-slate-300 flex items-center justify-between group">
+                        <span class="flex items-center gap-1.5"><i data-lucide="atom" class="w-3.5 h-3.5 text-sky-400"></i> Physics & Horizons Only</span>
+                        <i data-lucide="play" class="w-3 h-3 text-sky-400 opacity-0 group-hover:opacity-100 transition"></i>
+                    </button>
+                    <button onclick="startVoiceover('controls')" class="w-full text-left p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-purple-500/40 text-xs font-medium text-slate-300 flex items-center justify-between group">
+                        <span class="flex items-center gap-1.5"><i data-lucide="sliders" class="w-3.5 h-3.5 text-amber-400"></i> How Controls Work</span>
+                        <i data-lucide="play" class="w-3 h-3 text-amber-400 opacity-0 group-hover:opacity-100 transition"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Floating Active Voiceover Audio Player Bar -->
+            <div id="voiceover-player-bar" class="hidden absolute bottom-16 left-1/2 -translate-x-1/2 glass-panel px-4 py-2.5 rounded-full border border-purple-500/50 shadow-2xl flex items-center gap-4 z-40 pointer-events-auto min-w-[340px]">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-full bg-purple-600/30 border border-purple-500/50 flex items-center justify-center text-purple-300">
+                        <i data-lucide="volume-2" class="w-4 h-4 animate-bounce"></i>
+                    </div>
+                    <div>
+                        <div id="voiceover-status-title" class="text-xs font-bold text-purple-200">Narrating: Complete Tour</div>
+                        <div id="voiceover-subtext" class="text-[10px] text-purple-400 flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Gemini AI Voice Active
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-1 flex items-center gap-1 justify-center px-2">
+                    <span class="w-1 h-3 bg-purple-400 rounded animate-pulse"></span>
+                    <span class="w-1 h-5 bg-purple-300 rounded animate-pulse" style="animation-delay: 0.1s;"></span>
+                    <span class="w-1 h-2 bg-purple-500 rounded animate-pulse" style="animation-delay: 0.2s;"></span>
+                    <span class="w-1 h-6 bg-purple-300 rounded animate-pulse" style="animation-delay: 0.15s;"></span>
+                    <span class="w-1 h-3 bg-purple-400 rounded animate-pulse" style="animation-delay: 0.25s;"></span>
+                </div>
+
+                <div class="flex items-center gap-2 border-l border-slate-800 pl-3">
+                    <button id="voiceover-pause-btn" onclick="togglePauseVoiceover()" class="p-1.5 rounded-full bg-purple-600/20 hover:bg-purple-600/40 text-purple-300">
+                        <i id="voiceover-pause-icon" data-lucide="pause" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="stopVoiceover()" class="p-1.5 rounded-full bg-rose-600/20 hover:bg-rose-600/40 text-rose-300">
+                        <i data-lucide="square" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Explanatory Science Notes Modal -->
+            <div id="guide-modal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-md flex items-center justify-center z-50 p-4">
+                <div class="glass-panel w-full max-w-3xl max-h-[85vh] rounded-2xl border border-slate-700 shadow-2xl flex flex-col overflow-hidden">
+                    
+                    <!-- Modal Header -->
+                    <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/80">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-indigo-600/20 border border-indigo-500/40 rounded-xl text-indigo-400">
+                                <i data-lucide="book-open" class="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-lg font-bold text-white tracking-wide">Black Hole Science & Features Guide</h2>
+                                <p class="text-xs text-slate-400">General Relativity, Relativistic Horizons & Simulator Controls</p>
+                            </div>
+                        </div>
+                        <button onclick="toggleGuideModal()" class="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <!-- Modal Tab Buttons -->
+                    <div class="flex border-b border-slate-800 bg-slate-900/60 px-5 pt-3 gap-3 text-xs">
+                        <button onclick="switchGuideTab('tab-what')" id="tab-btn-what" class="pb-2.5 font-semibold text-indigo-400 border-b-2 border-indigo-500 transition flex items-center gap-1.5">
+                            <i data-lucide="globe" class="w-3.5 h-3.5"></i> What is a Black Hole?
+                        </button>
+                        <button onclick="switchGuideTab('tab-features')" id="tab-btn-features" class="pb-2.5 font-semibold text-slate-400 border-b-2 border-transparent hover:text-slate-200 transition flex items-center gap-1.5">
+                            <i data-lucide="layers" class="w-3.5 h-3.5"></i> Features & Horizons
+                        </button>
+                        <button onclick="switchGuideTab('tab-controls')" id="tab-btn-controls" class="pb-2.5 font-semibold text-slate-400 border-b-2 border-transparent hover:text-slate-200 transition flex items-center gap-1.5">
+                            <i data-lucide="sliders" class="w-3.5 h-3.5"></i> Simulator Controls
+                        </button>
+                    </div>
+
+                    <!-- Modal Body Content -->
+                    <div class="p-6 overflow-y-auto space-y-6 text-slate-300 text-xs leading-relaxed flex-1">
+                        
+                        <!-- TAB 1: What is a Black Hole -->
+                        <div id="guide-tab-what" class="space-y-4">
+                            <div class="p-4 rounded-xl bg-indigo-950/30 border border-indigo-500/30">
+                                <h3 class="text-sm font-bold text-indigo-200 mb-1 flex items-center gap-2">
+                                    <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400"></i> The Ultimate Gravitational Trap
+                                </h3>
+                                <p>
+                                    A black hole is a region of spacetime where gravity is so strong that nothing—not even light—has enough energy to escape its gravitational pull. Albert Einstein's Theory of General Relativity predicts that a sufficiently compact mass can deform spacetime to form a black hole.
+                                </p>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800">
+                                    <h4 class="font-bold text-white mb-1 flex items-center gap-1.5 text-xs">
+                                        <i data-lucide="circle-dot" class="w-4 h-4 text-sky-400"></i> Schwarzschild Black Holes
+                                    </h4>
+                                    <p class="text-slate-400 text-[11px]">
+                                        Non-rotating (static) black holes characterized solely by mass ($M$). The metric geometry is spherically symmetric, with a spherical event horizon at radius $r_s = \frac{2GM}{c^2}$.
+                                    </p>
+                                </div>
+                                <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800">
+                                    <h4 class="font-bold text-white mb-1 flex items-center gap-1.5 text-xs">
+                                        <i data-lucide="rotate-cw" class="w-4 h-4 text-amber-400"></i> Kerr Rotating Black Holes
+                                    </h4>
+                                    <p class="text-slate-400 text-[11px]">
+                                        Rotating black holes with angular momentum ($a$). Rotation drags space around itself (frame dragging) and flattens the outer region into an oblate Ergosphere.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 2: Anatomy & Features -->
+                        <div id="guide-tab-features" class="hidden space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                
+                                <div class="p-3.5 rounded-xl bg-slate-900 border border-rose-500/30">
+                                    <div class="font-bold text-rose-400 mb-1 flex items-center gap-1.5 text-xs">
+                                        <i data-lucide="shield-alert" class="w-4 h-4"></i> Event Horizon ($r_s$)
+                                    </div>
+                                    <p class="text-slate-300 text-[11px]">
+                                        The boundary beyond which escape velocity exceeds the speed of light. Anything crossing this radius is irrevocably drawn into the central singularity.
+                                    </p>
+                                </div>
+
+                                <div class="p-3.5 rounded-xl bg-slate-900 border border-amber-500/30">
+                                    <div class="font-bold text-amber-400 mb-1 flex items-center gap-1.5 text-xs">
+                                        <i data-lucide="disc" class="w-4 h-4"></i> Ergosphere ($r_{ergo}$)
+                                    </div>
+                                    <p class="text-slate-300 text-[11px]">
+                                        An oblate region outside the event horizon of rotating Kerr black holes. Spacetime is dragged so fast that objects cannot stand still (Frame Dragging / Penrose Process).
+                                    </p>
+                                </div>
+
+                                <div class="p-3.5 rounded-xl bg-slate-900 border border-sky-500/30">
+                                    <div class="font-bold text-sky-400 mb-1 flex items-center gap-1.5 text-xs">
+                                        <i data-lucide="orbit" class="w-4 h-4"></i> Photon Sphere ($1.5 r_s$)
+                                    </div>
+                                    <p class="text-slate-300 text-[11px]">
+                                        A spherical boundary where gravity is strong enough that light photons are forced to orbit in circular trajectories around the black hole.
+                                    </p>
+                                </div>
+
+                                <div class="p-3.5 rounded-xl bg-slate-900 border border-emerald-500/30">
+                                    <div class="font-bold text-emerald-400 mb-1 flex items-center gap-1.5 text-xs">
+                                        <i data-lucide="target" class="w-4 h-4"></i> ISCO Ring ($3.0 r_s$)
+                                    </div>
+                                    <p class="text-slate-300 text-[11px]">
+                                        Innermost Stable Circular Orbit. The innermost boundary where matter can orbit safely without spiraling into the horizon.
+                                    </p>
+                                </div>
+
+                            </div>
+
+                            <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+                                <h4 class="font-bold text-indigo-300 text-xs flex items-center gap-1.5">
+                                    <i data-lucide="clock" class="w-4 h-4 text-indigo-400"></i> Gravitational Time Dilation
+                                </h4>
+                                <p class="text-[11px] text-slate-300">
+                                    According to General Relativity, time runs slower near massive gravitational objects. As an infalling observer approaches $r_s$, time stops relative to a far observer ($d\tau = dt \cdot \sqrt{1 - r_s / r}$).
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- TAB 3: Controls Manual -->
+                        <div id="guide-tab-controls" class="hidden space-y-4">
+                            <div class="space-y-2">
+                                <div class="p-3 rounded-lg bg-slate-900 border border-slate-800 flex items-start gap-3">
+                                    <div class="p-1.5 bg-indigo-500/20 text-indigo-300 rounded mt-0.5"><i data-lucide="sliders" class="w-4 h-4"></i></div>
+                                    <div>
+                                        <div class="font-bold text-white text-xs">Mass (M) & Spin (a) Sliders</div>
+                                        <div class="text-[11px] text-slate-400">Dynamically scale black hole mass from 3 to 100 Solar Masses ($M_\odot$). Adjust angular momentum spin parameter $a$ from 0 (static Schwarzschild) to 0.99 (Extreme Kerr).</div>
+                                    </div>
+                                </div>
+
+                                <div class="p-3 rounded-lg bg-slate-900 border border-slate-800 flex items-start gap-3">
+                                    <div class="p-1.5 bg-sky-500/20 text-sky-300 rounded mt-0.5"><i data-lucide="send" class="w-4 h-4"></i></div>
+                                    <div>
+                                        <div class="font-bold text-white text-xs">3D Geodesic Launcher</div>
+                                        <div class="text-[11px] text-slate-400">Launch individual light photons or massive probes into 3D trajectories. Customize launch distance ($r$), deflection angle ($\theta$), and 3D inclination angle ($\phi$).</div>
+                                    </div>
+                                </div>
+
+                                <div class="p-3 rounded-lg bg-slate-900 border border-slate-800 flex items-start gap-3">
+                                    <div class="p-1.5 bg-emerald-500/20 text-emerald-300 rounded mt-0.5"><i data-lucide="grid" class="w-4 h-4"></i></div>
+                                    <div>
+                                        <div class="font-bold text-white text-xs">Parallel Light Fan</div>
+                                        <div class="text-[11px] text-slate-400">Fires 8 parallel light rays to visualize gravitational deflection, Einstein rings, and light bending in real time.</div>
+                                    </div>
+                                </div>
+
+                                <div class="p-3 rounded-lg bg-slate-900 border border-slate-800 flex items-start gap-3">
+                                    <div class="p-1.5 bg-purple-500/20 text-purple-300 rounded mt-0.5"><i data-lucide="headphones" class="w-4 h-4"></i></div>
+                                    <div>
+                                        <div class="font-bold text-white text-xs">Audio Tour & Voiceover</div>
+                                        <div class="text-[11px] text-slate-400">Click the Audio Tour button in the top navigation to listen to narrated explanations generated powered by Gemini AI speech models.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="p-4 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between">
+                        <button onclick="startVoiceover('full')" class="px-3.5 py-1.5 rounded-lg bg-purple-600/20 border border-purple-500/40 text-purple-300 hover:bg-purple-600/30 text-xs font-semibold flex items-center gap-1.5 transition">
+                            <i data-lucide="volume-2" class="w-4 h-4"></i>
+                            <span>Listen to Audio Guide</span>
+                        </button>
+                        <button onclick="toggleGuideModal()" class="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow transition">
+                            Close Guide
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+
+        // Audio Voiceover State
+        const voiceState = {
+            isPlaying: false,
+            isPaused: false,
+            currentTopic: null,
+            audioCtx: null,
+            audioSource: null,
+            utterance: null // Web Speech fallback
+        };
+
+        const VOICEOVER_SCRIPTS = {
+            full: "Welcome to Event Horizon 3D, an interactive simulator for general relativity and black hole physics. A black hole is a region of spacetime where gravitational forces are so intense that nothing, not even light, can escape once inside. The boundary surrounding a black hole is called the Event Horizon. For a non-rotating Schwarzschild black hole, this radius is determined purely by its mass. When a black hole spins, it becomes a Kerr black hole, creating a surrounding oblate region known as the Ergosphere, where space itself is dragged around. Outside the event horizon lies the Photon Sphere, where light rays can orbit in circles, and the Innermost Stable Circular Orbit, or ISCO. You can use the controls on the left to modify the mass and spin sliders, adjust 3D geodesic launchers, and switch between teacher presets or student quizzes. Explore how light bends and clocks slow down near these cosmic giants!",
+            physics: "Black hole physics is governed by Einstein's theory of General Relativity. The Event Horizon marks the radius of no return. At one point five times the event horizon radius lies the Photon Sphere, where photons travel in circular orbits around the singularity. In rotating Kerr black holes, frame dragging creates the Ergosphere, where matter is forced to rotate with spacetime. Furthermore, gravitational time dilation dictates that clocks closer to the event horizon tick significantly slower compared to distant observers.",
+            controls: "Here is how to use the interactive controls. Use the Mass slider to change the black hole's gravitational field. Adjust the Spin slider to transform a static Schwarzschild black hole into a rotating Kerr black hole. The 3D Geodesic Launcher allows you to set radial distance, launch angle, and three-dimensional inclination angle before firing photons or probes. You can also click Fire Parallel Light Fan to see gravitational lensing across multiple light rays at once."
+        };
+
+        // Modal Handlers
+        function toggleGuideModal() {
+            const modal = document.getElementById('guide-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        function switchGuideTab(tabId) {
+            ['tab-what', 'tab-features', 'tab-controls'].forEach(id => {
+                const tabEl = document.getElementById(`guide-${id}`);
+                const btnEl = document.getElementById(`tab-btn-${id.replace('tab-', '')}`);
+                if (id === tabId) {
+                    tabEl.classList.remove('hidden');
+                    btnEl.className = "pb-2.5 font-semibold text-indigo-400 border-b-2 border-indigo-500 transition flex items-center gap-1.5";
+                } else {
+                    tabEl.classList.add('hidden');
+                    btnEl.className = "pb-2.5 font-semibold text-slate-400 border-b-2 border-transparent hover:text-slate-200 transition flex items-center gap-1.5";
+                }
+            });
+        }
+
+        function toggleVoiceoverMenu() {
+            const menu = document.getElementById('voiceover-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Voiceover Narrator Function using Gemini TTS API with Web Speech API Fallback
+        async function startVoiceover(topic) {
+            stopVoiceover();
+            toggleVoiceoverMenu();
+
+            voiceState.isPlaying = true;
+            voiceState.isPaused = false;
+            voiceState.currentTopic = topic;
+
+            const text = VOICEOVER_SCRIPTS[topic] || VOICEOVER_SCRIPTS.full;
+
+            // Show UI Player Bar
+            document.getElementById('voiceover-player-bar').classList.remove('hidden');
+            document.getElementById('voiceover-active-dot').classList.remove('hidden');
+            document.getElementById('voiceover-status-title').innerText = `Narrating: ${topic === 'full' ? 'Complete Tour' : topic === 'physics' ? 'Physics & Features' : 'Controls Guide'}`;
+            document.getElementById('voiceover-subtext').innerText = "Gemini AI Voice Active";
+
+            try {
+                // Call Gemini TTS API
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+
+                const payload = {
+                    contents: [{
+                        parts: [{ text: `Say clearly and eloquently as an astronomy educator: ${text}` }]
+                    }],
+                    generationConfig: {
+                        responseModalities: ["AUDIO"],
+                        speechConfig: {
+                            voiceConfig: {
+                                prebuiltVoiceConfig: { voiceName: "Zephyr" }
+                            }
+                        }
+                    },
+                    model: "gemini-2.5-flash-preview-tts"
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                const part = data.candidates?.[0]?.content?.parts?.[0];
+
+                if (part && part.inlineData && part.inlineData.data) {
+                    const base64Audio = part.inlineData.data;
+                    const mimeType = part.inlineData.mimeType || "audio/L16;rate=24000";
+                    const sampleRateMatch = mimeType.match(/rate=(\d+)/);
+                    const sampleRate = sampleRateMatch ? parseInt(sampleRateMatch[1], 10) : 24000;
+
+                    // Decode base64 PCM data
+                    const binaryString = atob(base64Audio);
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+                    const pcm16 = new Int16Array(bytes.buffer);
+
+                    playPcm16Audio(pcm16, sampleRate);
+                } else {
+                    throw new Error("No inline TTS audio found, switching to speech synthesizer fallback.");
+                }
+
+            } catch (err) {
+                console.warn("Gemini TTS API call fallback to browser SpeechSynthesis:", err);
+                fallbackSpeechSynthesis(text);
+            }
+        }
+
+        function playPcm16Audio(pcm16, sampleRate) {
+            if (!voiceState.audioCtx) {
+                voiceState.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            const ctx = voiceState.audioCtx;
+            if (ctx.state === 'suspended') {
+                ctx.resume();
+            }
+
+            const buffer = ctx.createBuffer(1, pcm16.length, sampleRate);
+            const channelData = buffer.getChannelData(0);
+            for (let i = 0; i < pcm16.length; i++) {
+                channelData[i] = pcm16[i] / 32768.0;
+            }
+
+            const source = ctx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(ctx.destination);
+            source.onended = () => {
+                stopVoiceover();
+            };
+
+            voiceState.audioSource = source;
+            source.start(0);
+        }
+
+        function fallbackSpeechSynthesis(text) {
+            if ('speechSynthesis' in window) {
+                document.getElementById('voiceover-subtext').innerText = "Browser Voice Synthesis";
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 1.0;
+                utterance.pitch = 1.0;
+                utterance.onend = () => { stopVoiceover(); };
+                voiceState.utterance = utterance;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function togglePauseVoiceover() {
+            if (!voiceState.isPlaying) return;
+
+            voiceState.isPaused = !voiceState.isPaused;
+            const pauseIcon = document.getElementById('voiceover-pause-icon');
+
+            if (voiceState.audioCtx && voiceState.audioCtx.state === 'running') {
+                voiceState.audioCtx.suspend();
+                pauseIcon.setAttribute('data-lucide', 'play');
+            } else if (voiceState.audioCtx && voiceState.audioCtx.state === 'suspended') {
+                voiceState.audioCtx.resume();
+                pauseIcon.setAttribute('data-lucide', 'pause');
+            } else if (window.speechSynthesis) {
+                if (voiceState.isPaused) {
+                    window.speechSynthesis.pause();
+                    pauseIcon.setAttribute('data-lucide', 'play');
+                } else {
+                    window.speechSynthesis.resume();
+                    pauseIcon.setAttribute('data-lucide', 'pause');
+                }
+            }
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                lucide.createIcons();
+            }
+        }
+
+        function stopVoiceover() {
+            voiceState.isPlaying = false;
+            voiceState.isPaused = false;
+
+            if (voiceState.audioSource) {
+                try { voiceState.audioSource.stop(); } catch (e) {}
+                voiceState.audioSource = null;
+            }
+
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+            }
+
+            document.getElementById('voiceover-player-bar').classList.add('hidden');
+            document.getElementById('voiceover-active-dot').classList.add('hidden');
+        }
+
+        // Physical Constants (Normalized)
+        const G = 6.67430e-11;
+        const C = 299792458;
+        const M_SUN = 1.989e30;
+
+        // State & Simulation Parameters
+        const state = {
+            mode: 'teacher',
+            paused: false,
+            massSolar: 10,
+            spin: 0.00,
+            diskBrightness: 80,
+            
+            // Visibility Toggles
+            showHorizon: true,
+            showErgosphere: true,
+            showPhotonSphere: true,
+            showISCO: true,
+            showDisk: true,
+            showGrid: true,
+
+            // Launcher State
+            launchType: 'photon',
+            launchR: 6.0,
+            launchAngleDeg: 0,
+            launchPhiDeg: 0,
+
+            // Clocks
+            t_far: 0,
+            t_probe: 0,
+
+            // Rays and Particles
+            rays: [],
+            particles: [],
+
+            activeQuizIndex: null
+        };
+
+        // Three.js Globals
+        let scene, camera, renderer, controls;
+        let eventHorizonMesh, ergosphereMesh, photonSphereMesh, iscoRingMesh, accretionDiskMesh, spacetimeGridMesh;
+        let rayGroup, particleGroup;
+
+        const SCALE = 8; // Visual 3D scene scaling factor per Schwarzschild radius (rs)
+
+        // Teacher Presets
+        const TEACHER_PRESETS = [
+            {
+                id: 'lensing-3d',
+                title: '3D Gravitational Lensing',
+                desc: 'Inspect background light distortion around the central photon sphere from multiple 3D angles.',
+                setup: () => {
+                    state.massSolar = 15;
+                    state.spin = 0;
+                    clearTrajectories();
+                    fireRayBeam();
+                    setCameraView('edge');
+                }
+            },
+            {
+                id: 'kerr-spin',
+                title: 'Kerr Ergosphere Inspection',
+                desc: 'Observe the oblateness of the Ergosphere as spin parameter "a" approaches 0.99.',
+                setup: () => {
+                    state.massSolar = 20;
+                    state.spin = 0.95;
+                    clearTrajectories();
+                    setCameraView('perspective');
+                }
+            },
+            {
+                id: 'horizon-capture',
+                title: 'Point of No Return Trajectory',
+                desc: 'Fire rays at different impact parameters to demonstrate photon capture vs deflection.',
+                setup: () => {
+                    state.massSolar = 10;
+                    state.spin = 0;
+                    clearTrajectories();
+                    spawnPhotonRay3D(-12, 2.7, 0, 1, 0, 0, '#38bdf8');
+                    spawnPhotonRay3D(-12, 2.1, 0, 1, 0, 0, '#f43f5e');
+                    setCameraView('top');
+                }
+            }
+        ];
+
+        // Student Quizzes
+        const STUDENT_QUIZZES = [
+            {
+                title: 'Mission 1: 3D Photon Capture',
+                desc: 'Adjust the 3D inclination and launch angle to wrap a photon ray around the photon sphere without plunging into the horizon.',
+                check: () => {
+                    return state.rays.some(ray => ray.path.length > 250 && ray.minR < 1.8 && !ray.captured);
+                }
+            },
+            {
+                title: 'Mission 2: Ergosphere Traversal',
+                desc: 'Increase spin to a >= 0.80 and fire a probe into the ergosphere that escapes back out into deep space.',
+                check: () => {
+                    const r_ergo = getErgosphereRadius(state.spin, Math.PI / 2);
+                    return state.spin >= 0.8 && state.rays.some(ray => ray.minR < r_ergo && !ray.captured);
+                }
+            }
+        ];
+
+        window.onload = function() {
+            initThree();
+            setupUIEventListeners();
+            setMode('teacher');
+            updateReadouts();
+
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                lucide.createIcons();
+            }
+
+            animateLoop(0);
+        };
+
+        function initThree() {
+            const container = document.getElementById('canvas-container');
+
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x030712);
+
+            // Camera setup
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 30, 80);
+
+            // WebGL Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            container.appendChild(renderer.domElement);
+
+            // Orbit Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxDistance = 250;
+            controls.minDistance = 5;
+
+            // Ambient & Point Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+
+            const diskLight = new THREE.PointLight(0xffaa44, 2, 200);
+            diskLight.position.set(0, 0, 0);
+            scene.add(diskLight);
+
+            // Ray & Particle groups
+            rayGroup = new THREE.Group();
+            particleGroup = new THREE.Group();
+            scene.add(rayGroup);
+            scene.add(particleGroup);
+
+            // Build 3D Objects
+            createStarfield();
+            createEventHorizon();
+            createErgosphere();
+            createPhotonSphere();
+            createISCORing();
+            createAccretionDisk();
+            createSpacetimeGrid();
+
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function createStarfield() {
+            const count = 1200;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(count * 3);
+
+            for (let i = 0; i < count * 3; i += 3) {
+                positions[i] = (Math.random() - 0.5) * 500;
+                positions[i + 1] = (Math.random() - 0.5) * 500;
+                positions[i + 2] = (Math.random() - 0.5) * 500;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const material = new THREE.PointsMaterial({ color: 0xffffff, size: 0.8, transparent: true, opacity: 0.8 });
+            const stars = new THREE.Points(geometry, material);
+            scene.add(stars);
+        }
+
+        function createEventHorizon() {
+            const geo = new THREE.SphereGeometry(1 * SCALE, 64, 64);
+            const mat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            eventHorizonMesh = new THREE.Mesh(geo, mat);
+
+            // Add subtle crimson horizon outline glow
+            const glowGeo = new THREE.SphereGeometry(1.02 * SCALE, 32, 32);
+            const glowMat = new THREE.MeshBasicMaterial({ color: 0xf43f5e, wireframe: true, transparent: true, opacity: 0.3 });
+            const glow = new THREE.Mesh(glowGeo, glowMat);
+            eventHorizonMesh.add(glow);
+
+            scene.add(eventHorizonMesh);
+        }
+
+        function createErgosphere() {
+            const geo = new THREE.SphereGeometry(1 * SCALE, 32, 32);
+            const mat = new THREE.MeshBasicMaterial({ color: 0xfbbf24, wireframe: true, transparent: true, opacity: 0.35 });
+            ergosphereMesh = new THREE.Mesh(geo, mat);
+            scene.add(ergosphereMesh);
+        }
+
+        function createPhotonSphere() {
+            const geo = new THREE.SphereGeometry(1.5 * SCALE, 32, 32);
+            const mat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true, transparent: true, opacity: 0.2 });
+            photonSphereMesh = new THREE.Mesh(geo, mat);
+            scene.add(photonSphereMesh);
+        }
+
+        function createISCORing() {
+            const geo = new THREE.RingGeometry(3 * SCALE - 0.2, 3 * SCALE + 0.2, 64);
+            const mat = new THREE.MeshBasicMaterial({ color: 0x34d399, side: THREE.DoubleSide, transparent: true, opacity: 0.6 });
+            iscoRingMesh = new THREE.Mesh(geo, mat);
+            iscoRingMesh.rotation.x = Math.PI / 2;
+            scene.add(iscoRingMesh);
+        }
+
+        function createAccretionDisk() {
+            // Layered volumetric accretion disk mesh
+            const geo = new THREE.RingGeometry(2.5 * SCALE, 7.5 * SCALE, 64, 8);
+            
+            // Custom shader for Doppler beaming glow and accretion disk gradient
+            const mat = new THREE.ShaderMaterial({
+                side: THREE.DoubleSide,
+                transparent: true,
+                uniforms: {
+                    uBrightness: { value: 0.8 },
+                    uTime: { value: 0.0 }
+                },
+                vertexShader: `
+                    varying vec2 vUv;
+                    varying vec3 vPos;
+                    void main() {
+                        vUv = uv;
+                        vPos = position;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform float uBrightness;
+                    uniform float uTime;
+                    varying vec2 vUv;
+                    varying vec3 vPos;
+
+                    void main() {
+                        float dist = length(vPos.xy);
+                        float alpha = smoothstep(2.5 * 8.0, 3.5 * 8.0, dist) * (1.0 - smoothstep(5.0 * 8.0, 7.5 * 8.0, dist));
+                        
+                        // Doppler Beaming effect (Left side brighter/bluer, right side dimmer/redder)
+                        float doppler = 0.5 + 0.5 * (vPos.x / (7.5 * 8.0));
+                        vec3 innerColor = mix(vec3(0.2, 0.6, 1.0), vec3(1.0, 0.5, 0.1), doppler);
+                        vec3 outerColor = vec3(0.9, 0.2, 0.1);
+
+                        vec3 finalColor = mix(innerColor, outerColor, vUv.y);
+                        gl_FragColor = vec4(finalColor, alpha * uBrightness);
+                    }
+                `
+            });
+
+            accretionDiskMesh = new THREE.Mesh(geo, mat);
+            accretionDiskMesh.rotation.x = Math.PI / 2;
+            scene.add(accretionDiskMesh);
+        }
+
+        function createSpacetimeGrid() {
+            const gridHelper = new THREE.GridHelper(120, 40, 0x6366f1, 0x1e293b);
+            gridHelper.position.y = -0.1;
+            spacetimeGridMesh = gridHelper;
+            scene.add(spacetimeGridMesh);
+        }
+
+        function getSchwarzschildRadius(massSolar) {
+            const M = massSolar * M_SUN;
+            return (2 * G * M) / (C * C);
+        }
+
+        function getEventHorizonRadius(a) {
+            return 0.5 * (1 + Math.sqrt(Math.max(0, 1 - a * a)));
+        }
+
+        function getErgosphereRadius(a, theta = Math.PI / 2) {
+            return 0.5 * (1 + Math.sqrt(Math.max(0, 1 - a * a * Math.cos(theta) * Math.cos(theta))));
+        }
+
+        function getPhotonSphereRadius(a) {
+            return 0.5 * (3 + 2 * Math.cos((2/3) * Math.acos(-Math.min(0.99, Math.max(-0.99, a)))));
+        }
+
+        function getISCORadius(massSolar, a) {
+            const Z1 = 1 + Math.cbrt(1 - a * a) * (Math.cbrt(1 + a) + Math.cbrt(1 - a));
+            const Z2 = Math.sqrt(3 * a * a + Z1 * Z1);
+            const r_isco_M = 3 + Z2 - Math.sqrt((3 - Z1) * (3 + Z1 + 2 * Z2));
+            return r_isco_M / 2.0;
+        }
+
+        function update3DMeshes() {
+            const r_horizon = getEventHorizonRadius(state.spin);
+            const r_ergo = getErgosphereRadius(state.spin, Math.PI / 2);
+            const r_photon = getPhotonSphereRadius(state.spin);
+            const r_isco = getISCORadius(state.massSolar, state.spin);
+
+            // Scale Meshes
+            eventHorizonMesh.scale.setScalar(r_horizon);
+            eventHorizonMesh.visible = state.showHorizon;
+
+            // Kerr Ergosphere Oblate Spheroid deformation
+            ergosphereMesh.scale.set(r_ergo, r_horizon, r_ergo);
+            ergosphereMesh.visible = state.showErgosphere && state.spin > 0;
+
+            photonSphereMesh.scale.setScalar(r_photon);
+            photonSphereMesh.visible = state.showPhotonSphere;
+
+            // ISCO Ring mesh update
+            iscoRingMesh.geometry.dispose();
+            iscoRingMesh.geometry = new THREE.RingGeometry(r_isco * SCALE - 0.2, r_isco * SCALE + 0.2, 64);
+            iscoRingMesh.visible = state.showISCO;
+
+            // Accretion disk visibility and brightness
+            accretionDiskMesh.visible = state.showDisk;
+            if (accretionDiskMesh.material.uniforms) {
+                accretionDiskMesh.material.uniforms.uBrightness.value = state.diskBrightness / 100;
+            }
+
+            spacetimeGridMesh.visible = state.showGrid;
+        }
+
+        function spawnPhotonRay3D(x0, y0, z0, vx0, vy0, vz0, color = '#38bdf8') {
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(800 * 3);
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+            const material = new THREE.LineBasicMaterial({ color: new THREE.Color(color), linewidth: 2 });
+            const line = new THREE.Line(geometry, material);
+            rayGroup.add(line);
+
+            state.rays.push({
+                x: x0, y: y0, z: z0,
+                vx: vx0, vy: vy0, vz: vz0,
+                path: [{x: x0, y: y0, z: z0}],
+                captured: false,
+                lineMesh: line,
+                minR: Math.hypot(x0, y0, z0)
+            });
+        }
+
+        function fireTestRay() {
+            const radAngle = (state.launchAngleDeg * Math.PI) / 180;
+            const radPhi = (state.launchPhiDeg * Math.PI) / 180;
+
+            const startX = -state.launchR;
+            const startY = Math.sin(radPhi) * state.launchR;
+            const startZ = 0;
+
+            const vx = Math.cos(radAngle) * Math.cos(radPhi);
+            const vy = Math.sin(radPhi);
+            const vz = Math.sin(radAngle);
+
+            spawnPhotonRay3D(startX, startY, startZ, vx, vy, vz, state.launchType === 'photon' ? '#38bdf8' : '#fbbf24');
+        }
+
+        function fireRayBeam() {
+            for (let offset = -4; offset <= 4; offset += 1.0) {
+                if (Math.abs(offset) < 0.2) continue;
+                spawnPhotonRay3D(-14, offset, 0, 1, 0, 0, '#38bdf8');
+            }
+        }
+
+        function clearTrajectories() {
+            state.rays.forEach(ray => {
+                rayGroup.remove(ray.lineMesh);
+                ray.lineMesh.geometry.dispose();
+            });
+            state.rays = [];
+        }
+
+        function updatePhysics(dt) {
+            if (state.paused) return;
+
+            state.t_far += dt;
+            const r_probe = state.launchR;
+            if (r_probe > 1.0) {
+                const dilation = Math.sqrt(Math.max(0, 1.0 - 1.0 / r_probe));
+                state.t_probe += dt * dilation;
+            }
+
+            // Update Clocks UI
+            const formatTime = (s) => {
+                const mins = Math.floor(s / 60).toString().padStart(2, '0');
+                const secs = (s % 60).toFixed(2).padStart(5, '0');
+                return `${mins}:${secs}`;
+            };
+            document.getElementById('clock-far').innerText = formatTime(state.t_far);
+            document.getElementById('clock-probe').innerText = formatTime(state.t_probe);
+
+            const horizonR = getEventHorizonRadius(state.spin);
+
+            // Step 3D Photons
+            state.rays.forEach(ray => {
+                if (ray.captured || ray.path.length >= 800) return;
+
+                const steps = 3;
+                const subDt = dt / steps;
+
+                for (let s = 0; s < steps; s++) {
+                    const r2 = ray.x * ray.x + ray.y * ray.y + ray.z * ray.z;
+                    const r = Math.sqrt(r2);
+
+                    if (r < ray.minR) ray.minR = r;
+
+                    if (r <= horizonR) {
+                        ray.captured = true;
+                        break;
+                    }
+
+                    // 3D Relativistic Gravity Pull
+                    const GR_factor = 1.5 / (r2 * r2);
+                    const ax = -ray.x * GR_factor;
+                    const ay = -ray.y * GR_factor;
+                    const az = -ray.z * GR_factor;
+
+                    ray.vx += ax * subDt;
+                    ray.vy += ay * subDt;
+                    ray.vz += az * subDt;
+
+                    // Renormalize speed
+                    const v = Math.hypot(ray.vx, ray.vy, ray.vz);
+                    ray.vx /= v;
+                    ray.vy /= v;
+                    ray.vz /= v;
+
+                    // Kerr Spin Frame Dragging
+                    if (state.spin > 0) {
+                        const omega = (2 * state.spin) / (r * r * r + state.spin * state.spin * r + 2 * state.spin * state.spin);
+                        ray.vx += -ray.z * omega * 0.05;
+                        ray.vz += ray.x * omega * 0.05;
+                    }
+
+                    ray.x += ray.vx * subDt * 10;
+                    ray.y += ray.vy * subDt * 10;
+                    ray.z += ray.vz * subDt * 10;
+
+                    ray.path.push({ x: ray.x, y: ray.y, z: ray.z });
+                }
+
+                // Update Line Geometry in 3D Scene
+                const positions = ray.lineMesh.geometry.attributes.position.array;
+                for (let i = 0; i < ray.path.length; i++) {
+                    positions[i * 3] = ray.path[i].x * SCALE;
+                    positions[i * 3 + 1] = ray.path[i].y * SCALE;
+                    positions[i * 3 + 2] = ray.path[i].z * SCALE;
+                }
+                ray.lineMesh.geometry.attributes.position.needsUpdate = true;
+                ray.lineMesh.geometry.setDrawRange(0, ray.path.length);
+            });
+        }
+
+        function setupUIEventListeners() {
+            // Sliders
+            document.getElementById('mass-slider').addEventListener('input', (e) => {
+                state.massSolar = parseFloat(e.target.value);
+                document.getElementById('mass-val-display').innerText = `${state.massSolar} M☉`;
+                updateReadouts();
+            });
+
+            document.getElementById('spin-slider').addEventListener('input', (e) => {
+                state.spin = parseFloat(e.target.value);
+                document.getElementById('spin-val-display').innerText = `${state.spin.toFixed(2)} ${state.spin === 0 ? '(Static)' : '(Rotating)'}`;
+                document.getElementById('bh-metric-badge').innerText = state.spin > 0 ? 'Kerr Metric' : 'Schwarzschild';
+                updateReadouts();
+            });
+
+            document.getElementById('disk-slider').addEventListener('input', (e) => {
+                state.diskBrightness = parseInt(e.target.value);
+                document.getElementById('disk-val-display').innerText = `${state.diskBrightness}%`;
+                update3DMeshes();
+            });
+
+            document.getElementById('launch-r-slider').addEventListener('input', (e) => {
+                state.launchR = parseFloat(e.target.value);
+                document.getElementById('launch-r-display').innerText = `${state.launchR.toFixed(1)} rs`;
+                updateReadouts();
+            });
+
+            document.getElementById('launch-angle-slider').addEventListener('input', (e) => {
+                state.launchAngleDeg = parseFloat(e.target.value);
+                document.getElementById('launch-angle-display').innerText = `${state.launchAngleDeg}°`;
+            });
+
+            document.getElementById('launch-phi-slider').addEventListener('input', (e) => {
+                state.launchPhiDeg = parseFloat(e.target.value);
+                document.getElementById('launch-phi-display').innerText = `${state.launchPhiDeg}°`;
+            });
+
+            // Toggles
+            document.getElementById('toggle-horizon').addEventListener('change', (e) => { state.showHorizon = e.target.checked; update3DMeshes(); });
+            document.getElementById('toggle-ergosphere').addEventListener('change', (e) => { state.showErgosphere = e.target.checked; update3DMeshes(); });
+            document.getElementById('toggle-photon-sphere').addEventListener('change', (e) => { state.showPhotonSphere = e.target.checked; update3DMeshes(); });
+            document.getElementById('toggle-isco').addEventListener('change', (e) => { state.showISCO = e.target.checked; update3DMeshes(); });
+            document.getElementById('toggle-disk').addEventListener('change', (e) => { state.showDisk = e.target.checked; update3DMeshes(); });
+            document.getElementById('toggle-grid').addEventListener('change', (e) => { state.showGrid = e.target.checked; update3DMeshes(); });
+        }
+
+        function updateReadouts() {
+            const rs_m = getSchwarzschildRadius(state.massSolar);
+            const rs_km = rs_m / 1000;
+
+            document.getElementById('readout-rs').innerText = `${(getEventHorizonRadius(state.spin) * rs_km).toFixed(1)} km`;
+            document.getElementById('readout-rergo').innerText = `${(getErgosphereRadius(state.spin, Math.PI / 2) * rs_km).toFixed(1)} km`;
+            document.getElementById('readout-rph').innerText = `${(getPhotonSphereRadius(state.spin) * rs_km).toFixed(1)} km`;
+            document.getElementById('readout-risco').innerText = `${(getISCORadius(state.massSolar, state.spin) * rs_km).toFixed(1)} km`;
+
+            const r_probe = state.launchR;
+            if (r_probe > 1.0) {
+                const gamma_gr = 1.0 / Math.sqrt(1 - 1.0 / r_probe);
+                document.getElementById('dilation-factor').innerText = `${gamma_gr.toFixed(2)}x`;
+            } else {
+                document.getElementById('dilation-factor').innerText = `∞ (Event Horizon)`;
+            }
+
+            update3DMeshes();
+        }
+
+        function setCameraView(view) {
+            if (view === 'perspective') {
+                camera.position.set(0, 35, 75);
+            } else if (view === 'top') {
+                camera.position.set(0, 90, 0.1);
+            } else if (view === 'edge') {
+                camera.position.set(0, 2, 75);
+            } else if (view === 'close') {
+                camera.position.set(0, 8, 22);
+            }
+            controls.target.set(0, 0, 0);
+            controls.update();
+        }
+
+        function setMode(mode) {
+            state.mode = mode;
+            const teacherBtn = document.getElementById('mode-teacher-btn');
+            const studentBtn = document.getElementById('mode-student-btn');
+            const contextPanel = document.getElementById('sidebar-context-panel');
+
+            if (mode === 'teacher') {
+                teacherBtn.className = "px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 bg-indigo-600 text-white shadow";
+                studentBtn.className = "px-3 py-1 text-xs font-medium rounded-md text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5";
+                document.getElementById('quiz-banner').classList.add('hidden');
+
+                contextPanel.innerHTML = `
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 mb-2">
+                        <i data-lucide="presentation" class="w-3.5 h-3.5 text-indigo-400"></i> Instructional 3D Scenarios
+                    </h2>
+                    <div class="space-y-2">
+                        ${TEACHER_PRESETS.map(p => `
+                            <button onclick="loadPreset('${p.id}')" class="w-full text-left p-2.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-indigo-500/50 hover:bg-slate-800/80 transition group">
+                                <div class="font-bold text-xs text-indigo-300 group-hover:text-indigo-200 flex items-center justify-between">
+                                    <span>${p.title}</span>
+                                    <i data-lucide="play" class="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                                </div>
+                                <div class="text-[10px] text-slate-400 mt-0.5">${p.desc}</div>
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+            } else {
+                studentBtn.className = "px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 bg-indigo-600 text-white shadow";
+                teacherBtn.className = "px-3 py-1 text-xs font-medium rounded-md text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5";
+
+                contextPanel.innerHTML = `
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 mb-2">
+                        <i data-lucide="award" class="w-3.5 h-3.5 text-amber-400"></i> Discovery Challenges
+                    </h2>
+                    <div class="space-y-2">
+                        ${STUDENT_QUIZZES.map((q, idx) => `
+                            <button onclick="startQuiz(${idx})" class="w-full text-left p-2.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-amber-500/50 hover:bg-slate-800/80 transition">
+                                <div class="font-bold text-xs text-amber-300 flex items-center justify-between">
+                                    <span>${q.title}</span>
+                                    <i data-lucide="target" class="w-3.5 h-3.5 text-amber-400"></i>
+                                </div>
+                                <div class="text-[10px] text-slate-400 mt-0.5">${q.desc}</div>
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                lucide.createIcons();
+            }
+        }
+
+        function loadPreset(id) {
+            const preset = TEACHER_PRESETS.find(p => p.id === id);
+            if (preset) {
+                preset.setup();
+                updateReadouts();
+            }
+        }
+
+        function startQuiz(index) {
+            state.activeQuizIndex = index;
+            const quiz = STUDENT_QUIZZES[index];
+            document.getElementById('quiz-title').innerText = quiz.title;
+            document.getElementById('quiz-desc').innerText = quiz.desc;
+            document.getElementById('quiz-status').innerText = 'Status: In Progress';
+            document.getElementById('quiz-status').className = 'text-xs font-semibold text-amber-400';
+            document.getElementById('quiz-banner').classList.remove('hidden');
+        }
+
+        function checkQuizGoal() {
+            if (state.activeQuizIndex !== null) {
+                const quiz = STUDENT_QUIZZES[state.activeQuizIndex];
+                if (quiz.check()) {
+                    document.getElementById('quiz-status').innerText = 'Status: Completed! 🎉';
+                    document.getElementById('quiz-status').className = 'text-xs font-semibold text-emerald-400';
+                } else {
+                    document.getElementById('quiz-status').innerText = 'Status: Not achieved yet. Adjust launch angle & inclination!';
+                    document.getElementById('quiz-status').className = 'text-xs font-semibold text-rose-400';
+                }
+            }
+        }
+
+        function dismissQuizBanner() {
+            document.getElementById('quiz-banner').classList.add('hidden');
+        }
+
+        function setLaunchType(type) {
+            state.launchType = type;
+            document.getElementById('launch-photon-btn').className = type === 'photon' ? 
+                'flex-1 py-1.5 px-2 rounded-md bg-sky-500/20 border border-sky-500/40 text-sky-300 text-xs font-semibold text-center hover:bg-sky-500/30' :
+                'flex-1 py-1.5 px-2 rounded-md bg-slate-800 border border-slate-700 text-slate-400 text-xs font-semibold text-center hover:bg-slate-700';
+
+            document.getElementById('launch-probe-btn').className = type === 'probe' ? 
+                'flex-1 py-1.5 px-2 rounded-md bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-semibold text-center hover:bg-amber-500/30' :
+                'flex-1 py-1.5 px-2 rounded-md bg-slate-800 border border-slate-700 text-slate-400 text-xs font-semibold text-center hover:bg-slate-700';
+        }
+
+        function togglePlay() {
+            state.paused = !state.paused;
+            document.getElementById('play-icon').setAttribute('data-lucide', state.paused ? 'play' : 'pause');
+            document.getElementById('play-text').innerText = state.paused ? 'Resume' : 'Pause';
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                lucide.createIcons();
+            }
+        }
+
+        function resetSimulation() {
+            state.t_far = 0;
+            state.t_probe = 0;
+            clearTrajectories();
+            updateReadouts();
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('canvas-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        let lastTime = 0;
+        function animateLoop(timestamp) {
+            requestAnimationFrame(animateLoop);
+
+            const dt = Math.min(0.05, (timestamp - lastTime) / 1000);
+            lastTime = timestamp;
+
+            updatePhysics(dt);
+
+            // Animate accretion disk shader uniform
+            if (accretionDiskMesh && accretionDiskMesh.material.uniforms) {
+                accretionDiskMesh.material.uniforms.uTime.value = timestamp * 0.001;
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>

@@ -85,15 +85,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
               </button>
             )}
 
-            {isCreatorMode && onOpenStandards && (
-              <button
-                onClick={onOpenStandards}
-                className="flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-amber-300 hover:text-amber-200 font-semibold text-sm border border-amber-500/30 cursor-pointer transition-all"
-              >
-                <BookOpen className="w-4 h-4 text-amber-400" />
-                <span>{t("heroCtaStandards")}</span>
-              </button>
-            )}
+
 
             {hasSimulations && onTestDriveFeatured && (
               <button

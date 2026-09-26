@@ -6,289 +6,884 @@
   <title>Wave Optics: Young's Double Slit & Diffraction Grating Lab</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { background-color: #090d16; color: #e2e8f0; font-family: system-ui, -apple-system, sans-serif; }
-    canvas { background-color: #0f172a; border-radius: 0.75rem; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #090d16;
+      color: #f1f5f9;
+    }
+
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    /* Range Input Custom Styling */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: #1e293b;
+      height: 6px;
+      border-radius: 3px;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #38bdf8;
+      cursor: pointer;
+      transition: transform 0.1s ease, background-color 0.1s ease;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      background: #7dd3fc;
+    }
+
+    .glow-box {
+      box-shadow: 0 0 25px -5px rgba(56, 189, 248, 0.15);
+    }
   </style>
 </head>
-<body class="p-4 select-none">
-  <div class="max-w-7xl mx-auto space-y-4">
-    <!-- Header -->
-    <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-900/80 p-4 rounded-xl border border-slate-800 backdrop-blur">
-      <div>
-        <h1 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">
-          Wave Optics: Young's Double Slit & Diffraction Grating Lab
+<body class="min-h-screen flex flex-col p-3 md:p-6 gap-4">
+
+  <header class="flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-900/80 backdrop-blur border border-slate-800 p-4 rounded-xl shadow-lg">
+    <div>
+      <div class="flex items-center gap-3">
+        <div class="w-3 h-3 rounded-full bg-cyan-400 animate-pulse"></div>
+        <h1 class="text-xl md:text-2xl font-bold bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-400 bg-clip-text text-transparent">
+          Wave Optics Virtual Laboratory
         </h1>
-        <p class="text-xs text-slate-400">Wavefront Propagation, Fringe Spacing (Δy = λL/d), Single-Slit Envelope, and Multi-Slit Gratings</p>
       </div>
-      <div class="flex items-center gap-2">
-        <button id="btnLaserRed" class="px-3 py-1 bg-rose-600/30 text-rose-300 text-xs font-semibold rounded-lg border border-rose-500/40 transition">
-          🔴 Red 650 nm
-        </button>
-        <button id="btnLaserGreen" class="px-3 py-1 bg-emerald-600/30 text-emerald-300 text-xs font-semibold rounded-lg border border-emerald-500/40 transition">
-          🟢 Green 532 nm
-        </button>
-        <button id="btnLaserViolet" class="px-3 py-1 bg-violet-600/30 text-violet-300 text-xs font-semibold rounded-lg border border-violet-500/40 transition">
-          🟣 Violet 405 nm
-        </button>
-      </div>
+      <p class="text-xs md:text-sm text-slate-400 mt-0.5">
+        Interference, Single-Slit Diffraction Envelope, & Multi-Slit Diffraction Gratings
+      </p>
     </div>
-
-    <!-- Main Workspace -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-      <!-- Left: Optical Canvas & Screen Intensity Curve -->
-      <div class="lg:col-span-8 space-y-3">
-        <div class="relative bg-slate-900 p-2 rounded-xl border border-slate-800 shadow-2xl">
-          <canvas id="opticsCanvas" width="780" height="420" class="w-full h-auto block"></canvas>
-          <div class="absolute top-4 left-4 bg-slate-950/80 backdrop-blur px-3.5 py-2 rounded-lg border border-slate-800 text-xs flex gap-4 text-slate-300 font-mono">
-            <span>Fringe Spacing (Δy) = <span id="fringeLabel" class="text-emerald-400 font-bold">2.66 mm</span></span>
-            <span>Laser λ = <span id="lambdaLabel" class="text-emerald-400 font-bold">532 nm</span></span>
-          </div>
-        </div>
-
-        <!-- Sliders -->
-        <div class="grid grid-cols-3 gap-3 bg-slate-900 p-4 rounded-xl border border-slate-800 text-xs">
-          <div class="space-y-1.5">
-            <div class="flex justify-between font-bold text-slate-300">
-              <span>Wavelength (λ):</span>
-              <span id="lambdaVal" class="text-emerald-400 font-mono">532 nm</span>
-            </div>
-            <input id="sliderLambda" type="range" min="380" max="750" step="2" value="532" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500">
-          </div>
-          <div class="space-y-1.5">
-            <div class="flex justify-between font-bold text-slate-300">
-              <span>Slit Separation (d):</span>
-              <span id="dVal" class="text-cyan-400 font-mono">0.25 mm</span>
-            </div>
-            <input id="sliderD" type="range" min="0.05" max="0.80" step="0.01" value="0.25" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500">
-          </div>
-          <div class="space-y-1.5">
-            <div class="flex justify-between font-bold text-slate-300">
-              <span>Screen Distance (L):</span>
-              <span id="lVal" class="text-teal-400 font-mono">1.25 m</span>
-            </div>
-            <input id="sliderL" type="range" min="0.5" max="3.0" step="0.05" value="1.25" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-teal-500">
-          </div>
-        </div>
-      </div>
-
-      <!-- Right: Slit Configuration & Interference Formulas -->
-      <div class="lg:col-span-4 space-y-4">
-        <!-- Slit Mode Selector -->
-        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
-          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Aperture Configuration</h2>
-          <div class="grid grid-cols-2 gap-2 text-xs">
-            <button class="slit-btn px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 text-left font-medium text-slate-300" data-slits="1">
-              🔘 Single Slit<br><span class="text-[10px] text-slate-400">Diffraction envelope</span>
-            </button>
-            <button class="slit-btn px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-emerald-500/50 text-left font-medium text-emerald-300 active" data-slits="2">
-              ✌ Double Slit (Young)<br><span class="text-[10px] text-slate-400">Interference + Envelope</span>
-            </button>
-            <button class="slit-btn px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 text-left font-medium text-slate-300" data-slits="4">
-              🎛 4 Slits<br><span class="text-[10px] text-slate-400">Sharper principal maxima</span>
-            </button>
-            <button class="slit-btn px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 text-left font-medium text-slate-300" data-slits="10">
-              🔬 Diffraction Grating<br><span class="text-[10px] text-slate-400">Ultra-sharp line spectrum</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Real-Time Analytical Physics HUD -->
-        <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 space-y-3 text-xs">
-          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Wave Optics Formula HUD</h2>
-          <div class="space-y-2 font-mono text-[11px] text-slate-300">
-            <div class="flex justify-between py-1 border-b border-slate-800">
-              <span class="text-slate-400">Fringe Spacing Δy = λ·L / d:</span>
-              <span id="calcFringe" class="text-emerald-400 font-bold">2.66 mm</span>
-            </div>
-            <div class="flex justify-between py-1 border-b border-slate-800">
-              <span class="text-slate-400">Central Max Width w₀ = 2λL/a:</span>
-              <span id="calcCentralWidth" class="text-cyan-300">26.60 mm</span>
-            </div>
-            <div class="flex justify-between py-1 border-b border-slate-800">
-              <span class="text-slate-400">Path Diff at 1st Order (m=1):</span>
-              <span id="calcPathDiff" class="text-amber-300">532.0 nm (= λ)</span>
-            </div>
-            <div class="text-[10px] text-slate-400 leading-relaxed font-sans pt-1">
-              Constructive interference (bright fringes) occurs when path difference <strong class="text-slate-200">d·sin(θ) = m·λ</strong>. Destructive interference (dark fringes) occurs when <strong class="text-slate-200">d·sin(θ) = (m + 0.5)·λ</strong>.
-            </div>
-          </div>
-        </div>
-      </div>
+    
+    <!-- Presets -->
+    <div class="flex flex-wrap items-center gap-2 mt-3 md:mt-0">
+      <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider mr-1">Presets:</span>
+      <button id="btnMono" class="preset-btn active bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-3 py-1.5 rounded-lg text-xs font-medium transition hover:bg-cyan-500/30">
+        Monochromatic
+      </button>
+      <button id="btnRedLaser" class="preset-btn bg-slate-800 text-slate-300 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium transition hover:bg-slate-700 hover:text-white">
+        Red Laser (632.8 nm)
+      </button>
+      <button id="btnGreenLaser" class="preset-btn bg-slate-800 text-slate-300 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium transition hover:bg-slate-700 hover:text-white">
+        Green Laser (532 nm)
+      </button>
+      <button id="btnWhite" class="preset-btn bg-slate-800 text-slate-300 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium transition hover:bg-slate-700 hover:text-white">
+        White Light
+      </button>
     </div>
-  </div>
+  </header>
+
+  <main class="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1">
+    
+    <!-- LEFT PANEL: Controls & Settings -->
+    <aside class="lg:col-span-4 xl:col-span-3 bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col gap-5 overflow-y-auto max-h-[85vh] lg:max-h-none">
+      
+      <!-- Experiment Mode Selector -->
+      <div class="flex flex-col gap-2">
+        <label for="modeSelect" class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex justify-between">
+          <span>Experiment Apparatus</span>
+        </label>
+        <select id="modeSelect" class="bg-slate-800 border border-slate-700 text-slate-100 rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-cyan-500 outline-none">
+          <option value="double">Double Slit (N = 2)</option>
+          <option value="triple">Triple Slit (N = 3)</option>
+          <option value="grating100">Diffraction Grating (100 lines/mm)</option>
+          <option value="grating300">Diffraction Grating (300 lines/mm)</option>
+          <option value="grating600">Diffraction Grating (600 lines/mm)</option>
+        </select>
+      </div>
+
+      <div class="h-px bg-slate-800"></div>
+
+      <!-- Control Sliders -->
+      <div class="flex flex-col gap-4">
+        
+        <!-- Wavelength Slider -->
+        <div id="wavelengthContainer" class="flex flex-col gap-1.5">
+          <div class="flex justify-between items-center text-sm">
+            <label for="lambdaSlider" class="text-slate-300 font-medium">Wavelength (&lambda;)</label>
+            <span id="lambdaValue" class="font-mono-code text-cyan-400 font-semibold bg-cyan-950/60 border border-cyan-800/50 px-2 py-0.5 rounded text-xs">650 nm</span>
+          </div>
+          <input type="range" id="lambdaSlider" min="380" max="750" value="650" class="w-full">
+          <div class="h-1.5 rounded-full w-full mt-1 bg-gradient-to-r from-purple-600 via-blue-500 via-green-500 via-yellow-400 to-red-600 opacity-80"></div>
+        </div>
+
+        <!-- Slit Separation d -->
+        <div id="dContainer" class="flex flex-col gap-1.5">
+          <div class="flex justify-between items-center text-sm">
+            <label for="dSlider" class="text-slate-300 font-medium">Slit Separation (d)</label>
+            <span id="dValue" class="font-mono-code text-cyan-400 font-semibold bg-cyan-950/60 border border-cyan-800/50 px-2 py-0.5 rounded text-xs">0.25 mm</span>
+          </div>
+          <input type="range" id="dSlider" min="0.02" max="0.80" step="0.01" value="0.25" class="w-full">
+        </div>
+
+        <!-- Slit Width a -->
+        <div class="flex flex-col gap-1.5">
+          <div class="flex justify-between items-center text-sm">
+            <label for="aSlider" class="text-slate-300 font-medium">Slit Width (a)</label>
+            <span id="aValue" class="font-mono-code text-cyan-400 font-semibold bg-cyan-950/60 border border-cyan-800/50 px-2 py-0.5 rounded text-xs">0.040 mm</span>
+          </div>
+          <input type="range" id="aSlider" min="0.005" max="0.100" step="0.005" value="0.040" class="w-full">
+          <span class="text-[10px] text-slate-500">Controls single-slit diffraction envelope width</span>
+        </div>
+
+        <!-- Screen Distance L -->
+        <div class="flex flex-col gap-1.5">
+          <div class="flex justify-between items-center text-sm">
+            <label for="lSlider" class="text-slate-300 font-medium">Screen Distance (L)</label>
+            <span id="lValue" class="font-mono-code text-cyan-400 font-semibold bg-cyan-950/60 border border-cyan-800/50 px-2 py-0.5 rounded text-xs">1.50 m</span>
+          </div>
+          <input type="range" id="lSlider" min="0.5" max="3.0" step="0.05" value="1.50" class="w-full">
+        </div>
+
+      </div>
+
+      <div class="h-px bg-slate-800"></div>
+
+      <!-- Physics Calculations Output Cards -->
+      <div class="flex flex-col gap-2">
+        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Calculated Parameters</span>
+        
+        <div class="grid grid-cols-1 gap-2 text-xs">
+          <div class="bg-slate-950/60 border border-slate-800/80 rounded-lg p-2.5 flex justify-between items-center">
+            <span class="text-slate-400">Fringe Spacing (&Delta;y = &lambda;L/d):</span>
+            <span id="calcDeltaY" class="font-mono-code font-bold text-emerald-400">3.90 mm</span>
+          </div>
+          
+          <div class="bg-slate-950/60 border border-slate-800/80 rounded-lg p-2.5 flex justify-between items-center">
+            <span class="text-slate-400">1st Max Angle (&theta;<sub>1</sub> = arcsin(&lambda;/d)):</span>
+            <span id="calcTheta1" class="font-mono-code font-bold text-sky-400">0.149&deg;</span>
+          </div>
+
+          <div class="bg-slate-950/60 border border-slate-800/80 rounded-lg p-2.5 flex justify-between items-center">
+            <span class="text-slate-400">1st Diff Zero (&theta;<sub>min</sub> = arcsin(&lambda;/a)):</span>
+            <span id="calcThetaMin" class="font-mono-code font-bold text-amber-400">0.931&deg;</span>
+          </div>
+
+          <div class="bg-slate-950/60 border border-slate-800/80 rounded-lg p-2.5 flex justify-between items-center">
+            <span class="text-slate-400">Central Envelope Width (2&lambda;L/a):</span>
+            <span id="calcEnvWidth" class="font-mono-code font-bold text-purple-400">48.75 mm</span>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- RIGHT PANEL: 3 Visualizations Stacked -->
+    <section class="lg:col-span-8 xl:col-span-9 flex flex-col gap-4">
+      
+      <!-- 1. 2D Wave Propagation Visualizer -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 flex flex-col gap-2 relative glow-box">
+        <div class="flex justify-between items-center px-1">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">Overhead Wave Interference Field</h2>
+          </div>
+          <span class="text-[11px] text-slate-500 font-mono-code">Planar &amp; Circular Wavefronts</span>
+        </div>
+        <div class="relative w-full h-44 bg-black rounded-lg overflow-hidden border border-slate-800/80">
+          <canvas id="waveCanvas" class="w-full h-full block"></canvas>
+        </div>
+      </div>
+
+      <!-- 2. Physical Screen Projection Bar -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 flex flex-col gap-2">
+        <div class="flex justify-between items-center px-1">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">Observation Screen Projection</h2>
+          </div>
+          <span class="text-[11px] text-slate-500 font-mono-code">Photorealistic Visual Pattern</span>
+        </div>
+        <div class="relative w-full h-14 bg-black rounded-lg overflow-hidden border border-slate-800/80">
+          <canvas id="screenCanvas" class="w-full h-full block"></canvas>
+        </div>
+      </div>
+
+      <!-- 3. PROMINENT CANVAS INTENSITY GRAPH WITH HOVER INSPECTION -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 flex flex-col gap-2 flex-1 min-h-[300px] relative">
+        <div class="flex justify-between items-center px-1">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">Interactive Intensity Spectrum Graph: I(y)</h2>
+          </div>
+          <div class="flex items-center gap-3 text-[11px]">
+            <div class="flex items-center gap-1 text-slate-400">
+              <span class="w-3 h-0.5 bg-cyan-400"></span> Total Pattern
+            </div>
+            <div class="flex items-center gap-1 text-slate-400">
+              <span class="w-3 h-0.5 bg-amber-400/80 border border-dashed border-amber-400"></span> Envelope
+            </div>
+            <span class="text-cyan-400/80 font-medium animate-pulse">Hover to Inspect Maxima</span>
+          </div>
+        </div>
+
+        <!-- Graph Canvas Container -->
+        <div class="relative flex-1 w-full min-h-[250px] bg-slate-950/80 rounded-lg overflow-hidden border border-slate-800/80">
+          <canvas id="graphCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
 
   <script>
-    const canvas = document.getElementById('opticsCanvas');
-    const ctx = canvas.getContext('2d');
+    // State management
+    const state = {
+      mode: 'double', // double, triple, grating100, grating300, grating600
+      isWhiteLight: false,
+      lambda: 650, // nm
+      d: 0.25, // mm
+      a: 0.04, // mm
+      L: 1.50, // meters
+      timePhase: 0,
+      mouseX: null,
+      mouseY: null,
+      isHoveringGraph: false
+    };
 
-    let wavelength = 532; // nm
-    let slitDist = 0.25;  // mm
-    let screenDist = 1.25; // m
-    let numSlits = 2;
-    let slitWidth = 0.05; // mm
+    // DOM Element Handles
+    const waveCanvas = document.getElementById('waveCanvas');
+    const waveCtx = waveCanvas.getContext('2d');
+    
+    const screenCanvas = document.getElementById('screenCanvas');
+    const screenCtx = screenCanvas.getContext('2d');
+    
+    const graphCanvas = document.getElementById('graphCanvas');
+    const graphCtx = graphCanvas.getContext('2d');
 
-    function wavelengthToColor(wl) {
-      if (wl < 420) return '#8b5cf6'; // Violet
-      if (wl < 490) return '#3b82f6'; // Blue
-      if (wl < 560) return '#10b981'; // Green
-      if (wl < 590) return '#eab308'; // Yellow
-      if (wl < 640) return '#f97316'; // Orange
-      return '#ef4444'; // Red
-    }
+    const modeSelect = document.getElementById('modeSelect');
+    const lambdaSlider = document.getElementById('lambdaSlider');
+    const lambdaValue = document.getElementById('lambdaValue');
+    const dSlider = document.getElementById('dSlider');
+    const dValue = document.getElementById('dValue');
+    const aSlider = document.getElementById('aSlider');
+    const aValue = document.getElementById('aValue');
+    const lSlider = document.getElementById('lSlider');
+    const lValue = document.getElementById('lValue');
 
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const w = canvas.width;
-      const h = canvas.height;
+    const wavelengthContainer = document.getElementById('wavelengthContainer');
+    const dContainer = document.getElementById('dContainer');
 
-      const slitBarrierX = 140;
-      const screenX = w - 60;
-      const midY = h / 2;
+    const btnMono = document.getElementById('btnMono');
+    const btnRedLaser = document.getElementById('btnRedLaser');
+    const btnGreenLaser = document.getElementById('btnGreenLaser');
+    const btnWhite = document.getElementById('btnWhite');
 
-      const laserColor = wavelengthToColor(wavelength);
+    const calcDeltaY = document.getElementById('calcDeltaY');
+    const calcTheta1 = document.getElementById('calcTheta1');
+    const calcThetaMin = document.getElementById('calcThetaMin');
+    const calcEnvWidth = document.getElementById('calcEnvWidth');
 
-      // Laser source box on left
-      ctx.fillStyle = '#1e293b';
-      ctx.fillRect(10, midY - 30, 60, 60);
-      ctx.strokeStyle = '#475569';
-      ctx.strokeRect(10, midY - 30, 60, 60);
-      ctx.fillStyle = laserColor;
-      ctx.fillRect(65, midY - 6, 12, 12);
-
-      // Incident beam from laser to slit barrier
-      ctx.fillStyle = laserColor;
-      ctx.globalAlpha = 0.4;
-      ctx.fillRect(70, midY - 15, slitBarrierX - 70, 30);
-      ctx.globalAlpha = 1.0;
-
-      // Slit Barrier (Opaque Wall)
-      ctx.fillStyle = '#334155';
-      ctx.fillRect(slitBarrierX - 4, 20, 8, h - 40);
-
-      // Slit Aperture Clearances
-      ctx.fillStyle = '#0f172a';
-      if (numSlits === 1) {
-        ctx.fillRect(slitBarrierX - 5, midY - 10, 10, 20);
-      } else {
-        const slitSpacingPx = Math.max(12, slitDist * 80);
-        for (let i = 0; i < numSlits; i++) {
-          const sy = midY + (i - (numSlits - 1) / 2) * slitSpacingPx;
-          ctx.fillRect(slitBarrierX - 5, sy - 4, 10, 8);
-        }
+    // Convert wavelength (nm) to RGB string
+    function wavelengthToRGB(wavelength) {
+      if (state.isWhiteLight) return { r: 255, g: 255, b: 255, css: 'rgb(255,255,255)' };
+      
+      let r = 0, g = 0, b = 0;
+      if (wavelength >= 380 && wavelength < 440) {
+        r = -(wavelength - 440) / (440 - 380);
+        b = 1.0;
+      } else if (wavelength >= 440 && wavelength < 490) {
+        g = (wavelength - 440) / (490 - 440);
+        b = 1.0;
+      } else if (wavelength >= 490 && wavelength < 510) {
+        g = 1.0;
+        b = -(wavelength - 510) / (510 - 490);
+      } else if (wavelength >= 510 && wavelength < 580) {
+        r = (wavelength - 510) / (580 - 510);
+        g = 1.0;
+      } else if (wavelength >= 580 && wavelength < 645) {
+        r = 1.0;
+        g = -(wavelength - 645) / (645 - 580);
+      } else if (wavelength >= 645 && wavelength <= 750) {
+        r = 1.0;
       }
 
-      // Detection Screen on Right
-      ctx.fillStyle = '#1e293b';
-      ctx.fillRect(screenX, 20, 15, h - 40);
-      ctx.strokeStyle = '#475569';
-      ctx.strokeRect(screenX, 20, 15, h - 40);
-
-      // Calculate intensity pattern on screen
-      // I(theta) = I0 * (sin(alpha)/alpha)^2 * (sin(N*beta)/sin(beta))^2
-      const N = numSlits;
-      const k = (2 * Math.PI) / (wavelength * 1e-9);
-      const d_m = slitDist * 1e-3;
-      const a_m = slitWidth * 1e-3;
-      const L_m = screenDist;
-
-      // Draw intensity curve
-      ctx.beginPath();
-      ctx.strokeStyle = laserColor;
-      ctx.lineWidth = 2;
-
-      for (let py = 25; py <= h - 25; py++) {
-        const y_m = ((py - midY) / 200) * 0.04; // scale
-        const theta = Math.atan2(y_m, L_m);
-
-        // Single slit diffraction alpha
-        const alpha = (k * a_m * Math.sin(theta)) / 2;
-        const diffFactor = alpha === 0 ? 1 : Math.pow(Math.sin(alpha) / alpha, 2);
-
-        // Multi-slit interference beta
-        let interfFactor = 1;
-        if (N > 1) {
-          const beta = (k * d_m * Math.sin(theta)) / 2;
-          interfFactor = Math.abs(Math.sin(beta)) < 1e-5 ? (N * N) : Math.pow(Math.sin(N * beta) / Math.sin(beta), 2);
-          interfFactor /= (N * N);
-        }
-
-        const intensity = Math.min(1.0, diffFactor * interfFactor);
-        const curveX = screenX - intensity * 160;
-
-        if (py === 25) ctx.moveTo(curveX, py);
-        else ctx.lineTo(curveX, py);
-
-        // Screen color illumination fringe
-        ctx.fillStyle = laserColor;
-        ctx.globalAlpha = intensity * 0.9;
-        ctx.fillRect(screenX + 2, py, 11, 1);
-        ctx.globalAlpha = 1.0;
+      let factor = 1.0;
+      if (wavelength >= 380 && wavelength < 420) {
+        factor = 0.3 + 0.7 * (wavelength - 380) / (420 - 380);
+      } else if (wavelength >= 700 && wavelength <= 750) {
+        factor = 0.3 + 0.7 * (750 - wavelength) / (750 - 700);
       }
-      ctx.stroke();
+
+      r = Math.round(Math.pow(r * factor, 0.8) * 255);
+      g = Math.round(Math.pow(g * factor, 0.8) * 255);
+      b = Math.round(Math.pow(b * factor, 0.8) * 255);
+
+      return { r, g, b, css: `rgb(${r}, ${g}, ${b})` };
     }
 
-    function update() {
-      const deltaY_mm = (wavelength * 1e-9 * screenDist) / (slitDist * 1e-3) * 1000;
-      const centralWidth_mm = (2 * wavelength * 1e-9 * screenDist) / (slitWidth * 1e-3) * 1000;
-
-      document.getElementById('lambdaVal').textContent = `${wavelength} nm`;
-      document.getElementById('lambdaLabel').textContent = `${wavelength} nm`;
-      document.getElementById('dVal').textContent = `${slitDist.toFixed(2)} mm`;
-      document.getElementById('lVal').textContent = `${screenDist.toFixed(2)} m`;
-      document.getElementById('fringeLabel').textContent = `${deltaY_mm.toFixed(2)} mm`;
-      document.getElementById('calcFringe').textContent = `${deltaY_mm.toFixed(2)} mm`;
-      document.getElementById('calcCentralWidth').textContent = `${centralWidth_mm.toFixed(2)} mm`;
-      document.getElementById('calcPathDiff').textContent = `${wavelength.toFixed(1)} nm (= λ)`;
-
-      draw();
-    }
-
-    document.getElementById('sliderLambda').addEventListener('input', (e) => {
-      wavelength = parseFloat(e.target.value);
-      update();
-    });
-
-    document.getElementById('sliderD').addEventListener('input', (e) => {
-      slitDist = parseFloat(e.target.value);
-      update();
-    });
-
-    document.getElementById('sliderL').addEventListener('input', (e) => {
-      screenDist = parseFloat(e.target.value);
-      update();
-    });
-
-    document.querySelectorAll('.slit-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        document.querySelectorAll('.slit-btn').forEach(b => {
-          b.className = 'slit-btn px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 text-left font-medium text-slate-300';
-        });
-        const cur = e.currentTarget;
-        cur.className = 'slit-btn px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-emerald-500/50 text-left font-medium text-emerald-300';
-        numSlits = parseInt(cur.dataset.slits, 10);
-        update();
+    // Resize canvases for crisp high-DPI rendering
+    function resizeCanvases() {
+      [waveCanvas, screenCanvas, graphCanvas].forEach(canvas => {
+        const rect = canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
       });
+    }
+    window.addEventListener('resize', resizeCanvases);
+
+    // Calculate intensity for angle theta and given wavelength
+    function getPhysicsData(theta, wl = state.lambda) {
+      const lambdaM = wl * 1e-9;
+      const aM = state.a * 1e-3;
+      const dM = state.d * 1e-3;
+
+      // Single Slit Envelope (Diffraction)
+      const beta = (Math.PI * aM / lambdaM) * Math.sin(theta);
+      const I_diffraction = Math.abs(beta) < 1e-7 ? 1.0 : Math.pow(Math.sin(beta) / beta, 2);
+
+      // Multi-Slit Interference
+      let N = 2;
+      if (state.mode === 'triple') N = 3;
+      else if (state.mode === 'grating100') N = 6;
+      else if (state.mode === 'grating300') N = 10;
+      else if (state.mode === 'grating600') N = 16;
+
+      const alpha = (Math.PI * dM / lambdaM) * Math.sin(theta);
+      const sinAlpha = Math.sin(alpha);
+      
+      let I_interference = 1.0;
+      if (Math.abs(sinAlpha) < 1e-6) {
+        I_interference = 1.0;
+      } else {
+        I_interference = Math.pow(Math.sin(N * alpha) / (N * sinAlpha), 2);
+      }
+
+      const totalIntensity = I_diffraction * I_interference;
+
+      // Order, path difference & phase difference
+      const pathDiff = dM * Math.sin(theta); // meters
+      const order = pathDiff / lambdaM;
+      const phaseDiff = (2 * Math.PI * pathDiff / lambdaM);
+
+      return {
+        totalIntensity,
+        I_diffraction,
+        I_interference,
+        pathDiff,
+        order,
+        phaseDiff,
+        theta
+      };
+    }
+
+    // Update Physics Calculations Text Readouts
+    function updateCalculations() {
+      const lambdaM = state.lambda * 1e-9;
+      const dM = state.d * 1e-3;
+      const aM = state.a * 1e-3;
+
+      if (state.isWhiteLight) {
+        calcDeltaY.textContent = "Rainbow Spectrum";
+        calcTheta1.textContent = "Continuous Dispersion";
+      } else {
+        const deltaY = (lambdaM * state.L / dM) * 1000; // mm
+        calcDeltaY.textContent = deltaY < 100 ? `${deltaY.toFixed(2)} mm` : `${(deltaY / 10).toFixed(2)} cm`;
+
+        const sinTheta1 = lambdaM / dM;
+        if (sinTheta1 <= 1) {
+          const theta1Deg = (Math.asin(sinTheta1) * 180 / Math.PI);
+          calcTheta1.textContent = `${theta1Deg.toFixed(3)}°`;
+        } else {
+          calcTheta1.textContent = "N/A (λ > d)";
+        }
+      }
+
+      const sinThetaMin = lambdaM / aM;
+      if (sinThetaMin <= 1) {
+        const thetaMinDeg = (Math.asin(sinThetaMin) * 180 / Math.PI);
+        calcThetaMin.textContent = `${thetaMinDeg.toFixed(3)}°`;
+      } else {
+        calcThetaMin.textContent = "N/A (λ > a)";
+      }
+
+      const envWidth = (2 * lambdaM * state.L / aM) * 1000;
+      calcEnvWidth.textContent = envWidth < 100 ? `${envWidth.toFixed(2)} mm` : `${(envWidth / 10).toFixed(2)} cm`;
+    }
+
+    function drawWaveField() {
+      const dpr = window.devicePixelRatio || 1;
+      const w = waveCanvas.width;
+      const h = waveCanvas.height;
+
+      waveCtx.clearRect(0, 0, w, h);
+
+      // Draw background
+      waveCtx.fillStyle = "#020617";
+      waveCtx.fillRect(0, 0, w, h);
+
+      const color = wavelengthToRGB(state.lambda);
+      let N = 2;
+      if (state.mode === 'triple') N = 3;
+      else if (state.mode === 'grating100') N = 5;
+      else if (state.mode === 'grating300') N = 7;
+      else if (state.mode === 'grating600') N = 9;
+
+      const slitX = 60 * dpr;
+      const slitYCenter = h / 2;
+      const slitSpacingPx = Math.min(30 * dpr, Math.max(8 * dpr, state.d * 80 * dpr));
+
+      const slitYPositions = [];
+      for (let i = 0; i < N; i++) {
+        slitYPositions.push(slitYCenter + (i - (N - 1) / 2) * slitSpacingPx);
+      }
+
+      const waveLengthPx = (state.lambda / 650) * (20 * dpr);
+      const waveVector = (2 * Math.PI) / waveLengthPx;
+
+      // Draw Incoming Planar Waves
+      waveCtx.lineWidth = 1.5 * dpr;
+      const planeWaveOffset = (state.timePhase * waveLengthPx / (2 * Math.PI)) % waveLengthPx;
+      for (let x = planeWaveOffset; x < slitX; x += waveLengthPx) {
+        waveCtx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 0.35)`;
+        waveCtx.beginPath();
+        waveCtx.moveTo(x, 0);
+        waveCtx.lineTo(x, h);
+        waveCtx.stroke();
+      }
+
+      // Draw Slit Barrier
+      waveCtx.fillStyle = "#334155";
+      waveCtx.fillRect(slitX - (3 * dpr), 0, 6 * dpr, h);
+
+      // Clear Slit Holes
+      const slitSizePx = Math.max(3 * dpr, state.a * 100 * dpr);
+      waveCtx.fillStyle = "#020617";
+      slitYPositions.forEach(y => {
+        waveCtx.fillRect(slitX - (4 * dpr), y - slitSizePx / 2, 8 * dpr, slitSizePx);
+      });
+
+      // Draw Circular Waves Interfering from Slits
+      const maxRadius = w - slitX;
+      for (let r = (state.timePhase * waveLengthPx / (2 * Math.PI)) % waveLengthPx; r < maxRadius; r += waveLengthPx) {
+        const opacity = Math.max(0, 0.7 * (1 - r / maxRadius));
+        waveCtx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity})`;
+        
+        slitYPositions.forEach(y => {
+          waveCtx.beginPath();
+          waveCtx.arc(slitX, y, r, -Math.PI / 2, Math.PI / 2);
+          waveCtx.stroke();
+        });
+      }
+    }
+
+    function drawScreenBar() {
+      const dpr = window.devicePixelRatio || 1;
+      const w = screenCanvas.width;
+      const h = screenCanvas.height;
+
+      screenCtx.clearRect(0, 0, w, h);
+      screenCtx.fillStyle = "#000000";
+      screenCtx.fillRect(0, 0, w, h);
+
+      const maxPosMeters = 0.04; // +-4 cm range across screen width
+
+      if (state.isWhiteLight) {
+        // Multi-wavelength superposition for White Light
+        for (let x = 0; x < w; x++) {
+          const yPos = ((x - w / 2) / (w / 2)) * maxPosMeters;
+          const theta = Math.atan(yPos / state.L);
+
+          let totR = 0, totG = 0, totB = 0;
+          for (let wl = 390; wl <= 720; wl += 15) {
+            const data = getPhysicsData(theta, wl);
+            const c = wavelengthToRGB(wl);
+            totR += c.r * data.totalIntensity;
+            totG += c.g * data.totalIntensity;
+            totB += c.b * data.totalIntensity;
+          }
+
+          totR = Math.min(255, totR / 4);
+          totG = Math.min(255, totG / 4);
+          totB = Math.min(255, totB / 4);
+
+          screenCtx.fillStyle = `rgb(${totR}, ${totG}, ${totB})`;
+          screenCtx.fillRect(x, 0, 1, h);
+        }
+      } else {
+        const color = wavelengthToRGB(state.lambda);
+        for (let x = 0; x < w; x++) {
+          const yPos = ((x - w / 2) / (w / 2)) * maxPosMeters;
+          const theta = Math.atan(yPos / state.L);
+          const data = getPhysicsData(theta, state.lambda);
+
+          screenCtx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${data.totalIntensity})`;
+          screenCtx.fillRect(x, 0, 1, h);
+        }
+      }
+
+      // Screen Frame Overlay
+      screenCtx.strokeStyle = "#475569";
+      screenCtx.lineWidth = 2 * dpr;
+      screenCtx.strokeRect(0, 0, w, h);
+    }
+
+    function drawIntensityGraph() {
+      const dpr = window.devicePixelRatio || 1;
+      const w = graphCanvas.width;
+      const h = graphCanvas.height;
+
+      graphCtx.clearRect(0, 0, w, h);
+
+      // Graph Paddings
+      const padding = {
+        left: 45 * dpr,
+        right: 20 * dpr,
+        top: 25 * dpr,
+        bottom: 35 * dpr
+      };
+
+      const plotWidth = w - padding.left - padding.right;
+      const plotHeight = h - padding.top - padding.bottom;
+
+      const maxPosMeters = 0.04; // +- 40 mm Screen Range
+      const color = wavelengthToRGB(state.lambda);
+
+      // Grid Lines & Axes
+      graphCtx.strokeStyle = "#1e293b";
+      graphCtx.lineWidth = 1 * dpr;
+
+      // Horizontal Grid
+      for (let i = 0; i <= 4; i++) {
+        const y = padding.top + (plotHeight / 4) * i;
+        graphCtx.beginPath();
+        graphCtx.moveTo(padding.left, y);
+        graphCtx.lineTo(w - padding.right, y);
+        graphCtx.stroke();
+
+        // Y-Axis Labels
+        graphCtx.fillStyle = "#64748b";
+        graphCtx.font = `${10 * dpr}px JetBrains Mono, monospace`;
+        graphCtx.textAlign = "right";
+        graphCtx.fillText(((1 - i / 4)).toFixed(2), padding.left - (6 * dpr), y + (3 * dpr));
+      }
+
+      // Vertical Center Line
+      const centerX = padding.left + plotWidth / 2;
+      graphCtx.strokeStyle = "#334155";
+      graphCtx.beginPath();
+      graphCtx.moveTo(centerX, padding.top);
+      graphCtx.lineTo(centerX, h - padding.bottom);
+      graphCtx.stroke();
+
+      // X-Axis Scale Ticks (-40mm to +40mm)
+      graphCtx.textAlign = "center";
+      for (let mm = -40; mm <= 40; mm += 20) {
+        const x = padding.left + ((mm + 40) / 80) * plotWidth;
+        graphCtx.fillStyle = "#64748b";
+        graphCtx.fillText(`${mm}`, x, h - padding.bottom + (16 * dpr));
+      }
+      graphCtx.fillText("Screen Position y (mm)", centerX, h - (6 * dpr));
+
+      // 1. Draw Single Slit Diffraction Envelope (Dashed Line)
+      graphCtx.setLineDash([4 * dpr, 4 * dpr]);
+      graphCtx.strokeStyle = "#f59e0b"; // Amber Envelope
+      graphCtx.lineWidth = 1.5 * dpr;
+      graphCtx.beginPath();
+
+      for (let px = 0; px <= plotWidth; px += 2) {
+        const xNorm = px / plotWidth;
+        const yPos = (xNorm - 0.5) * (2 * maxPosMeters);
+        const theta = Math.atan(yPos / state.L);
+        const data = getPhysicsData(theta, state.lambda);
+
+        const canvasX = padding.left + px;
+        const canvasY = padding.top + plotHeight * (1 - data.I_diffraction);
+
+        if (px === 0) graphCtx.moveTo(canvasX, canvasY);
+        else graphCtx.lineTo(canvasX, canvasY);
+      }
+      graphCtx.stroke();
+      graphCtx.setLineDash([]); // Reset line dash
+
+      // 2. Draw Total Multi-Slit Intensity Curve
+      graphCtx.strokeStyle = color.css;
+      graphCtx.lineWidth = 2 * dpr;
+      graphCtx.beginPath();
+
+      const points = [];
+      for (let px = 0; px <= plotWidth; px++) {
+        const xNorm = px / plotWidth;
+        const yPos = (xNorm - 0.5) * (2 * maxPosMeters);
+        const theta = Math.atan(yPos / state.L);
+        const data = getPhysicsData(theta, state.lambda);
+
+        const canvasX = padding.left + px;
+        const canvasY = padding.top + plotHeight * (1 - data.totalIntensity);
+
+        points.push({ canvasX, canvasY, yPos, theta, data });
+
+        if (px === 0) graphCtx.moveTo(canvasX, canvasY);
+        else graphCtx.lineTo(canvasX, canvasY);
+      }
+      graphCtx.stroke();
+
+      // Fill Gradient under graph
+      graphCtx.lineTo(padding.left + plotWidth, padding.top + plotHeight);
+      graphCtx.lineTo(padding.left, padding.top + plotHeight);
+      graphCtx.closePath();
+      const fillGrad = graphCtx.createLinearGradient(0, padding.top, 0, padding.top + plotHeight);
+      fillGrad.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, 0.25)`);
+      fillGrad.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0.0)`);
+      graphCtx.fillStyle = fillGrad;
+      graphCtx.fill();
+
+      // 3. Peak Marker Detection & Highlights (m = 0, +-1, +-2...)
+      graphCtx.fillStyle = "#38bdf8";
+      for (let i = 2; i < points.length - 2; i++) {
+        const p = points[i];
+        if (p.data.totalIntensity > 0.12 &&
+            p.data.totalIntensity >= points[i - 1].data.totalIntensity &&
+            p.data.totalIntensity >= points[i + 1].data.totalIntensity &&
+            p.data.totalIntensity > points[i - 2].data.totalIntensity) {
+          
+          const roundedOrder = Math.round(p.data.order);
+          if (Math.abs(p.data.order - roundedOrder) < 0.08) {
+            graphCtx.beginPath();
+            graphCtx.arc(p.canvasX, p.canvasY, 3.5 * dpr, 0, Math.PI * 2);
+            graphCtx.fill();
+            
+            // Label order m above peak
+            if (p.canvasY - (10 * dpr) > padding.top) {
+              graphCtx.fillStyle = "#94a3b8";
+              graphCtx.font = `${9 * dpr}px JetBrains Mono, monospace`;
+              graphCtx.textAlign = "center";
+              graphCtx.fillText(`m=${roundedOrder}`, p.canvasX, p.canvasY - (6 * dpr));
+              graphCtx.fillStyle = "#38bdf8";
+            }
+          }
+        }
+      }
+
+      // 4. Interactive Hover & Crosshairs
+      if (state.isHoveringGraph && state.mouseX !== null) {
+        const hoverX = Math.max(padding.left, Math.min(w - padding.right, state.mouseX * dpr));
+        const px = hoverX - padding.left;
+        const xNorm = px / plotWidth;
+        const yPos = (xNorm - 0.5) * (2 * maxPosMeters);
+        const theta = Math.atan(yPos / state.L);
+        const data = getPhysicsData(theta, state.lambda);
+        const hoverY = padding.top + plotHeight * (1 - data.totalIntensity);
+
+        // Vertical Crosshair
+        graphCtx.strokeStyle = "rgba(56, 189, 248, 0.7)";
+        graphCtx.lineWidth = 1 * dpr;
+        graphCtx.setLineDash([3 * dpr, 3 * dpr]);
+        graphCtx.beginPath();
+        graphCtx.moveTo(hoverX, padding.top);
+        graphCtx.lineTo(hoverX, h - padding.bottom);
+        graphCtx.stroke();
+
+        // Horizontal Crosshair
+        graphCtx.beginPath();
+        graphCtx.moveTo(padding.left, hoverY);
+        graphCtx.lineTo(w - padding.right, hoverY);
+        graphCtx.stroke();
+        graphCtx.setLineDash([]);
+
+        // Highlight Hover Point
+        graphCtx.fillStyle = "#38bdf8";
+        graphCtx.strokeStyle = "#ffffff";
+        graphCtx.lineWidth = 2 * dpr;
+        graphCtx.beginPath();
+        graphCtx.arc(hoverX, hoverY, 5 * dpr, 0, Math.PI * 2);
+        graphCtx.fill();
+        graphCtx.stroke();
+
+        // Tooltip Card Rendering
+        drawTooltipCard(graphCtx, hoverX, hoverY, yPos, theta, data, w, h, dpr);
+      }
+    }
+
+    // Render In-Canvas Inspection Tooltip Card
+    function drawTooltipCard(ctx, x, y, yPos, theta, data, w, h, dpr) {
+      const cardW = 195 * dpr;
+      const cardH = 115 * dpr;
+      
+      let cardX = x + (15 * dpr);
+      let cardY = y - (cardH / 2);
+
+      // Flip tooltip left/right if near canvas edge
+      if (cardX + cardW > w - (10 * dpr)) {
+        cardX = x - cardW - (15 * dpr);
+      }
+      if (cardY < (10 * dpr)) cardY = 10 * dpr;
+      if (cardY + cardH > h - (10 * dpr)) cardY = h - cardH - (10 * dpr);
+
+      // Card Background & Shadow
+      ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
+      ctx.strokeStyle = "#0284c7";
+      ctx.lineWidth = 1.5 * dpr;
+      
+      ctx.beginPath();
+      ctx.roundRect(cardX, cardY, cardW, cardH, 8 * dpr);
+      ctx.fill();
+      ctx.stroke();
+
+      // Tooltip Header
+      ctx.fillStyle = "#38bdf8";
+      ctx.font = `bold ${11 * dpr}px Inter, sans-serif`;
+      ctx.textAlign = "left";
+      ctx.fillText(`Order m: ${data.order.toFixed(2)}`, cardX + (10 * dpr), cardY + (18 * dpr));
+
+      // Tooltip Text Lines
+      ctx.fillStyle = "#cbd5e1";
+      ctx.font = `${10 * dpr}px JetBrains Mono, monospace`;
+
+      const thetaDeg = theta * (180 / Math.PI);
+      const lines = [
+        `Pos (y): ${(yPos * 1000).toFixed(2)} mm`,
+        `Angle (θ): ${thetaDeg.toFixed(3)}°`,
+        `Intensity (I/I₀): ${(data.totalIntensity * 100).toFixed(1)}%`,
+        `Path Diff (Δx): ${(data.pathDiff * 1e6).toFixed(2)} μm`,
+        `Phase Diff (Δφ): ${(data.phaseDiff % (2*Math.PI) * 180 / Math.PI).toFixed(1)}°`
+      ];
+
+      lines.forEach((line, idx) => {
+        ctx.fillText(line, cardX + (10 * dpr), cardY + (36 * dpr) + (idx * 15 * dpr));
+      });
+    }
+
+    // Event Listeners for Hover and Inspection
+    graphCanvas.addEventListener('mousemove', (e) => {
+      const rect = graphCanvas.getBoundingClientRect();
+      state.mouseX = e.clientX - rect.left;
+      state.mouseY = e.clientY - rect.top;
+      state.isHoveringGraph = true;
     });
 
-    document.getElementById('btnLaserRed').addEventListener('click', () => {
-      wavelength = 650;
-      document.getElementById('sliderLambda').value = 650;
-      update();
+    graphCanvas.addEventListener('mouseleave', () => {
+      state.isHoveringGraph = false;
+      state.mouseX = null;
+      state.mouseY = null;
     });
 
-    document.getElementById('btnLaserGreen').addEventListener('click', () => {
-      wavelength = 532;
-      document.getElementById('sliderLambda').value = 532;
-      update();
+    // Control Event Binding
+    modeSelect.addEventListener('change', (e) => {
+      state.mode = e.target.value;
+      if (state.mode.startsWith('grating')) {
+        const linesPerMm = parseInt(state.mode.replace('grating', ''));
+        state.d = 1.0 / linesPerMm; // mm
+        dSlider.value = state.d;
+        dValue.textContent = `${state.d.toFixed(4)} mm`;
+        dContainer.classList.add('opacity-40', 'pointer-events-none');
+      } else {
+        dContainer.classList.remove('opacity-40', 'pointer-events-none');
+        state.d = parseFloat(dSlider.value);
+        dValue.textContent = `${state.d.toFixed(2)} mm`;
+      }
+      updateCalculations();
     });
 
-    document.getElementById('btnLaserViolet').addEventListener('click', () => {
-      wavelength = 405;
-      document.getElementById('sliderLambda').value = 405;
-      update();
+    lambdaSlider.addEventListener('input', (e) => {
+      state.lambda = parseFloat(e.target.value);
+      lambdaValue.textContent = `${state.lambda} nm`;
+      updateCalculations();
     });
 
-    update();
+    dSlider.addEventListener('input', (e) => {
+      state.d = parseFloat(e.target.value);
+      dValue.textContent = `${state.d.toFixed(2)} mm`;
+      updateCalculations();
+    });
+
+    aSlider.addEventListener('input', (e) => {
+      state.a = parseFloat(e.target.value);
+      aValue.textContent = `${state.a.toFixed(3)} mm`;
+      updateCalculations();
+    });
+
+    lSlider.addEventListener('input', (e) => {
+      state.L = parseFloat(e.target.value);
+      lValue.textContent = `${state.L.toFixed(2)} m`;
+      updateCalculations();
+    });
+
+    // Presets Event Bindings
+    function setActivePresetBtn(activeBtn) {
+      [btnMono, btnRedLaser, btnGreenLaser, btnWhite].forEach(btn => {
+        btn.classList.remove('active', 'bg-cyan-500/20', 'text-cyan-300', 'border-cyan-500/40');
+        btn.classList.add('bg-slate-800', 'text-slate-300', 'border-slate-700');
+      });
+      activeBtn.classList.add('active', 'bg-cyan-500/20', 'text-cyan-300', 'border-cyan-500/40');
+      activeBtn.classList.remove('bg-slate-800', 'text-slate-300', 'border-slate-700');
+    }
+
+    btnMono.addEventListener('click', () => {
+      setActivePresetBtn(btnMono);
+      state.isWhiteLight = false;
+      wavelengthContainer.classList.remove('opacity-40', 'pointer-events-none');
+      updateCalculations();
+    });
+
+    btnRedLaser.addEventListener('click', () => {
+      setActivePresetBtn(btnRedLaser);
+      state.isWhiteLight = false;
+      wavelengthContainer.classList.remove('opacity-40', 'pointer-events-none');
+      state.lambda = 632.8;
+      lambdaSlider.value = 633;
+      lambdaValue.textContent = "632.8 nm";
+      updateCalculations();
+    });
+
+    btnGreenLaser.addEventListener('click', () => {
+      setActivePresetBtn(btnGreenLaser);
+      state.isWhiteLight = false;
+      wavelengthContainer.classList.remove('opacity-40', 'pointer-events-none');
+      state.lambda = 532;
+      lambdaSlider.value = 532;
+      lambdaValue.textContent = "532.0 nm";
+      updateCalculations();
+    });
+
+    btnWhite.addEventListener('click', () => {
+      setActivePresetBtn(btnWhite);
+      state.isWhiteLight = true;
+      wavelengthContainer.classList.add('opacity-40', 'pointer-events-none');
+      updateCalculations();
+    });
+
+    // Animation Render Loop
+    function animate() {
+      state.timePhase += 0.12;
+      drawWaveField();
+      drawScreenBar();
+      drawIntensityGraph();
+      requestAnimationFrame(animate);
+    }
+
+    // Start Simulation on Window Load
+    window.onload = () => {
+      resizeCanvases();
+      updateCalculations();
+      animate();
+    };
   </script>
 </body>
 </html>

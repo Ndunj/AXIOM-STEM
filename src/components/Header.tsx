@@ -12,7 +12,6 @@ import {
 import {
   Atom,
   ShoppingCart,
-  BookOpen,
   FileCheck2,
   Search,
   Sparkles,
@@ -22,7 +21,6 @@ import {
   Code2,
   ShieldCheck,
   Lock,
-  Unlock,
   PlusCircle,
   Share2,
   LogIn,
@@ -166,19 +164,6 @@ export const Header: React.FC<HeaderProps> = ({
               <span>{t("lemonStorePayouts")}</span>
             </button>
           )}
-
-          {/* Mode Switcher Toggle */}
-          <button
-            onClick={onToggleCreatorMode}
-            className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-md border flex items-center gap-1.5 transition-all cursor-pointer ${
-              isCreatorMode
-                ? "bg-amber-500/20 text-amber-300 border-amber-500/30 hover:bg-amber-500/30"
-                : "bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200"
-            }`}
-          >
-            {isCreatorMode ? <Unlock className="w-3 h-3 text-amber-400" /> : <Lock className="w-3 h-3" />}
-            <span>{isCreatorMode ? t("creatorModeActive") : t("unlockCreatorMode")}</span>
-          </button>
         </div>
       </div>
 
@@ -232,18 +217,6 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center gap-2.5">
             {/* Language Selector in Main Nav */}
             <LanguageSelector id="header-main-language-selector" />
-
-            {/* Standards Manager (Creator Only) */}
-            {isCreatorMode && onOpenStandardsManager && (
-              <button
-                id="standards-manager-btn"
-                onClick={onOpenStandardsManager}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold cursor-pointer transition-all"
-              >
-                <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-                <span>{t("standardsStudio")}</span>
-              </button>
-            )}
 
             {/* HTML Upload Button - Gated by Creator Publishing Authorization Fee */}
             {onOpenHtmlImporter && (

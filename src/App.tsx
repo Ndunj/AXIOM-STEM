@@ -215,7 +215,7 @@ export default function App() {
       localStorage.removeItem("axiom_custom_simulations_v12");
       localStorage.removeItem("axiom_custom_simulations_v11");
       
-      const saved = localStorage.getItem("axiom_custom_simulations_v51");
+      const saved = localStorage.getItem("axiom_custom_simulations_v52");
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -237,7 +237,7 @@ export default function App() {
   // Save simulations to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem("axiom_custom_simulations_v51", JSON.stringify(customSimulations));
+      localStorage.setItem("axiom_custom_simulations_v52", JSON.stringify(customSimulations));
       localStorage.setItem("axiom_custom_simulations", JSON.stringify(customSimulations));
     } catch (e) {
       console.error("Failed to persist simulations:", e);
@@ -641,13 +641,6 @@ export default function App() {
                     <span>Sync 19 Labs</span>
                   </button>
 
-                  <button
-                    onClick={() => setIsStandardsModalOpen(true)}
-                    className="flex-1 lg:flex-none px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-amber-300 hover:text-amber-200 border border-amber-500/30 font-semibold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                  >
-                    <BookOpen className="w-4 h-4 text-amber-400" />
-                    <span>Manage Standards</span>
-                  </button>
 
                   <button
                     id="banner-lemon-payouts-btn"
@@ -749,14 +742,6 @@ export default function App() {
                   >
                     <PlusCircle className="w-5 h-5 text-slate-950" />
                     <span>{t("uploadFirstApp")}</span>
-                  </button>
-
-                  <button
-                    onClick={() => setIsStandardsModalOpen(true)}
-                    className="px-5 py-3.5 bg-slate-800 hover:bg-slate-700 text-amber-300 font-semibold text-sm rounded-2xl border border-slate-700 transition-all cursor-pointer flex items-center gap-2"
-                  >
-                    <BookOpen className="w-4 h-4 text-amber-400" />
-                    <span>{t("standardsStudio")} ({standards.length})</span>
                   </button>
                 </div>
 
@@ -1083,11 +1068,6 @@ export default function App() {
                   <button onClick={() => setIsLemonSqueezyModalOpen(true)} className="hover:text-white cursor-pointer text-amber-300 flex items-center gap-1">
                     <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                     <span>Lemon Squeezy Store &amp; Payouts</span>
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => setIsStandardsModalOpen(true)} className="hover:text-white cursor-pointer text-amber-300">
-                    Standards Management Studio
                   </button>
                 </li>
                 <li>
