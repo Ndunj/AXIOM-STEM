@@ -1069,5 +1069,356 @@ export const RESTORED_SIMULATIONS: SimulationItem[] = [
     ],
     isHtmlApp: true,
     htmlUrl: "/simulations/black-hole-general-relativity.html"
+  },
+
+  // 16. PHYSICS / OPTICS: Light Refraction & Lateral Displacement Lab
+  {
+    id: "sim-light-refraction-lateral-displacement",
+    title: "Light Refraction & Lateral Displacement Lab",
+    tagline: "Interactive ray tracing through parallel-sided rectangular glass slabs, Snell's Law, and lateral displacement (d = t · sin(i - r) / cos(r))",
+    discipline: "physics",
+    gradeLevel: ["Middle School (6-8)", "High School (9-12)", "AP / IB STEM"],
+    standards: ["NGSS HS-PS4-1", "NGSS HS-PS4-3", "AP Physics 2: Geometric Optics"],
+    description: "An interactive geometric optics virtual laboratory investigating the refraction of light through a parallel-sided rectangular glass slab. Trace monochromatic laser beams from air (n₁ = 1.00) into glass (n₂), observe normal-line deflections governed by Snell's Law (n₁ sin i = n₂ sin r), verify parallel emergence (e = i), and quantify lateral displacement d as a function of slab thickness t, angle of incidence i, and glass refractive index n₂.",
+    learningObjectives: [
+      "Verify Snell's Law of refraction n₁ sin(i) = n₂ sin(r) at air-glass planar interfaces",
+      "Demonstrate why the emergent ray is strictly parallel to the incident ray (angle of emergence e = angle of incidence i) for parallel-sided slabs",
+      "Calculate and measure lateral displacement using d = t · sin(i - r) / cos(r)",
+      "Analyze the direct proportional relationship between slab thickness t, refractive index n₂, and the resulting lateral shift d"
+    ],
+    thumbnailGradient: "from-cyan-600 via-sky-700 to-indigo-950",
+    badgeColor: "bg-cyan-500/10 text-cyan-300 border-cyan-500/20",
+    iconName: "Eye",
+    rating: 4.99,
+    reviewCount: 64,
+    teacherCount: 280,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 200,
+      districtUnlimited: 400
+    },
+    features: [
+      "Dynamic 2D ray tracing engine showing incident (cyan), refracted (magenta), emergent (neon green), and undeviated (amber) paths",
+      "Adjustable angle of incidence (0° to 75°), glass refractive index (1.30 to 1.80), and slab thickness (3.0 cm to 9.0 cm)",
+      "Real-time geometric annotations displaying normal lines N₁ and N₂, angle arcs, and lateral displacement measurement arrows",
+      "Live physics telemetry with sub-millimeter displacement precision and analytical Snell's law verification"
+    ],
+    parameterDefaults: {
+      incidenceAngle: 45,
+      refractiveIndex: 1.52,
+      slabThickness: 6.0
+    },
+    parameterControls: [
+      {
+        key: "incidenceAngle",
+        label: "Angle of Incidence (i)",
+        min: 0,
+        max: 75,
+        step: 0.5,
+        unit: "°",
+        description: "Angle between incident laser ray and normal N₁"
+      },
+      {
+        key: "refractiveIndex",
+        label: "Refractive Index (n₂)",
+        min: 1.30,
+        max: 1.80,
+        step: 0.01,
+        unit: "",
+        description: "Optical density of the rectangular glass medium"
+      },
+      {
+        key: "slabThickness",
+        label: "Slab Thickness (t)",
+        min: 3.0,
+        max: 9.0,
+        step: 0.1,
+        unit: "cm",
+        description: "Physical width of the parallel-faced glass slab"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-refr-1",
+        title: "Crown Glass Refraction",
+        instruction: "Set angle of incidence to 45° with standard crown glass (n₂ = 1.52) and measure the angle of refraction r.",
+        targetMetric: "Angle of Refraction",
+        targetValue: 27.7,
+        tolerance: 0.2,
+        currentValueKey: "angle_r",
+        rewardBadge: "Snell's Explorer"
+      },
+      {
+        id: "ch-refr-2",
+        title: "Maximize Lateral Shift",
+        instruction: "Maximize slab thickness (9.0 cm) and increase incidence angle to 60° with flint glass (n₂ = 1.66) to achieve a displacement greater than 4.0 cm.",
+        targetMetric: "Lateral Displacement",
+        targetValue: 4.2,
+        tolerance: 0.3,
+        currentValueKey: "displacement_cm",
+        rewardBadge: "Optics Master"
+      }
+    ],
+    previewFacts: [
+      "Because opposite faces of a rectangular glass slab are parallel, the ray emerges at the same angle it entered (e = i), shifted only sideways.",
+      "Lateral displacement approaches zero at normal incidence (i = 0°) and increases monotonically with slab thickness and angle of incidence."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/light-refraction-lateral-displacement.html"
+  },
+
+  // 17. PHYSICS / MECHANICS: Rectilinear Motion Simulation
+  {
+    id: "sim-rectilinear-motion",
+    title: "Rectilinear Motion Simulation",
+    tagline: "Interactive velocity-time (v-t) graph: 3-phase kinematics, displacement as area under the curve, and acceleration slope analysis",
+    discipline: "physics",
+    gradeLevel: ["Middle School (6-8)", "High School (9-12)", "AP / IB STEM"],
+    standards: ["NGSS HS-PS2-1", "NGSS HS-PS2-2", "AP Physics 1: Kinematics"],
+    description: "An interactive rectilinear motion virtual laboratory centered on velocity-time (v-t) graph analysis. Configure a 3-phase journey: Phase 1 (constant acceleration a₁ over time t₁), Phase 2 (constant velocity cruise over time t₂), and Phase 3 (deceleration a₂ over time t₃). Discover how the area under the curve calculates net displacement and absolute distance traveled, how slope reveals instantaneous acceleration, and inspect live metrics including maximum velocity, total time, and average velocity.",
+    learningObjectives: [
+      "Interpret velocity-time (v-t) graphs to determine an object's instantaneous acceleration from the line slope",
+      "Calculate net displacement by integrating the algebraic area under the v-t curve",
+      "Distinguish between net displacement (signed area) and total distance traveled (absolute area) when velocity crosses zero",
+      "Analyze multi-phase rectilinear motion across acceleration, constant velocity, and deceleration intervals"
+    ],
+    thumbnailGradient: "from-blue-600 via-indigo-700 to-slate-900",
+    badgeColor: "bg-blue-500/10 text-blue-700 border-blue-500/20",
+    iconName: "Activity",
+    rating: 4.98,
+    reviewCount: 68,
+    teacherCount: 290,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 200,
+      districtUnlimited: 400
+    },
+    features: [
+      "Dynamic 3-phase velocity-time graph with phase-colored shaded areas (Phase 1 Blue, Phase 2 Green, Phase 3 Red)",
+      "Independent parameter sliders for initial velocity (u), phase 1 acceleration (a₁) and time (t₁), phase 2 cruise time (t₂), and phase 3 deceleration (a₂) and time (t₃)",
+      "Smooth real-time animation playback tracing the v-t trajectory and area accumulation",
+      "Instant telemetry card displaying Total Time, Max Velocity, Net Displacement, Total Distance, and Average Velocity"
+    ],
+    parameterDefaults: {
+      u: 0,
+      a1: 2,
+      t1: 5,
+      t2: 5,
+      a2: -3,
+      t3: 5
+    },
+    parameterControls: [
+      {
+        key: "u",
+        label: "Initial Velocity (u)",
+        min: -20,
+        max: 20,
+        step: 1,
+        unit: "m/s",
+        description: "Initial velocity at time t = 0"
+      },
+      {
+        key: "a1",
+        label: "Phase 1 Accel (a₁)",
+        min: -10,
+        max: 10,
+        step: 0.5,
+        unit: "m/s²",
+        description: "Acceleration during Phase 1"
+      },
+      {
+        key: "t1",
+        label: "Phase 1 Time (t₁)",
+        min: 0,
+        max: 20,
+        step: 1,
+        unit: "s",
+        description: "Duration of Phase 1"
+      },
+      {
+        key: "t2",
+        label: "Phase 2 Time (t₂)",
+        min: 0,
+        max: 20,
+        step: 1,
+        unit: "s",
+        description: "Duration of constant velocity Phase 2"
+      },
+      {
+        key: "a2",
+        label: "Phase 3 Accel (a₂)",
+        min: -10,
+        max: 10,
+        step: 0.5,
+        unit: "m/s²",
+        description: "Acceleration during Phase 3"
+      },
+      {
+        key: "t3",
+        label: "Phase 3 Time (t₃)",
+        min: 0,
+        max: 20,
+        step: 1,
+        unit: "s",
+        description: "Duration of Phase 3"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-rect-1",
+        title: "Stopping Condition",
+        instruction: "Adjust Phase 3 deceleration a₂ and duration t₃ so that the object comes to a complete rest (final velocity = 0 m/s) at the end of the simulation.",
+        targetMetric: "Final Velocity",
+        targetValue: 0,
+        tolerance: 0.1,
+        currentValueKey: "final_velocity",
+        rewardBadge: "Precision Braker"
+      },
+      {
+        id: "ch-rect-2",
+        title: "Displacement vs Distance Gap",
+        instruction: "Set initial velocity u = -10 m/s with a₁ = 4 m/s² and observe the difference between net displacement and total distance caused by directional turnaround.",
+        targetMetric: "Distance Traveled",
+        targetValue: 80,
+        tolerance: 10,
+        currentValueKey: "total_distance",
+        rewardBadge: "Kinematics Master"
+      }
+    ],
+    previewFacts: [
+      "The area between a velocity-time graph and the time axis corresponds mathematically to the definite integral ∫ v(t) dt, which represents displacement.",
+      "When a moving object reverses direction, parts of the v-t curve fall below the time axis; net displacement subtracts this negative area while total distance adds it."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/rectilinear-motion.html"
+  },
+
+  // 18. PHYSICS / MECHANICS: Distance-Time Graph Simulation
+  {
+    id: "sim-distance-time-graph",
+    title: "Distance-Time Graph Simulation",
+    tagline: "Interactive distance-time (s-t) graph: parabolic acceleration curves, velocity as gradient slope, and 3-phase kinematics",
+    discipline: "physics",
+    gradeLevel: ["Middle School (6-8)", "High School (9-12)", "AP / IB STEM"],
+    standards: ["NGSS HS-PS2-1", "NGSS HS-PS2-2", "AP Physics 1: Kinematics"],
+    description: "An interactive rectilinear kinematics virtual laboratory exploring distance-time (s-t) and position-time graphs. Investigate 3-phase motion: initial acceleration (parabolic curve), constant velocity cruising (linear constant slope), and decelerated braking. Analyze how the tangent slope at any point equals instantaneous velocity, calculate total path length vs net displacement, and observe live simulation metrics with animated graph tracing.",
+    learningObjectives: [
+      "Interpret distance-time (s-t) graphs to determine that the slope (gradient) of the line represents instantaneous velocity",
+      "Recognize that curved quadratic parabolic segments indicate non-zero acceleration or deceleration",
+      "Distinguish between net position displacement and cumulative path distance when velocity reversals occur",
+      "Connect initial velocity (u), accelerations (a₁, a₂), and phase durations (t₁, t₂, t₃) to the shape of distance-time trajectories"
+    ],
+    thumbnailGradient: "from-indigo-600 via-purple-700 to-slate-900",
+    badgeColor: "bg-indigo-500/10 text-indigo-700 border-indigo-500/20",
+    iconName: "Activity",
+    rating: 4.98,
+    reviewCount: 65,
+    teacherCount: 285,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 200,
+      districtUnlimited: 400
+    },
+    features: [
+      "High-resolution 3-phase distance-time chart showing smooth quadratic parabolas and linear slope transitions",
+      "Phase-differentiated trajectory styling (Phase 1 Blue, Phase 2 Green, Phase 3 Red)",
+      "Interactive animation playback tracing the position trajectory over time",
+      "Instant telemetry readouts: Total Time, Final Velocity, Net Displacement, Total Distance, and Average Velocity"
+    ],
+    parameterDefaults: {
+      u: 0,
+      a1: 2,
+      t1: 5,
+      t2: 5,
+      a2: -3,
+      t3: 5
+    },
+    parameterControls: [
+      {
+        key: "u",
+        label: "Initial Velocity (u)",
+        min: -20,
+        max: 20,
+        step: 1,
+        unit: "m/s",
+        description: "Starting velocity at t = 0"
+      },
+      {
+        key: "a1",
+        label: "Phase 1 Accel (a₁)",
+        min: -10,
+        max: 10,
+        step: 0.5,
+        unit: "m/s²",
+        description: "Acceleration in Phase 1"
+      },
+      {
+        key: "t1",
+        label: "Phase 1 Time (t₁)",
+        min: 0,
+        max: 20,
+        step: 1,
+        unit: "s",
+        description: "Duration of Phase 1"
+      },
+      {
+        key: "t2",
+        label: "Phase 2 Time (t₂)",
+        min: 0,
+        max: 20,
+        step: 1,
+        unit: "s",
+        description: "Duration of constant velocity Phase 2"
+      },
+      {
+        key: "a2",
+        label: "Phase 3 Accel (a₂)",
+        min: -10,
+        max: 10,
+        step: 0.5,
+        unit: "m/s²",
+        description: "Acceleration in Phase 3"
+      },
+      {
+        key: "t3",
+        label: "Phase 3 Time (t₃)",
+        min: 0,
+        max: 20,
+        step: 1,
+        unit: "s",
+        description: "Duration of Phase 3"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-dt-1",
+        title: "Stationary Cruise",
+        instruction: "Configure Phase 1 so that the object comes to rest at the end of Phase 1 (v = 0), and inspect the horizontal plateau in Phase 2 on the distance-time graph.",
+        targetMetric: "Cruise Velocity",
+        targetValue: 0,
+        tolerance: 0.1,
+        currentValueKey: "cruise_velocity",
+        rewardBadge: "Gradient Master"
+      },
+      {
+        id: "ch-dt-2",
+        title: "Return to Origin",
+        instruction: "Adjust deceleration a₂ and duration t₃ so that the net displacement returns back to zero (s = 0 m) by the end of the simulation.",
+        targetMetric: "Net Displacement",
+        targetValue: 0,
+        tolerance: 1.0,
+        currentValueKey: "final_displacement",
+        rewardBadge: "Loop Navigator"
+      }
+    ],
+    previewFacts: [
+      "On a distance-time or position-time graph, a horizontal straight line indicates the object is stationary (velocity is zero).",
+      "The tangent slope to the position-time curve ds/dt at any instant gives the instantaneous velocity."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/distance-time-graph.html"
   }
 ];

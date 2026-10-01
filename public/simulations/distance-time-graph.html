@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distance-Time Graph Simulation</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* Custom range slider styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 2px;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen p-4 md:p-6 antialiased">
+
+    <div class="max-w-7xl mx-auto space-y-6">
+        
+        <header class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight text-slate-900">Rectilinear Motion Simulation</h1>
+                <p class="text-slate-500 mt-1">Interactive Distance-Time (s-t) Graph</p>
+            </div>
+            <div class="bg-indigo-50 text-indigo-800 p-4 rounded-xl flex items-start gap-3 max-w-lg border border-indigo-100">
+                <svg class="w-5 h-5 shrink-0 mt-0.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <p class="text-sm leading-snug">
+                    <strong>Key Concepts:</strong> The <em>slope (gradient) of the line</em> represents the object's <strong>velocity</strong>. 
+                    A <em>curved line (parabola)</em> indicates that the object is <strong>accelerating</strong> or decelerating.
+                </p>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Left Column: Controls -->
+            <div class="lg:col-span-4 space-y-4">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                    <div class="flex justify-between items-center mb-5">
+                        <h2 class="font-bold text-lg">Input Parameters</h2>
+                        <button id="btn-reset" class="text-sm px-3 py-1.5 text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors border border-slate-200 flex items-center gap-2" title="Reset">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            Reset
+                        </button>
+                    </div>
+
+                    <!-- Phase 1 Controls -->
+                    <div class="p-4 bg-slate-50 rounded-xl mb-4 border border-slate-100">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-blue-600 mb-4 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-blue-500 inline-block"></span> Phase 1: Initial Acceleration
+                        </h3>
+                        
+                        <div class="mb-3">
+                            <div class="flex justify-between text-sm mb-1">
+                                <label class="font-medium text-slate-700">Initial Velocity (u) <span class="text-slate-400 font-normal">m/s</span></label>
+                                <span id="val-u" class="font-mono text-blue-700 font-bold">0</span>
+                            </div>
+                            <input type="range" id="input-u" min="-20" max="20" step="1" value="0">
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="flex justify-between text-sm mb-1">
+                                <label class="font-medium text-slate-700">Acceleration (a₁) <span class="text-slate-400 font-normal">m/s²</span></label>
+                                <span id="val-a1" class="font-mono text-blue-700 font-bold">2</span>
+                            </div>
+                            <input type="range" id="input-a1" min="-10" max="10" step="0.5" value="2">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <label class="font-medium text-slate-700">Time (t₁) <span class="text-slate-400 font-normal">s</span></label>
+                                <span id="val-t1" class="font-mono text-blue-700 font-bold">5</span>
+                            </div>
+                            <input type="range" id="input-t1" min="0" max="20" step="1" value="5">
+                        </div>
+                    </div>
+
+                    <!-- Phase 2 Controls -->
+                    <div class="p-4 bg-slate-50 rounded-xl mb-4 border border-slate-100">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-600 mb-2 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> Phase 2: Constant Velocity
+                        </h3>
+                        <p class="text-xs text-slate-400 mb-4">Velocity remains constant at Phase 1's final value. Acceleration is 0.</p>
+                        
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <label class="font-medium text-slate-700">Time (t₂) <span class="text-slate-400 font-normal">s</span></label>
+                                <span id="val-t2" class="font-mono text-emerald-700 font-bold">5</span>
+                            </div>
+                            <input type="range" id="input-t2" min="0" max="20" step="1" value="5">
+                        </div>
+                    </div>
+
+                    <!-- Phase 3 Controls -->
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-rose-600 mb-4 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span> Phase 3: Deceleration
+                        </h3>
+                        
+                        <div class="mb-3">
+                            <div class="flex justify-between text-sm mb-1">
+                                <label class="font-medium text-slate-700">Acceleration (a₂) <span class="text-slate-400 font-normal">m/s²</span></label>
+                                <span id="val-a2" class="font-mono text-rose-700 font-bold">-3</span>
+                            </div>
+                            <input type="range" id="input-a2" min="-10" max="10" step="0.5" value="-3">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <label class="font-medium text-slate-700">Time (t₃) <span class="text-slate-400 font-normal">s</span></label>
+                                <span id="val-t3" class="font-mono text-rose-700 font-bold">5</span>
+                            </div>
+                            <input type="range" id="input-t3" min="0" max="20" step="1" value="5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Graph & Results -->
+            <div class="lg:col-span-8 space-y-6">
+                
+                <!-- Graph Card -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col relative">
+                    <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
+                        <h2 class="font-bold text-lg">Distance (Position) vs Time Graph</h2>
+                        <button id="btn-play" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors bg-blue-600 text-white hover:bg-blue-700 shadow-sm">
+                            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            <span>Play Animation</span>
+                        </button>
+                    </div>
+                    
+                    <!-- CRITICAL FIX: The canvas container must have a defined height -->
+                    <div class="w-full relative h-[400px]">
+                        <canvas id="dtChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Results Card -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                    <h2 class="font-bold text-lg mb-4 pb-2 border-b border-slate-100">Simulation Metrics</h2>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                        
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col justify-between">
+                            <span class="text-[10px] sm:text-xs text-slate-500 font-bold uppercase tracking-wide">Total Time</span>
+                            <div class="mt-2 flex items-baseline gap-1">
+                                <span id="res-time" class="text-2xl sm:text-3xl font-black text-slate-900">0</span>
+                                <span class="text-sm font-medium text-slate-500">s</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col justify-between">
+                            <span class="text-[10px] sm:text-xs text-slate-500 font-bold uppercase tracking-wide">Final Velocity</span>
+                            <div class="mt-2 flex items-baseline gap-1">
+                                <span id="res-vend" class="text-2xl sm:text-3xl font-black text-slate-900">0</span>
+                                <span class="text-sm font-medium text-slate-500">m/s</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100 flex flex-col justify-between">
+                            <span class="text-[10px] sm:text-xs text-indigo-600 font-bold uppercase tracking-wide" title="Net change in position">Displacement</span>
+                            <div class="mt-2 flex items-baseline gap-1">
+                                <span id="res-disp" class="text-2xl sm:text-3xl font-black text-indigo-900">0</span>
+                                <span class="text-sm font-medium text-indigo-700">m</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100 flex flex-col justify-between">
+                            <span class="text-[10px] sm:text-xs text-emerald-600 font-bold uppercase tracking-wide" title="Total path length covered">Total Distance</span>
+                            <div class="mt-2 flex items-baseline gap-1">
+                                <span id="res-dist" class="text-2xl sm:text-3xl font-black text-emerald-900">0</span>
+                                <span class="text-sm font-medium text-emerald-700">m</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col justify-between">
+                            <span class="text-[10px] sm:text-xs text-slate-500 font-bold uppercase tracking-wide">Avg Velocity</span>
+                            <div class="mt-2 flex items-baseline gap-1">
+                                <span id="res-vavg" class="text-2xl sm:text-3xl font-black text-slate-900">0</span>
+                                <span class="text-sm font-medium text-slate-500">m/s</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Default Constants
+        const DEFAULTS = { u: 0, a1: 2, t1: 5, t2: 5, a2: -3, t3: 5 };
+        
+        // DOM Elements
+        const inputs = {
+            u: document.getElementById('input-u'),
+            a1: document.getElementById('input-a1'),
+            t1: document.getElementById('input-t1'),
+            t2: document.getElementById('input-t2'),
+            a2: document.getElementById('input-a2'),
+            t3: document.getElementById('input-t3')
+        };
+        const displays = {
+            u: document.getElementById('val-u'),
+            a1: document.getElementById('val-a1'),
+            t1: document.getElementById('val-t1'),
+            t2: document.getElementById('val-t2'),
+            a2: document.getElementById('val-a2'),
+            t3: document.getElementById('val-t3')
+        };
+        const results = {
+            time: document.getElementById('res-time'),
+            vend: document.getElementById('res-vend'),
+            disp: document.getElementById('res-disp'),
+            dist: document.getElementById('res-dist'),
+            vavg: document.getElementById('res-vavg')
+        };
+        
+        let chartInstance = null;
+        let animationFrameId = null;
+        let isPlaying = false;
+        let currentAnimTime = 0;
+        let simData = {}; 
+
+        function runSimulation() {
+            // Read UI parameters
+            const u = parseFloat(inputs.u.value);
+            const a1 = parseFloat(inputs.a1.value);
+            const t1 = parseFloat(inputs.t1.value);
+            const t2 = parseFloat(inputs.t2.value);
+            const a2 = parseFloat(inputs.a2.value);
+            const t3 = parseFloat(inputs.t3.value);
+
+            // Update UI Labels instantly
+            Object.keys(inputs).forEach(key => displays[key].innerText = inputs[key].value);
+
+            const totalTime = t1 + t2 + t3;
+            
+            // Time step for high-resolution plotting to show smooth parabolas
+            const dt = 0.1; 
+            const ds1 = [], ds2 = [], ds3 = [];
+            
+            let maxS = 0;
+            let minS = 0;
+            
+            let currentS = 0; // Displacement (Position relative to start)
+            let totalDist = 0; // Total absolute distance traveled
+            let currentV = u;
+
+            // Generate Chart Data Points incrementally
+            for (let t = 0; t <= totalTime + 0.0001; t += dt) {
+                // Calculate kinematics at exact time t
+                let s = 0;
+                let v = 0;
+                let activePhase = 1;
+
+                if (t <= t1) {
+                    v = u + a1 * t;
+                    s = u * t + 0.5 * a1 * t * t;
+                    activePhase = 1;
+                } else if (t <= t1 + t2) {
+                    const tPhase = t - t1;
+                    const v1 = u + a1 * t1;
+                    const s1 = u * t1 + 0.5 * a1 * t1 * t1;
+                    v = v1;
+                    s = s1 + v1 * tPhase;
+                    activePhase = 2;
+                } else {
+                    const tPhase = t - (t1 + t2);
+                    const v1 = u + a1 * t1;
+                    const s1 = u * t1 + 0.5 * a1 * t1 * t1;
+                    const v2 = v1;
+                    const s2 = s1 + v2 * t2;
+                    v = v2 + a2 * tPhase;
+                    s = s2 + v2 * tPhase + 0.5 * a2 * tPhase * tPhase;
+                    activePhase = 3;
+                }
+
+                // Tracking max/min for chart scaling
+                maxS = Math.max(maxS, s);
+                minS = Math.min(minS, s);
+                
+                const point = { x: parseFloat(t.toFixed(2)), y: parseFloat(s.toFixed(2)), v: parseFloat(v.toFixed(2)) };
+
+                // Push to appropriate datasets (overlap borders to prevent gaps)
+                if (t <= t1) ds1.push(point);
+                if (t >= t1 && t <= t1 + t2) ds2.push(point);
+                if (t >= t1 + t2) ds3.push(point);
+            }
+
+            // Exactly calculate final metrics
+            const finalV = ds3.length > 0 ? ds3[ds3.length-1].v : (ds2.length > 0 ? ds2[ds2.length-1].v : ds1[ds1.length-1].v);
+            const finalS = ds3.length > 0 ? ds3[ds3.length-1].y : (ds2.length > 0 ? ds2[ds2.length-1].y : ds1[ds1.length-1].y);
+            
+            // Calculate absolute distance (integrating absolute velocity)
+            let calculatedDist = 0;
+            // Phase 1 Dist
+            if (u * (u + a1*t1) < 0 && a1 !== 0) { // Velocity crossed 0
+                const tc = -u / a1;
+                calculatedDist += Math.abs(u * tc + 0.5 * a1 * tc * tc);
+                calculatedDist += Math.abs(0.5 * a1 * (t1 - tc) * (t1 - tc));
+            } else {
+                calculatedDist += Math.abs(u * t1 + 0.5 * a1 * t1 * t1);
+            }
+            
+            // Phase 2 Dist
+            const v1 = u + a1*t1;
+            calculatedDist += Math.abs(v1 * t2);
+            
+            // Phase 3 Dist
+            const v2 = v1;
+            const v3 = v2 + a2*t3;
+            if (v2 * v3 < 0 && a2 !== 0) { // Velocity crossed 0
+                const tc = -v2 / a2;
+                calculatedDist += Math.abs(v2 * tc + 0.5 * a2 * tc * tc);
+                calculatedDist += Math.abs(0.5 * a2 * (t3 - tc) * (t3 - tc));
+            } else {
+                calculatedDist += Math.abs(v2 * t3 + 0.5 * a2 * t3 * t3);
+            }
+
+
+            simData = {
+                metrics: { 
+                    totalTime, 
+                    totalDisp: finalS, 
+                    totalDist: calculatedDist, 
+                    finalVelocity: finalV, 
+                    avgVelocity: totalTime > 0 ? finalS / totalTime : 0, 
+                    maxS, 
+                    minS 
+                },
+                datasets: [ds1, ds2, ds3]
+            };
+
+            updateResultsUI();
+        }
+
+        function updateResultsUI() {
+            const m = simData.metrics;
+            results.time.innerText = m.totalTime.toFixed(1);
+            results.vend.innerText = m.finalVelocity.toFixed(1);
+            results.disp.innerText = m.totalDisp.toFixed(1);
+            results.dist.innerText = m.totalDist.toFixed(1);
+            results.vavg.innerText = m.avgVelocity.toFixed(2);
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('dtChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'line', // Using line type with high density data acts like a smooth scatter plot
+                data: {
+                    datasets: [
+                        {
+                            label: 'Phase 1 (Accel)',
+                            data: [],
+                            borderColor: 'rgba(59, 130, 246, 1)', // Blue 500
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            fill: 'origin',
+                            pointRadius: 0, // Hide points for smooth line look
+                            borderWidth: 3,
+                            tension: 0 // Parabola created mathematically, no artificial smoothing needed
+                        },
+                        {
+                            label: 'Phase 2 (Const Vel)',
+                            data: [],
+                            borderColor: 'rgba(16, 185, 129, 1)', // Emerald 500
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            fill: 'origin',
+                            pointRadius: 0,
+                            borderWidth: 3,
+                            tension: 0
+                        },
+                        {
+                            label: 'Phase 3 (Decel)',
+                            data: [],
+                            borderColor: 'rgba(244, 63, 94, 1)', // Rose 500
+                            backgroundColor: 'rgba(244, 63, 94, 0.1)',
+                            fill: 'origin',
+                            pointRadius: 0,
+                            borderWidth: 3,
+                            tension: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false, // Handled manually in our animation loop
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `Dist: ${ctx.parsed.y} m | Vel: ${ctx.raw.v} m/s`,
+                                title: (items) => `Time: ${items[0].parsed.x} s`
+                            }
+                        },
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                boxWidth: 8
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            title: { display: true, text: 'Time (s)', font: { weight: 'bold' } },
+                            min: 0,
+                            max: 20
+                        },
+                        y: {
+                            title: { display: true, text: 'Distance/Position (m)', font: { weight: 'bold' } },
+                            min: 0,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChart(timeLimit = Infinity) {
+            if (!chartInstance) return;
+
+            // Fix axis bounds so they don't bounce around during animation
+            const m = simData.metrics;
+            chartInstance.options.scales.x.max = Math.max(1, m.totalTime);
+            
+            const sPadding = Math.max(2, (m.maxS - m.minS) * 0.1);
+            chartInstance.options.scales.y.max = Math.ceil(m.maxS + sPadding);
+            chartInstance.options.scales.y.min = Math.floor(Math.min(0, m.minS - sPadding));
+
+            // Slice data arrays up to the current timeLimit
+            for (let i = 0; i < 3; i++) {
+                chartInstance.data.datasets[i].data = simData.datasets[i].filter(p => p.x <= timeLimit);
+                
+                // Interpolate perfectly on the cut-off point mid-animation
+                if (timeLimit < m.totalTime && simData.datasets[i].length > 0) {
+                    const fullDataset = simData.datasets[i];
+                    const lastIdx = chartInstance.data.datasets[i].data.length - 1;
+                    
+                    if (lastIdx >= 0 && lastIdx < fullDataset.length - 1) {
+                        const pA = fullDataset[lastIdx];
+                        const pB = fullDataset[lastIdx + 1];
+                        if (pA.x < timeLimit && pB.x >= timeLimit) {
+                            const ratio = (timeLimit - pA.x) / (pB.x - pA.x);
+                            const interY = pA.y + ratio * (pB.y - pA.y);
+                            const interV = pA.v + ratio * (pB.v - pA.v);
+                            chartInstance.data.datasets[i].data.push({ x: timeLimit, y: interY, v: interV });
+                        }
+                    }
+                }
+            }
+
+            chartInstance.update();
+        }
+
+        function animationLoop() {
+            if (!isPlaying) return;
+
+            // Advance time dynamically to finish animation in roughly 2-3 seconds
+            const speed = Math.max(0.1, simData.metrics.totalTime / 120); 
+            currentAnimTime += speed;
+
+            if (currentAnimTime >= simData.metrics.totalTime) {
+                currentAnimTime = simData.metrics.totalTime;
+                updateChart(currentAnimTime);
+                stopAnimation();
+                return;
+            }
+
+            updateChart(currentAnimTime);
+            animationFrameId = requestAnimationFrame(animationLoop);
+        }
+
+        function startAnimation() {
+            if (simData.metrics.totalTime <= 0) return;
+            isPlaying = true;
+            currentAnimTime = 0;
+            const btn = document.getElementById('btn-play');
+            btn.innerHTML = `<svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg><span>Stop</span>`;
+            btn.classList.replace('bg-blue-600', 'bg-red-500');
+            btn.classList.replace('hover:bg-blue-700', 'hover:bg-red-600');
+            animationLoop();
+        }
+
+        function stopAnimation() {
+            isPlaying = false;
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            const btn = document.getElementById('btn-play');
+            btn.innerHTML = `<svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><span>Play Animation</span>`;
+            btn.classList.replace('bg-red-500', 'bg-blue-600');
+            btn.classList.replace('hover:bg-red-600', 'hover:bg-blue-700');
+            
+            // Fast forward to end if stopped manually
+            updateChart(Infinity);
+        }
+
+        function resetToDefaults() {
+            inputs.u.value = DEFAULTS.u;
+            inputs.a1.value = DEFAULTS.a1;
+            inputs.t1.value = DEFAULTS.t1;
+            inputs.t2.value = DEFAULTS.t2;
+            inputs.a2.value = DEFAULTS.a2;
+            inputs.t3.value = DEFAULTS.t3;
+            
+            if (isPlaying) stopAnimation();
+            runSimulation();
+            updateChart(Infinity);
+        }
+
+        Object.values(inputs).forEach(input => {
+            input.addEventListener('input', () => {
+                if (isPlaying) stopAnimation();
+                runSimulation();
+                updateChart(Infinity);
+            });
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', resetToDefaults);
+        
+        document.getElementById('btn-play').addEventListener('click', () => {
+            if (isPlaying) stopAnimation();
+            else startAnimation();
+        });
+
+        // Ensure everything is ready before initializing the canvas chart
+        window.addEventListener('DOMContentLoaded', () => {
+            initChart();
+            runSimulation();
+            updateChart(Infinity);
+        });
+
+    </script>
+</body>
+</html>

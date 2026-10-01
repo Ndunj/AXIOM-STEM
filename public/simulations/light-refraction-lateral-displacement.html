@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Light Refraction &amp; Lateral Displacement Simulation</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f19;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+
+        /* Glassmorphic card styling */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        /* Neon Glow Utility Effects */
+        .glow-cyan {
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
+        }
+        
+        .glow-magenta {
+            box-shadow: 0 0 15px rgba(224, 86, 253, 0.4);
+        }
+
+        /* Custom styled sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: #1e293b;
+            border-radius: 6px;
+            height: 6px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #00f3ff;
+            cursor: pointer;
+            box-shadow: 0 0 10px #00f3ff;
+            transition: transform 0.1s ease, background-color 0.1s ease;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            background: #38bdf8;
+        }
+
+        /* Canvas glowing border frame */
+        .canvas-container {
+            position: relative;
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(15, 23, 42, 0.8);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-4 md:p-6">
+
+    <!-- Header Section -->
+    <header class="max-w-7xl mx-auto w-full mb-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-400 bg-clip-text text-transparent">
+                Light Refraction &amp; Displacement Lab
+            </h1>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">
+                Interactive Ray Tracing through a Rectangular Glass Slab (Snell's Law)
+            </p>
+        </div>
+        <div class="flex items-center gap-2 text-xs code-font bg-slate-900/80 px-3 py-1.5 rounded-full border border-slate-700/60">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="text-slate-300">Monochromatic Beam Simulation</span>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
+        
+        <!-- Left/Center Canvas Display -->
+        <div class="lg:col-span-8 flex flex-col">
+            <div class="canvas-container flex-grow bg-slate-950 rounded-2xl border border-slate-800/80 overflow-hidden min-h-[420px] md:min-h-[500px] flex items-center justify-center relative">
+                
+                <canvas id="simulationCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+
+                <!-- On-Canvas Controls / Legend Overlay -->
+                <div class="absolute top-4 left-4 flex flex-wrap gap-2 text-[11px] code-font pointer-events-none">
+                    <span class="bg-slate-900/80 backdrop-blur border border-cyan-500/30 text-cyan-300 px-2.5 py-1 rounded-md flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-cyan-400 inline-block"></span> Incident Ray (Angle i)
+                    </span>
+                    <span class="bg-slate-900/80 backdrop-blur border border-fuchsia-500/30 text-fuchsia-300 px-2.5 py-1 rounded-md flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-fuchsia-400 inline-block"></span> Refracted Ray (Angle r)
+                    </span>
+                    <span class="bg-slate-900/80 backdrop-blur border border-emerald-500/30 text-emerald-300 px-2.5 py-1 rounded-md flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span> Emergent Ray (Angle e)
+                    </span>
+                    <span class="bg-slate-900/80 backdrop-blur border border-amber-500/30 text-amber-300 px-2.5 py-1 rounded-md flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span> Undeviated Path
+                    </span>
+                </div>
+
+                <!-- Medium Info -->
+                <div class="absolute bottom-3 right-4 text-[10px] code-font text-slate-500 pointer-events-none">
+                    Medium: Air (n₁ = 1.00) ➔ Glass Slab (n₂) ➔ Air (n₁ = 1.00)
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side Dashboard & Controls -->
+        <div class="lg:col-span-4 flex flex-col gap-5">
+            
+            <!-- Controls Panel -->
+            <div class="glass-panel p-5 rounded-2xl flex flex-col gap-4">
+                <h2 class="text-base font-semibold text-slate-200 border-b border-slate-700/50 pb-2.5 flex items-center justify-between">
+                    <span>Simulation Controls</span>
+                    <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                </h2>
+
+                <!-- Play/Pause & Fire Buttons -->
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="fireBtn" class="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold py-2.5 px-4 rounded-xl shadow-lg glow-cyan transition-all duration-200 flex items-center justify-center gap-2 text-sm active:scale-95">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+                        <span>Fire Laser</span>
+                    </button>
+                    <button id="pauseBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600/60 font-semibold py-2.5 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 text-sm active:scale-95">
+                        <svg id="pauseIcon" class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                        <span id="pauseText">Pause</span>
+                    </button>
+                </div>
+
+                <!-- Sliders -->
+                <div class="space-y-3.5 mt-1">
+                    <!-- Angle of Incidence Slider -->
+                    <div>
+                        <div class="flex justify-between text-xs font-medium mb-1.5">
+                            <label for="incidenceAngle" class="text-slate-300">Angle of Incidence (i)</label>
+                            <span id="incidenceVal" class="text-cyan-400 code-font font-semibold">45.0°</span>
+                        </div>
+                        <input type="range" id="incidenceAngle" min="0" max="75" step="0.5" value="45" class="w-full">
+                    </div>
+
+                    <!-- Refractive Index Slider -->
+                    <div>
+                        <div class="flex justify-between text-xs font-medium mb-1.5">
+                            <label for="refractiveIndex" class="text-slate-300">Glass Refractive Index (n₂)</label>
+                            <span id="refractiveVal" class="text-cyan-400 code-font font-semibold">1.52</span>
+                        </div>
+                        <input type="range" id="refractiveIndex" min="1.30" max="1.80" step="0.01" value="1.52" class="w-full">
+                    </div>
+
+                    <!-- Prism Thickness Slider (Represented in cm) -->
+                    <div>
+                        <div class="flex justify-between text-xs font-medium mb-1.5">
+                            <label for="slabThickness" class="text-slate-300">Glass Slab Thickness (t)</label>
+                            <span id="thicknessVal" class="text-cyan-400 code-font font-semibold">6.0 cm</span>
+                        </div>
+                        <input type="range" id="slabThickness" min="3.0" max="9.0" step="0.1" value="6.0" class="w-full">
+                    </div>
+
+                    <!-- Animation Speed Slider -->
+                    <div>
+                        <div class="flex justify-between text-xs font-medium mb-1.5">
+                            <label for="animSpeed" class="text-slate-300">Animation Speed</label>
+                            <span id="speedVal" class="text-cyan-400 code-font font-semibold">1.0x</span>
+                        </div>
+                        <input type="range" id="animSpeed" min="0.3" max="3.0" step="0.1" value="1.0" class="w-full">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Physics Telemetry & Analytics Dashboard -->
+            <div class="glass-panel p-5 rounded-2xl flex flex-col gap-3 flex-grow justify-between">
+                <h2 class="text-base font-semibold text-slate-200 border-b border-slate-700/50 pb-2 flex items-center justify-between">
+                    <span>Physics Readouts</span>
+                    <span class="text-[10px] code-font text-slate-400 uppercase tracking-widest bg-slate-800 px-2 py-0.5 rounded">Live Telemetry</span>
+                </h2>
+
+                <div class="grid grid-cols-2 gap-3 text-xs code-font">
+                    <!-- Readout Item -->
+                    <div class="bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl flex flex-col justify-between">
+                        <span class="text-slate-400 text-[11px]">Angle of Incidence (i)</span>
+                        <span id="readoutI" class="text-cyan-300 text-base font-bold mt-1">45.00°</span>
+                    </div>
+
+                    <!-- Readout Item -->
+                    <div class="bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl flex flex-col justify-between">
+                        <span class="text-slate-400 text-[11px]">Angle of Refraction (r)</span>
+                        <span id="readoutR" class="text-fuchsia-300 text-base font-bold mt-1">27.72°</span>
+                    </div>
+
+                    <!-- Readout Item -->
+                    <div class="bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl flex flex-col justify-between">
+                        <span class="text-slate-400 text-[11px]">Angle of Emergence (e)</span>
+                        <span id="readoutE" class="text-emerald-300 text-base font-bold mt-1">45.00°</span>
+                    </div>
+
+                    <!-- Readout Item (Lateral Displacement in cm) -->
+                    <div class="bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl flex flex-col justify-between">
+                        <span class="text-slate-400 text-[11px]">Lateral Displacement (d)</span>
+                        <span id="readoutD" class="text-amber-300 text-base font-bold mt-1">2.01 cm</span>
+                    </div>
+                </div>
+
+                <!-- Mathematical Formula Display Box -->
+                <div class="bg-slate-950/70 border border-slate-800/80 p-3 rounded-xl text-[11px] code-font text-slate-400 space-y-1 mt-1">
+                    <div class="text-slate-300 font-semibold mb-1 text-[11px]">Governing Snell's Equations:</div>
+                    <div class="flex justify-between">
+                        <span>Refraction Law:</span>
+                        <span class="text-cyan-400">n₁·sin(i) = n₂·sin(r)</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Displacement:</span>
+                        <span class="text-amber-400">d = t · sin(i - r) / cos(r)</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="max-w-7xl mx-auto w-full mt-4 text-center text-xs text-slate-500">
+        Interactive Physics Lab &bull; Refraction through a Parallel-Sided Rectangular Slab
+    </footer>
+
+    <!-- Simulation Script Logic -->
+    <script>
+        // --- Canvas & DOM Setup ---
+        const canvas = document.getElementById('simulationCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // UI Controls
+        const incidenceInput = document.getElementById('incidenceAngle');
+        const refractiveInput = document.getElementById('refractiveIndex');
+        const thicknessInput = document.getElementById('slabThickness');
+        const speedInput = document.getElementById('animSpeed');
+
+        const incidenceVal = document.getElementById('incidenceVal');
+        const refractiveVal = document.getElementById('refractiveVal');
+        const thicknessVal = document.getElementById('thicknessVal');
+        const speedVal = document.getElementById('speedVal');
+
+        // Telemetry Readouts
+        const readoutI = document.getElementById('readoutI');
+        const readoutR = document.getElementById('readoutR');
+        const readoutE = document.getElementById('readoutE');
+        const readoutD = document.getElementById('readoutD');
+
+        // Buttons
+        const fireBtn = document.getElementById('fireBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const pauseText = document.getElementById('pauseText');
+
+        // --- Simulation State Variables ---
+        let width = 0;
+        let height = 0;
+
+        let isPaused = false;
+        let animProgress = 0;
+        let lastTimestamp = 0;
+
+        // Scale Factor: 30 pixels on canvas = 1.0 cm
+        const PX_PER_CM = 30;
+
+        // --- Physics & Geometry Cache ---
+        let geom = {
+            laserSource: { x: 0, y: 0 },
+            p1: { x: 0, y: 0 },          // First incidence point
+            p2: { x: 0, y: 0 },          // Second incidence point
+            pEmergentEnd: { x: 0, y: 0 },// Terminal point for emergent ray
+            pDirectEnd: { x: 0, y: 0 },  // Terminal point for un-refracted path
+            
+            angleI_rad: 0,
+            angleR_rad: 0,
+            angleE_rad: 0,
+            
+            seg1Len: 0,
+            seg2Len: 0,
+            seg3Len: 0,
+            totalLen: 0,
+
+            displacementCm: 0,
+            displacementPx: 0,
+            slabThicknessCm: 6.0,
+            slabThicknessPx: 180,
+            slabLeftX: 0,
+            slabRightX: 0,
+            slabTopY: 0,
+            slabBottomY: 0
+        };
+
+        // Resize Canvas dynamically
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            width = canvas.width;
+            height = canvas.height;
+            recalculatePhysics();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // --- Physics Calculations Engine ---
+        function recalculatePhysics() {
+            const i_deg = parseFloat(incidenceInput.value);
+            const n2 = parseFloat(refractiveInput.value);
+            const t_cm = parseFloat(thicknessInput.value);
+            const n1 = 1.00;
+
+            const i_rad = (i_deg * Math.PI) / 180;
+            
+            const sin_r = (n1 / n2) * Math.sin(i_rad);
+            const r_rad = Math.asin(sin_r);
+            const r_deg = (r_rad * 180) / Math.PI;
+
+            const e_rad = i_rad;
+            const e_deg = i_deg;
+
+            // Lateral Displacement formula in cm: d = t * sin(i - r) / cos(r)
+            const d_cm = (t_cm * Math.sin(i_rad - r_rad)) / Math.cos(r_rad);
+            const t_px = t_cm * PX_PER_CM;
+            const d_px = d_cm * PX_PER_CM;
+
+            // Prism Geometry
+            geom.slabThicknessCm = t_cm;
+            geom.slabThicknessPx = t_px;
+
+            const slabHeight = Math.min(height * 0.7, 360);
+            geom.slabLeftX = width * 0.38;
+            geom.slabRightX = geom.slabLeftX + t_px;
+            geom.slabTopY = (height - slabHeight) / 2;
+            geom.slabBottomY = geom.slabTopY + slabHeight;
+
+            geom.p1 = {
+                x: geom.slabLeftX,
+                y: height / 2
+            };
+
+            const incidentRayLength = Math.min(width * 0.25, 220);
+            
+            geom.laserSource = {
+                x: geom.p1.x - incidentRayLength * Math.cos(i_rad),
+                y: geom.p1.y - incidentRayLength * Math.sin(i_rad)
+            };
+
+            const dy_inside_px = t_px * Math.tan(r_rad);
+            geom.p2 = {
+                x: geom.slabRightX,
+                y: geom.p1.y + dy_inside_px
+            };
+
+            const emergentRayLength = Math.min(width * 0.25, 220);
+            geom.pEmergentEnd = {
+                x: geom.p2.x + emergentRayLength * Math.cos(e_rad),
+                y: geom.p2.y + emergentRayLength * Math.sin(e_rad)
+            };
+
+            const totalExtDistPx = t_px / Math.cos(i_rad) + emergentRayLength;
+            geom.pDirectEnd = {
+                x: geom.p1.x + totalExtDistPx * Math.cos(i_rad),
+                y: geom.p1.y + totalExtDistPx * Math.sin(i_rad)
+            };
+
+            geom.seg1Len = Math.hypot(geom.p1.x - geom.laserSource.x, geom.p1.y - geom.laserSource.y);
+            geom.seg2Len = Math.hypot(geom.p2.x - geom.p1.x, geom.p2.y - geom.p1.y);
+            geom.seg3Len = Math.hypot(geom.pEmergentEnd.x - geom.p2.x, geom.pEmergentEnd.y - geom.p2.y);
+            geom.totalLen = geom.seg1Len + geom.seg2Len + geom.seg3Len;
+
+            geom.displacementCm = d_cm;
+            geom.displacementPx = d_px;
+            geom.angleI_rad = i_rad;
+            geom.angleR_rad = r_rad;
+            geom.angleE_rad = e_rad;
+
+            readoutI.textContent = i_deg.toFixed(2) + "°";
+            readoutR.textContent = r_deg.toFixed(2) + "°";
+            readoutE.textContent = e_deg.toFixed(2) + "°";
+            readoutD.textContent = d_cm.toFixed(2) + " cm";
+
+            incidenceVal.textContent = i_deg.toFixed(1) + "°";
+            refractiveVal.textContent = n2.toFixed(2);
+            thicknessVal.textContent = t_cm.toFixed(1) + " cm";
+        }
+
+        // --- Render Engine ---
+        function render() {
+            ctx.clearRect(0, 0, width, height);
+
+            drawGrid();
+            drawGlassPrism();
+            drawNormals();
+            drawOriginalPathExtension();
+            drawLightRays();
+            drawAngleAnnotations();
+            drawDisplacementMeasurement();
+            drawLaserSource();
+        }
+
+        function drawGrid() {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(30, 41, 59, 0.35)';
+            ctx.lineWidth = 1;
+            const gridSize = 30;
+
+            for (let x = 0; x < width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function drawGlassPrism() {
+            ctx.save();
+            const { slabLeftX, slabTopY, slabThicknessPx } = geom;
+            const slabHeight = geom.slabBottomY - geom.slabTopY;
+
+            const glassGrad = ctx.createLinearGradient(slabLeftX, 0, slabLeftX + slabThicknessPx, 0);
+            glassGrad.addColorStop(0, 'rgba(255, 255, 255, 0.08)');
+            glassGrad.addColorStop(0.5, 'rgba(186, 230, 253, 0.14)');
+            glassGrad.addColorStop(1, 'rgba(255, 255, 255, 0.08)');
+
+            ctx.fillStyle = glassGrad;
+            ctx.fillRect(slabLeftX, slabTopY, slabThicknessPx, slabHeight);
+
+            ctx.strokeStyle = 'rgba(186, 230, 253, 0.4)';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(slabLeftX, slabTopY, slabThicknessPx, slabHeight);
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(slabLeftX, slabTopY);
+            ctx.lineTo(slabLeftX + slabThicknessPx, slabTopY);
+            ctx.stroke();
+
+            ctx.font = '600 12px Inter, sans-serif';
+            ctx.fillStyle = 'rgba(148, 163, 184, 0.5)';
+            ctx.fillText('AIR (n₁ = 1.00)', slabLeftX - 110, slabTopY + 25);
+            ctx.fillText('AIR (n₁ = 1.00)', slabLeftX + slabThicknessPx + 20, slabTopY + 25);
+
+            ctx.fillStyle = 'rgba(186, 230, 253, 0.7)';
+            ctx.fillText(`GLASS SLAB (n₂ = ${parseFloat(refractiveInput.value).toFixed(2)})`, slabLeftX + 12, slabTopY + 25);
+
+            ctx.restore();
+        }
+
+        function drawNormals() {
+            ctx.save();
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 1.25;
+            ctx.setLineDash([6, 6]);
+
+            const normalLength = 130;
+
+            // Normal N1 at First Interface (Point P1)
+            ctx.beginPath();
+            ctx.moveTo(geom.p1.x - normalLength, geom.p1.y);
+            ctx.lineTo(geom.p1.x + normalLength, geom.p1.y);
+            ctx.stroke();
+
+            // Normal N2 at Second Interface (Point P2)
+            ctx.beginPath();
+            ctx.moveTo(geom.p2.x - normalLength, geom.p2.y);
+            ctx.lineTo(geom.p2.x + normalLength, geom.p2.y);
+            ctx.stroke();
+
+            ctx.setLineDash([]);
+            ctx.strokeStyle = '#64748b';
+            ctx.lineWidth = 1;
+            const squareSize = 10;
+
+            ctx.beginPath();
+            ctx.rect(geom.p1.x - squareSize, geom.p1.y - squareSize, squareSize, squareSize);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.rect(geom.p2.x, geom.p2.y - squareSize, squareSize, squareSize);
+            ctx.stroke();
+
+            // Updated position: Placed immediately alongside normal lines
+            ctx.font = '600 11px "Fira Code", monospace';
+            ctx.fillStyle = '#cbd5e1';
+            
+            // Label N1 right along left normal line
+            ctx.fillText('Normal N₁', geom.p1.x - 70, geom.p1.y - 8);
+            
+            // Label N2 right along right normal line
+            ctx.fillText('Normal N₂', geom.p2.x + 12, geom.p2.y - 8);
+
+            ctx.restore();
+        }
+
+        function drawOriginalPathExtension() {
+            ctx.save();
+            ctx.strokeStyle = '#ffbe08';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([5, 5]);
+
+            ctx.beginPath();
+            ctx.moveTo(geom.p1.x, geom.p1.y);
+            ctx.lineTo(geom.pDirectEnd.x, geom.pDirectEnd.y);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function drawLightRays() {
+            ctx.save();
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            const d = animProgress;
+
+            // --- Segment 1: Incident Ray (Cyan) ---
+            const seg1Current = Math.min(d, geom.seg1Len);
+            if (seg1Current > 0) {
+                const ratio = seg1Current / geom.seg1Len;
+                const currentHead = {
+                    x: geom.laserSource.x + (geom.p1.x - geom.laserSource.x) * ratio,
+                    y: geom.laserSource.y + (geom.p1.y - geom.laserSource.y) * ratio
+                };
+
+                ctx.strokeStyle = 'rgba(0, 243, 255, 0.4)';
+                ctx.lineWidth = 8;
+                ctx.beginPath();
+                ctx.moveTo(geom.laserSource.x, geom.laserSource.y);
+                ctx.lineTo(currentHead.x, currentHead.y);
+                ctx.stroke();
+
+                ctx.strokeStyle = '#00f3ff';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(geom.laserSource.x, geom.laserSource.y);
+                ctx.lineTo(currentHead.x, currentHead.y);
+                ctx.stroke();
+            }
+
+            // --- Segment 2: Refracted Ray Inside Slab (Magenta) ---
+            if (d > geom.seg1Len) {
+                const seg2Current = Math.min(d - geom.seg1Len, geom.seg2Len);
+                const ratio = seg2Current / geom.seg2Len;
+                const currentHead = {
+                    x: geom.p1.x + (geom.p2.x - geom.p1.x) * ratio,
+                    y: geom.p1.y + (geom.p2.y - geom.p1.y) * ratio
+                };
+
+                ctx.strokeStyle = 'rgba(224, 86, 253, 0.4)';
+                ctx.lineWidth = 8;
+                ctx.beginPath();
+                ctx.moveTo(geom.p1.x, geom.p1.y);
+                ctx.lineTo(currentHead.x, currentHead.y);
+                ctx.stroke();
+
+                ctx.strokeStyle = '#e056fd';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(geom.p1.x, geom.p1.y);
+                ctx.lineTo(currentHead.x, currentHead.y);
+                ctx.stroke();
+            }
+
+            // --- Segment 3: Emergent Ray Outside Slab (Neon Green) ---
+            if (d > geom.seg1Len + geom.seg2Len) {
+                const seg3Current = Math.min(d - geom.seg1Len - geom.seg2Len, geom.seg3Len);
+                const ratio = seg3Current / geom.seg3Len;
+                const currentHead = {
+                    x: geom.p2.x + (geom.pEmergentEnd.x - geom.p2.x) * ratio,
+                    y: geom.p2.y + (geom.pEmergentEnd.y - geom.p2.y) * ratio
+                };
+
+                ctx.strokeStyle = 'rgba(0, 255, 135, 0.4)';
+                ctx.lineWidth = 8;
+                ctx.beginPath();
+                ctx.moveTo(geom.p2.x, geom.p2.y);
+                ctx.lineTo(currentHead.x, currentHead.y);
+                ctx.stroke();
+
+                ctx.strokeStyle = '#00ff87';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(geom.p2.x, geom.p2.y);
+                ctx.lineTo(currentHead.x, currentHead.y);
+                ctx.stroke();
+            }
+
+            // Ray Head Glow Pulse
+            if (d > 0 && d < geom.totalLen) {
+                let tipX = geom.laserSource.x;
+                let tipY = geom.laserSource.y;
+
+                if (d <= geom.seg1Len) {
+                    const r = d / geom.seg1Len;
+                    tipX = geom.laserSource.x + (geom.p1.x - geom.laserSource.x) * r;
+                    tipY = geom.laserSource.y + (geom.p1.y - geom.laserSource.y) * r;
+                } else if (d <= geom.seg1Len + geom.seg2Len) {
+                    const r = (d - geom.seg1Len) / geom.seg2Len;
+                    tipX = geom.p1.x + (geom.p2.x - geom.p1.x) * r;
+                    tipY = geom.p1.y + (geom.p2.y - geom.p1.y) * r;
+                } else {
+                    const r = (d - geom.seg1Len - geom.seg2Len) / geom.seg3Len;
+                    tipX = geom.p2.x + (geom.pEmergentEnd.x - geom.p2.x) * r;
+                    tipY = geom.p2.y + (geom.pEmergentEnd.y - geom.p2.y) * r;
+                }
+
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowColor = '#00f3ff';
+                ctx.shadowBlur = 12;
+                ctx.beginPath();
+                ctx.arc(tipX, tipY, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
+            ctx.restore();
+        }
+
+        function drawAngleAnnotations() {
+            ctx.save();
+            ctx.font = '600 12px "Fira Code", monospace';
+
+            const radiusP1 = 55;
+            const radiusP2 = 45;
+
+            const i_deg = (geom.angleI_rad * 180 / Math.PI).toFixed(1);
+            const r_deg = (geom.angleR_rad * 180 / Math.PI).toFixed(1);
+            const e_deg = (geom.angleE_rad * 180 / Math.PI).toFixed(1);
+
+            // --- 1. Angle of Incidence (i) Arc & Label ---
+            const incidentIncomingAngle = Math.PI + geom.angleI_rad;
+            const normalLeftAngle = Math.PI;
+
+            ctx.strokeStyle = 'rgba(0, 243, 255, 0.8)';
+            ctx.fillStyle = 'rgba(0, 243, 255, 0.18)';
+            ctx.lineWidth = 1.5;
+
+            ctx.beginPath();
+            ctx.moveTo(geom.p1.x, geom.p1.y);
+            ctx.arc(geom.p1.x, geom.p1.y, radiusP1, normalLeftAngle, incidentIncomingAngle, false);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            const midAngleI = Math.PI + (geom.angleI_rad / 2);
+            const textRadiusI = radiusP1 + (geom.angleI_rad < 0.25 ? 35 : 22);
+            const lblIX = geom.p1.x + textRadiusI * Math.cos(midAngleI);
+            const lblIY = geom.p1.y + textRadiusI * Math.sin(midAngleI);
+            
+            ctx.fillStyle = '#00f3ff';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`i = ${i_deg}°`, lblIX, lblIY);
+
+
+            // --- 2. Angle of Refraction (r) Arc & Label ---
+            const refractedRayAngle = Math.atan2(geom.p2.y - geom.p1.y, geom.p2.x - geom.p1.x);
+
+            ctx.strokeStyle = 'rgba(224, 86, 253, 0.8)';
+            ctx.fillStyle = 'rgba(224, 86, 253, 0.15)';
+
+            ctx.beginPath();
+            ctx.moveTo(geom.p1.x, geom.p1.y);
+            ctx.arc(geom.p1.x, geom.p1.y, radiusP1 - 10, 0, refractedRayAngle, false);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            const midAngleR = refractedRayAngle / 2;
+            const lblRX = geom.p1.x + (radiusP1 + 15) * Math.cos(midAngleR);
+            const lblRY = geom.p1.y + (radiusP1 + 15) * Math.sin(midAngleR);
+
+            ctx.fillStyle = '#e056fd';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'alphabetic';
+            ctx.fillText(`r = ${r_deg}°`, lblRX, lblRY + 4);
+
+
+            // --- 3. Angle of Emergence (e) Arc & Label ---
+            const emergentRayAngle = Math.atan2(geom.pEmergentEnd.y - geom.p2.y, geom.pEmergentEnd.x - geom.p2.x);
+
+            ctx.strokeStyle = 'rgba(0, 255, 135, 0.8)';
+            ctx.fillStyle = 'rgba(0, 255, 135, 0.15)';
+
+            ctx.beginPath();
+            ctx.moveTo(geom.p2.x, geom.p2.y);
+            ctx.arc(geom.p2.x, geom.p2.y, radiusP2, 0, emergentRayAngle, false);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            const midAngleE = emergentRayAngle / 2;
+            const lblEX = geom.p2.x + (radiusP2 + 18) * Math.cos(midAngleE);
+            const lblEY = geom.p2.y + (radiusP2 + 18) * Math.sin(midAngleE);
+
+            ctx.fillStyle = '#00ff87';
+            ctx.fillText(`e = ${e_deg}°`, lblEX, lblEY + 4);
+
+            ctx.restore();
+        }
+
+        function drawDisplacementMeasurement() {
+            if (animProgress < geom.seg1Len + geom.seg2Len) return;
+
+            ctx.save();
+            ctx.strokeStyle = '#ffbe08';
+            ctx.fillStyle = '#ffbe08';
+            ctx.lineWidth = 1.5;
+
+            const offsetDist = 120;
+            const i_rad = geom.angleI_rad;
+
+            const pEmergentRef = {
+                x: geom.p2.x + offsetDist * Math.cos(i_rad),
+                y: geom.p2.y + offsetDist * Math.sin(i_rad)
+            };
+
+            const perpVector = {
+                x: Math.sin(i_rad),
+                y: -Math.cos(i_rad)
+            };
+
+            const pDirectRef = {
+                x: pEmergentRef.x - geom.displacementPx * perpVector.x,
+                y: pEmergentRef.y - geom.displacementPx * perpVector.y
+            };
+
+            ctx.beginPath();
+            ctx.moveTo(pEmergentRef.x, pEmergentRef.y);
+            ctx.lineTo(pDirectRef.x, pDirectRef.y);
+            ctx.stroke();
+
+            drawArrowHead(pEmergentRef, pDirectRef);
+            drawArrowHead(pDirectRef, pEmergentRef);
+
+            const midX = (pEmergentRef.x + pDirectRef.x) / 2;
+            const midY = (pEmergentRef.y + pDirectRef.y) / 2;
+
+            // Updated label display in cm
+            ctx.font = '600 12px "Fira Code", monospace';
+            ctx.fillText(`d = ${geom.displacementCm.toFixed(2)} cm`, midX + 12, midY + 4);
+
+            ctx.restore();
+        }
+
+        function drawArrowHead(from, to) {
+            const headlen = 6;
+            const angle = Math.atan2(to.y - from.y, to.x - from.x);
+            ctx.beginPath();
+            ctx.moveTo(to.x, to.y);
+            ctx.lineTo(to.x - headlen * Math.cos(angle - Math.PI / 6), to.y - headlen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(to.x - headlen * Math.cos(angle + Math.PI / 6), to.y - headlen * Math.sin(angle + Math.PI / 6));
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawLaserSource() {
+            ctx.save();
+            const { x, y } = geom.laserSource;
+            const angle = geom.angleI_rad;
+
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+
+            ctx.fillStyle = '#1e293b';
+            ctx.strokeStyle = '#00f3ff';
+            ctx.lineWidth = 1.5;
+
+            ctx.beginPath();
+            ctx.roundRect(-35, -12, 35, 24, 4);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(0, -7, 6, 14);
+
+            ctx.fillStyle = '#00f3ff';
+            ctx.beginPath();
+            ctx.arc(-20, 0, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // --- Animation Loop ---
+        function animate(timestamp) {
+            if (!lastTimestamp) lastTimestamp = timestamp;
+            const deltaTime = (timestamp - lastTimestamp) / 1000;
+            lastTimestamp = timestamp;
+
+            if (!isPaused) {
+                const speedMultiplier = parseFloat(speedInput.value);
+                const raySpeed = 380 * speedMultiplier;
+
+                animProgress += raySpeed * deltaTime;
+                if (animProgress > geom.totalLen + 80) {
+                    animProgress = geom.totalLen + 80;
+                }
+            }
+
+            render();
+            requestAnimationFrame(animate);
+        }
+
+        // --- Event Handlers ---
+        function triggerFireLaser() {
+            animProgress = 0;
+            isPaused = false;
+            updatePauseButtonUI();
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            updatePauseButtonUI();
+        }
+
+        function updatePauseButtonUI() {
+            if (isPaused) {
+                pauseText.textContent = "Play";
+                pauseIcon.innerHTML = `<path d="M8 5v14l11-7z"/>`;
+            } else {
+                pauseText.textContent = "Pause";
+                pauseIcon.innerHTML = `<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>`;
+            }
+        }
+
+        [incidenceInput, refractiveInput, thicknessInput].forEach(element => {
+            element.addEventListener('input', () => {
+                recalculatePhysics();
+                if (animProgress >= geom.totalLen) {
+                    animProgress = geom.totalLen;
+                }
+            });
+        });
+
+        speedInput.addEventListener('input', () => {
+            speedVal.textContent = parseFloat(speedInput.value).toFixed(1) + 'x';
+        });
+
+        fireBtn.addEventListener('click', triggerFireLaser);
+        pauseBtn.addEventListener('click', togglePause);
+
+        // --- Initialize ---
+        resizeCanvas();
+        triggerFireLaser();
+        requestAnimationFrame(animate);
+
+    </script>
+</body>
+</html>
