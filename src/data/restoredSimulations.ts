@@ -1420,5 +1420,282 @@ export const RESTORED_SIMULATIONS: SimulationItem[] = [
     ],
     isHtmlApp: true,
     htmlUrl: "/simulations/distance-time-graph.html"
+  },
+
+  // 19. PHYSICS / ASTROPHYSICS: 3D Solar Flare Simulation & Physics Narration
+  {
+    id: "sim-solar-flare-physics-narration",
+    title: "3D Solar Flare Simulation & Physics Narration",
+    tagline: "Active Region 3664: magnetic reconnection, coronal loops, granulation convection, plasma particle bursts, and voiceover narration",
+    discipline: "physics",
+    gradeLevel: ["Middle School (6-8)", "High School (9-12)", "AP / IB STEM", "Undergraduate"],
+    standards: ["NGSS HS-ESS1-1", "NGSS HS-PS2-4", "NGSS HS-PS4-2", "NGSS SEP-2"],
+    description: "An immersive 3D solar physics laboratory simulating solar flare dynamics in Active Region 3664. Explore how turbulent magnetoconvection twists coronal magnetic field lines above sunspot groups until magnetic reconnection violently snaps the loops, accelerating superheated plasma particles into the heliosphere and blasting extreme UV and X-ray radiation. Features interactive 3D camera controls, adjustable magnetic tension and twist, real-time GOES X-ray flare classification, plasma temperature readouts, and automated speech synthesis voice narration.",
+    learningObjectives: [
+      "Explain how solar granulation and convective motions twist magnetic field lines above active sunspot regions",
+      "Model magnetic reconnection as a mechanism converting stored magnetic energy into kinetic plasma energy and radiation",
+      "Interpret solar flare classification scales (B, C, M, and X-class flares) based on peak soft X-ray flux",
+      "Analyze the thermal dynamics of solar coronal plasma reaching tens of millions of Kelvin during eruptive events"
+    ],
+    thumbnailGradient: "from-amber-600 via-orange-700 to-slate-950",
+    badgeColor: "bg-amber-500/10 text-amber-300 border-amber-500/20",
+    iconName: "Flame",
+    rating: 4.99,
+    reviewCount: 92,
+    teacherCount: 380,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 200,
+      districtUnlimited: 400
+    },
+    features: [
+      "Real-time 3D solar photosphere viewport with orbiting camera, zoom, and procedural solar granulation texture",
+      "Dynamic magnetic arcade loops rendered with tension, twist offset, and reconnection apex snapping",
+      "Particle physics engine simulating thousands of trapped plasma particles and eruptive ejection trajectories",
+      "Interactive audio voiceover narration powered by the Web Speech API explaining each stage of solar flare physics",
+      "Live active region telemetry: X-Ray Class (B to X-class), Plasma Temperature (MK), Magnetic Flux (kT), and Energy State"
+    ],
+    parameterDefaults: {
+      tension: 0.80,
+      density: 1600,
+      twist: 0.45
+    },
+    parameterControls: [
+      {
+        key: "tension",
+        label: "Magnetic Tension",
+        min: 0.2,
+        max: 1.5,
+        step: 0.05,
+        unit: "",
+        description: "Vertical extension and tension of coronal magnetic loops"
+      },
+      {
+        key: "density",
+        label: "Particle Density",
+        min: 600,
+        max: 3000,
+        step: 100,
+        unit: "pts",
+        description: "Number of active plasma particles in the arcade"
+      },
+      {
+        key: "twist",
+        label: "Turbulence / Twist",
+        min: 0.0,
+        max: 1.0,
+        step: 0.05,
+        unit: "",
+        description: "Non-potential shear and twist inducing magnetic instability"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-flare-1",
+        title: "X-Class Superflare",
+        instruction: "Increase magnetic twist and tension to trigger a major reconnection event reaching an X-class flare rating.",
+        targetMetric: "Flare Triggered",
+        targetValue: 1,
+        tolerance: 0,
+        currentValueKey: "flare_intensity",
+        rewardBadge: "Solar Storm Chaser"
+      },
+      {
+        id: "ch-flare-2",
+        title: "Coronal Overheating",
+        instruction: "Trigger a flare and observe the peak plasma temperature telemetry surpassing 20 Million Kelvin (MK).",
+        targetMetric: "Plasma Temperature",
+        targetValue: 20,
+        tolerance: 2,
+        currentValueKey: "plasma_temp_mk",
+        rewardBadge: "Helios Physicist"
+      }
+    ],
+    previewFacts: [
+      "Solar flares release up to 10²⁵ Joules of energy in mere minutes—equivalent to millions of 100-megaton hydrogen bombs detonating simultaneously.",
+      "The solar Carrington Event of 1859 was an estimated X40-class flare that produced auroras visible in tropical skies and induced currents in telegraph wires."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/solar-flare-physics-narration.html"
+  },
+
+  // 20. CHEMISTRY: Full-Atomic Chemical Bonding Simulator
+  {
+    id: "sim-chemical-bonding-simulator",
+    title: "Full-Atomic Chemical Bonding Simulator",
+    tagline: "Bohr and subshell electronic configurations: ionic electron transfer, covalent orbital sharing, and coordinate dative pairs",
+    discipline: "chemistry",
+    gradeLevel: ["Middle School (6-8)", "High School (9-12)", "AP / IB STEM", "Undergraduate"],
+    standards: ["NGSS HS-PS1-1", "NGSS HS-PS1-2", "AP Chemistry Unit 2", "NGSS SEP-2"],
+    description: "An interactive chemistry laboratory visualizing Bohr shell and subshell (s, p, d) electronic configurations during chemical bonding. Explore ionic electron transfer (NaCl, MgO, LiF, KCl, NaF) with cation and anion formation, covalent orbital sharing (H₂, O₂, N₂, HF, Cl₂) across single, double, and triple bonds, and coordinate-covalent dative bonds (NH₃→BF₃, [BF₄]⁻, [NH₄]⁺, [H₃O]⁺, [AlCl₄]⁻) where a donor lone pair fills an empty acceptor orbital.",
+    learningObjectives: [
+      "Distinguish between ionic, covalent, and coordinate-covalent (dative) bonding mechanisms",
+      "Trace electron transfer and octet rule satisfaction in terms of both Bohr shells and subshell orbital occupancies (1s, 2s, 2p, 3s, 3p)",
+      "Model how single, double, and triple covalent bonds form through mutual sharing of 1, 2, or 3 electron pairs",
+      "Explain coordinate bonding wherein a Lewis base donates an unshared lone pair to a Lewis acid with an electron-deficient valence shell"
+    ],
+    thumbnailGradient: "from-cyan-600 via-teal-700 to-slate-950",
+    badgeColor: "bg-teal-500/10 text-teal-300 border-teal-500/20",
+    iconName: "FlaskConical",
+    rating: 4.99,
+    reviewCount: 98,
+    teacherCount: 410,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 200,
+      districtUnlimited: 400
+    },
+    features: [
+      "15 interactive compounds across 3 fundamental bond classes: Ionic (NaCl, MgO, LiF, KCl, NaF), Covalent (H₂, O₂, N₂, HF, Cl₂), and Coordinate-Covalent (NH₃-BF₃, [BF₄]⁻, [NH₄]⁺, [H₃O]⁺, [AlCl₄]⁻)",
+      "Real-time atomic orbital canvas with animated electron transfers, shared overlapping orbitals, and dative arrow representations",
+      "Dynamic configuration telemetry updating Bohr configurations and full subshell notation (e.g. 1s² 2s² 2p⁶) upon reaction completion",
+      "Nucleus particle counts displaying proton (P) and neutron (N) totals for each element",
+      "Interactive animation controls: Play, Pause, Replay, and Reset with step-by-step progress tracking"
+    ],
+    parameterDefaults: {
+      bondType: "ionic",
+      compoundIndex: 0
+    },
+    parameterControls: [
+      {
+        key: "bondType",
+        label: "Bond Classification",
+        min: 0,
+        max: 2,
+        step: 1,
+        unit: "",
+        description: "Ionic (0), Covalent (1), or Coordinate-Covalent (2)"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-chem-1",
+        title: "Octet Completion in Ionic Transfer",
+        instruction: "Select Magnesium Oxide (MgO) and animate the 2-electron transfer from Mg (3s²) to O (2p⁴) to form the Mg²⁺ and O²⁻ octets.",
+        targetMetric: "Electrons Transferred",
+        targetValue: 2,
+        tolerance: 0,
+        currentValueKey: "transfer_count",
+        rewardBadge: "Electrovalent Specialist"
+      },
+      {
+        id: "ch-chem-2",
+        title: "Dative Bond Lone Pair Donation",
+        instruction: "Explore the Ammonia-Boron Trifluoride adduct (NH₃: + BF₃) to observe how Nitrogen's 2s² lone pair completes Boron's valence octet.",
+        targetMetric: "Coordinate Bond Formed",
+        targetValue: 1,
+        tolerance: 0,
+        currentValueKey: "dative_state",
+        rewardBadge: "Lewis Acid-Base Master"
+      }
+    ],
+    previewFacts: [
+      "In a coordinate (dative) bond, both shared electrons originate from the same donor atom, yet once formed, the bond has identical physical properties to a standard covalent bond.",
+      "The octet rule reflects the stable electronic configuration of noble gases, corresponding to completely filled ns² np⁶ valence subshells."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/chemical-bonding-simulator.html"
+  },
+
+  // 21. MATHEMATICS: STEM Virtual Lab - Circles, Tangents & Conics
+  {
+    id: "sim-analytical-geometry-circles-conics",
+    title: "STEM Virtual Lab: Analytical Geometry (Circles, Tangents & Conics)",
+    tagline: "Interactive Cartesian geometry: circles with perpendicular tangent lines, external tangents, ellipses, parabolas, and hyperbolas",
+    discipline: "mathematics",
+    gradeLevel: ["High School (9-12)", "AP / IB STEM", "Undergraduate"],
+    standards: ["CCSS.MATH.HSG.GPE.A.1", "CCSS.MATH.HSG.C.A.2", "CCSS.MATH.HSG.GPE.A.2", "CCSS.MATH.HSG.GPE.A.3"],
+    description: "An interactive analytical geometry laboratory exploring circles, tangent lines, and conic sections in real-time coordinate space. Mode A enables dynamic manipulation of circles (h, k, r) and tangent lines from points on the perimeter or external points, proving tangent-radius perpendicularity (m₁·m₂ = -1). Mode B explores the complete conic family (ellipses, parabolas, and hyperbolas) with dynamic foci points, directrix lines, asymptotes, eccentricity calculations, and live Cartesian equation updates.",
+    learningObjectives: [
+      "Derive and graph standard Cartesian equations of circles (x - h)² + (y - k)² = r²",
+      "Demonstrate that the tangent to a circle at any point of contact is strictly perpendicular to the radius vector at that point",
+      "Construct and calculate external tangent lines and points of contact from external coordinate points",
+      "Analyze conic sections (ellipse, parabola, hyperbola) in terms of center/vertex offsets, focal parameters, directrix lines, and asymptotic slopes"
+    ],
+    thumbnailGradient: "from-blue-600 via-indigo-700 to-slate-900",
+    badgeColor: "bg-blue-500/10 text-blue-300 border-blue-500/20",
+    iconName: "Compass",
+    rating: 4.98,
+    reviewCount: 74,
+    teacherCount: 320,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 200,
+      districtUnlimited: 400
+    },
+    features: [
+      "Dual exploration modes: Mode A (Circles & Tangents) and Mode B (Conic Sections: Ellipse, Parabola, Hyperbola)",
+      "Interactive 2D Cartesian coordinate plane with smooth canvas panning, zoom controls, and direct handle drag-and-drop",
+      "Real-time analytical equation readouts for circle standard form, tangent lines, ellipse major/minor axes, and conic Cartesian equations",
+      "Geometric overlay toggles for foci, vertices, directrix lines, right-angle indicators, and hyperbola asymptotes",
+      "Built-in presets for unit circles, shifted centers, external points, standard ellipses, parabolas, and hyperbolas"
+    ],
+    parameterDefaults: {
+      circleH: 0,
+      circleK: 0,
+      circleR: 4,
+      tangentX1: 6,
+      tangentY1: 4
+    },
+    parameterControls: [
+      {
+        key: "circleH",
+        label: "Center X (h)",
+        min: -10,
+        max: 10,
+        step: 0.5,
+        unit: "",
+        description: "X-coordinate of the circle's center"
+      },
+      {
+        key: "circleK",
+        label: "Center Y (k)",
+        min: -10,
+        max: 10,
+        step: 0.5,
+        unit: "",
+        description: "Y-coordinate of the circle's center"
+      },
+      {
+        key: "circleR",
+        label: "Radius (r)",
+        min: 1,
+        max: 12,
+        step: 0.5,
+        unit: "",
+        description: "Radius of the circle"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-geom-1",
+        title: "Perpendicular Tangent Verification",
+        instruction: "Place a tangent point exactly on the circle perimeter and verify that the product of the radius slope and tangent slope equals -1.",
+        targetMetric: "Perpendicular Verified",
+        targetValue: 1,
+        tolerance: 0,
+        currentValueKey: "perpendicular_state",
+        rewardBadge: "Tangent Theorem Master"
+      },
+      {
+        id: "ch-geom-2",
+        title: "Equal Major-Minor Ellipse (Circle Limit)",
+        instruction: "In Conics Mode, set semi-axis a and b to the exact same value and observe the foci converge to the center.",
+        targetMetric: "Eccentricity Zero",
+        targetValue: 0,
+        tolerance: 0.05,
+        currentValueKey: "eccentricity",
+        rewardBadge: "Conics Connoisseur"
+      }
+    ],
+    previewFacts: [
+      "Apollonius of Perga (circa 200 BC) was the first to show that the parabola, ellipse, and hyperbola are all cross-sections of the same cone.",
+      "Johannes Kepler discovered that planetary orbits are not perfect circles, but ellipses with the Sun located at one focus (Kepler's First Law)."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/analytical-geometry-circles-conics.html"
   }
 ];

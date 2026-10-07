@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Chemical Bonding Simulator</title>
+    <style>
+        :root {
+            --bg-color: #090d16;
+            --panel-bg: #151c2c;
+            --accent-blue: #38bdf8;
+            --accent-purple: #c084fc;
+            --accent-green: #4ade80;
+            --accent-pink: #f472b6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            color: var(--accent-blue);
+            margin-bottom: 5px;
+        }
+
+        header p {
+            color: var(--text-muted);
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+            max-width: 1550px;
+            margin: 0 auto;
+            width: 100%;
+            flex-grow: 1;
+        }
+
+        .control-panel {
+            background: var(--panel-bg);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+            border: 1px solid #1e293b;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--accent-blue);
+            border-bottom: 2px solid #334155;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .tab-btn, .example-btn {
+            background: #1e293b;
+            color: var(--text-main);
+            border: 1px solid #334155;
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover, .example-btn:hover {
+            background: #334155;
+        }
+
+        .tab-btn.active {
+            background: var(--accent-blue);
+            color: #0f172a;
+            font-weight: bold;
+            border-color: var(--accent-blue);
+        }
+
+        .example-btn.active {
+            background: var(--accent-purple);
+            color: #ffffff;
+            font-weight: bold;
+            border-color: var(--accent-purple);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-play { background: var(--accent-green); color: #0f172a; }
+        .btn-play:hover { background: #22c55e; }
+        .btn-reset { background: var(--accent-pink); color: #0f172a; }
+        .btn-reset:hover { background: #ec4899; }
+
+        .simulation-area {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .canvas-container {
+            background: var(--panel-bg);
+            border-radius: 12px;
+            position: relative;
+            flex-grow: 1;
+            min-height: 560px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+            border: 1px solid #1e293b;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .info-card {
+            background: var(--panel-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+            border: 1px solid #1e293b;
+        }
+
+        .info-card h2 {
+            color: var(--accent-green);
+            margin-bottom: 8px;
+            font-size: 1.4rem;
+        }
+
+        .info-card p {
+            color: var(--text-muted);
+            line-height: 1.5;
+            font-size: 0.95rem;
+        }
+
+        .legend {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            font-size: 0.85rem;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        @media (max-width: 900px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Full-Atomic Chemical Bonding Simulator</h1>
+        <p>Visualizing Bohr &amp; Subshell Electronic Configurations During Chemical Bonding</p>
+    </header>
+
+    <div class="main-container">
+        <!-- Control Sidebar -->
+        <div class="control-panel">
+            <div>
+                <div class="section-title">1. Select Bond Type</div>
+                <div class="btn-group">
+                    <button class="tab-btn active" onclick="switchBondType('ionic')">Ionic (Electrovalent)</button>
+                    <button class="tab-btn" onclick="switchBondType('covalent')">Covalent</button>
+                    <button class="tab-btn" onclick="switchBondType('coordinate')">Coordinate-Covalent</button>
+                </div>
+            </div>
+
+            <div>
+                <div class="section-title">2. Choose Compound</div>
+                <div class="btn-group" id="example-buttons"></div>
+            </div>
+
+            <div>
+                <div class="section-title">3. Controls</div>
+                <div class="controls">
+                    <button class="action-btn btn-play" id="playBtn" onclick="toggleAnimation()">Animate</button>
+                    <button class="action-btn btn-reset" onclick="resetAnimation()">Reset</button>
+                </div>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item"><span class="dot" style="background:#64748b;"></span> Inner Shell Electron</div>
+                <div class="legend-item"><span class="dot" style="background:#38bdf8;"></span> Atom A Valence / Donor Pair</div>
+                <div class="legend-item"><span class="dot" style="background:#f472b6;"></span> Atom B Valence</div>
+                <div class="legend-item"><span class="dot" style="background:#facc15;"></span> Transferred / Shared Pair</div>
+            </div>
+        </div>
+
+        <!-- Visual Canvas & Details -->
+        <div class="simulation-area">
+            <div class="canvas-container">
+                <canvas id="simCanvas"></canvas>
+            </div>
+
+            <div class="info-card">
+                <h2 id="compound-name">Compound Name</h2>
+                <p id="compound-desc">Description of the reaction and chemical mechanics will appear here.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Full Atomic Data Store
+        const bondData = {
+            ionic: [
+                {
+                    name: "Sodium Chloride (NaCl)",
+                    formula: "Na + Cl → Na⁺Cl⁻",
+                    desc: "Sodium loses 1 valence electron (3s¹) to form Na⁺, while Chlorine gains 1 electron into its 3p subshell to form Cl⁻, achieving octets.",
+                    type: "ionic",
+                    atomA: { 
+                        name: "Sodium (Na)", symbol: "Na", protons: 11, neutrons: 12, shells: [2, 8, 1],
+                        initialBohr: "2, 8, 1", finalBohr: "2, 8",
+                        initialSub: "1s² 2s² 2p⁶ 3s¹", finalSub: "1s² 2s² 2p⁶",
+                        change: "-1 e⁻ (Loss)"
+                    },
+                    atomB: { 
+                        name: "Chlorine (Cl)", symbol: "Cl", protons: 17, neutrons: 18, shells: [2, 8, 7],
+                        initialBohr: "2, 8, 7", finalBohr: "2, 8, 8",
+                        initialSub: "1s² 2s² 2p⁶ 3s² 3p⁵", finalSub: "1s² 2s² 2p⁶ 3s² 3p⁶",
+                        change: "+1 e⁻ (Gain)"
+                    },
+                    transferCount: 1
+                },
+                {
+                    name: "Magnesium Oxide (MgO)",
+                    formula: "Mg + O → Mg²⁺O²⁻",
+                    desc: "Magnesium loses 2 valence electrons (3s²) to form Mg²⁺. Oxygen gains 2 electrons into its 2p subshell to become O²⁻.",
+                    type: "ionic",
+                    atomA: { 
+                        name: "Magnesium (Mg)", symbol: "Mg", protons: 12, neutrons: 12, shells: [2, 8, 2],
+                        initialBohr: "2, 8, 2", finalBohr: "2, 8",
+                        initialSub: "1s² 2s² 2p⁶ 3s²", finalSub: "1s² 2s² 2p⁶",
+                        change: "-2 e⁻ (Loss)"
+                    },
+                    atomB: { 
+                        name: "Oxygen (O)", symbol: "O", protons: 8, neutrons: 8, shells: [2, 6],
+                        initialBohr: "2, 6", finalBohr: "2, 8",
+                        initialSub: "1s² 2s² 2p⁴", finalSub: "1s² 2s² 2p⁶",
+                        change: "+2 e⁻ (Gain)"
+                    },
+                    transferCount: 2
+                },
+                {
+                    name: "Lithium Fluoride (LiF)",
+                    formula: "Li + F → Li⁺F⁻",
+                    desc: "Lithium loses its 2s¹ valence electron to form Li⁺ (duet). Fluorine gains 1 electron into 2p⁶ to form F⁻ (octet).",
+                    type: "ionic",
+                    atomA: { 
+                        name: "Lithium (Li)", symbol: "Li", protons: 3, neutrons: 4, shells: [2, 1],
+                        initialBohr: "2, 1", finalBohr: "2",
+                        initialSub: "1s² 2s¹", finalSub: "1s²",
+                        change: "-1 e⁻ (Loss)"
+                    },
+                    atomB: { 
+                        name: "Fluorine (F)", symbol: "F", protons: 9, neutrons: 10, shells: [2, 7],
+                        initialBohr: "2, 7", finalBohr: "2, 8",
+                        initialSub: "1s² 2s² 2p⁵", finalSub: "1s² 2s² 2p⁶",
+                        change: "+1 e⁻ (Gain)"
+                    },
+                    transferCount: 1
+                },
+                {
+                    name: "Potassium Chloride (KCl)",
+                    formula: "K + Cl → K⁺Cl⁻",
+                    desc: "Potassium loses its 4s¹ electron to become K⁺. Chlorine completes its 3p shell to form Cl⁻.",
+                    type: "ionic",
+                    atomA: { 
+                        name: "Potassium (K)", symbol: "K", protons: 19, neutrons: 20, shells: [2, 8, 8, 1],
+                        initialBohr: "2, 8, 8, 1", finalBohr: "2, 8, 8",
+                        initialSub: "1s² 2s² 2p⁶ 3s² 3p⁶ 4s¹", finalSub: "1s² 2s² 2p⁶ 3s² 3p⁶",
+                        change: "-1 e⁻ (Loss)"
+                    },
+                    atomB: { 
+                        name: "Chlorine (Cl)", symbol: "Cl", protons: 17, neutrons: 18, shells: [2, 8, 7],
+                        initialBohr: "2, 8, 7", finalBohr: "2, 8, 8",
+                        initialSub: "1s² 2s² 2p⁶ 3s² 3p⁵", finalSub: "1s² 2s² 2p⁶ 3s² 3p⁶",
+                        change: "+1 e⁻ (Gain)"
+                    },
+                    transferCount: 1
+                },
+                {
+                    name: "Sodium Fluoride (NaF)",
+                    formula: "Na + F → Na⁺F⁻",
+                    desc: "Sodium loses 1 electron (3s¹), Fluorine gains 1 electron (2p⁶), forming stable Na⁺ and F⁻ ions.",
+                    type: "ionic",
+                    atomA: { 
+                        name: "Sodium (Na)", symbol: "Na", protons: 11, neutrons: 12, shells: [2, 8, 1],
+                        initialBohr: "2, 8, 1", finalBohr: "2, 8",
+                        initialSub: "1s² 2s² 2p⁶ 3s¹", finalSub: "1s² 2s² 2p⁶",
+                        change: "-1 e⁻ (Loss)"
+                    },
+                    atomB: { 
+                        name: "Fluorine (F)", symbol: "F", protons: 9, neutrons: 10, shells: [2, 7],
+                        initialBohr: "2, 7", finalBohr: "2, 8",
+                        initialSub: "1s² 2s² 2p⁵", finalSub: "1s² 2s² 2p⁶",
+                        change: "+1 e⁻ (Gain)"
+                    },
+                    transferCount: 1
+                }
+            ],
+            covalent: [
+                {
+                    name: "Hydrogen Molecule (H₂)",
+                    formula: "H + H → H—H",
+                    desc: "Each Hydrogen contributes its 1s¹ electron to form a shared pair, achieving a stable 1s² duet configuration.",
+                    type: "covalent",
+                    atomA: { 
+                        name: "Hydrogen (H)", symbol: "H", protons: 1, neutrons: 0, shells: [1],
+                        initialBohr: "1", finalBohr: "2 (Shared)",
+                        initialSub: "1s¹", finalSub: "1s² (Shared)",
+                        change: "Shares 1 e⁻"
+                    },
+                    atomB: { 
+                        name: "Hydrogen (H)", symbol: "H", protons: 1, neutrons: 0, shells: [1],
+                        initialBohr: "1", finalBohr: "2 (Shared)",
+                        initialSub: "1s¹", finalSub: "1s² (Shared)",
+                        change: "Shares 1 e⁻"
+                    },
+                    sharedPairs: 1,
+                    bondLabel: "Single Covalent Bond (—)"
+                },
+                {
+                    name: "Oxygen Gas (O₂)",
+                    formula: "O + O → O=O",
+                    desc: "Two Oxygen atoms share 2 pairs of electrons (4 electrons total), filling their 2p subshells to complete outer octets.",
+                    type: "covalent",
+                    atomA: { 
+                        name: "Oxygen (O)", symbol: "O", protons: 8, neutrons: 8, shells: [2, 6],
+                        initialBohr: "2, 6", finalBohr: "2, 8 (Shared)",
+                        initialSub: "1s² 2s² 2p⁴", finalSub: "1s² 2s² 2p⁶ (Shared)",
+                        change: "Shares 2 e⁻"
+                    },
+                    atomB: { 
+                        name: "Oxygen (O)", symbol: "O", protons: 8, neutrons: 8, shells: [2, 6],
+                        initialBohr: "2, 6", finalBohr: "2, 8 (Shared)",
+                        initialSub: "1s² 2s² 2p⁴", finalSub: "1s² 2s² 2p⁶ (Shared)",
+                        change: "Shares 2 e⁻"
+                    },
+                    sharedPairs: 2,
+                    bondLabel: "Double Covalent Bond (=)"
+                },
+                {
+                    name: "Nitrogen Gas (N₂)",
+                    formula: "N + N → N≡N",
+                    desc: "Two Nitrogen atoms share 3 pairs of valence electrons (6 electrons total), completing their 2p³ → 2p⁶ outer shell.",
+                    type: "covalent",
+                    atomA: { 
+                        name: "Nitrogen (N)", symbol: "N", protons: 7, neutrons: 7, shells: [2, 5],
+                        initialBohr: "2, 5", finalBohr: "2, 8 (Shared)",
+                        initialSub: "1s² 2s² 2p³", finalSub: "1s² 2s² 2p⁶ (Shared)",
+                        change: "Shares 3 e⁻"
+                    },
+                    atomB: { 
+                        name: "Nitrogen (N)", symbol: "N", protons: 7, neutrons: 7, shells: [2, 5],
+                        initialBohr: "2, 5", finalBohr: "2, 8 (Shared)",
+                        initialSub: "1s² 2s² 2p³", finalSub: "1s² 2s² 2p⁶ (Shared)",
+                        change: "Shares 3 e⁻"
+                    },
+                    sharedPairs: 3,
+                    bondLabel: "Triple Covalent Bond (≡)"
+                },
+                {
+                    name: "Hydrogen Fluoride (HF)",
+                    formula: "H + F → H—F",
+                    desc: "Hydrogen shares its 1s¹ electron with Fluorine's 2p⁵, giving Hydrogen a 1s² duet and Fluorine a 2p⁶ octet.",
+                    type: "covalent",
+                    atomA: { 
+                        name: "Hydrogen (H)", symbol: "H", protons: 1, neutrons: 0, shells: [1],
+                        initialBohr: "1", finalBohr: "2 (Shared)",
+                        initialSub: "1s¹", finalSub: "1s² (Shared)",
+                        change: "Shares 1 e⁻"
+                    },
+                    atomB: { 
+                        name: "Fluorine (F)", symbol: "F", protons: 9, neutrons: 10, shells: [2, 7],
+                        initialBohr: "2, 7", finalBohr: "2, 8 (Shared)",
+                        initialSub: "1s² 2s² 2p⁵", finalSub: "1s² 2s² 2p⁶ (Shared)",
+                        change: "Shares 1 e⁻"
+                    },
+                    sharedPairs: 1,
+                    bondLabel: "Single Covalent Bond (—)"
+                },
+                {
+                    name: "Chlorine Gas (Cl₂)",
+                    formula: "Cl + Cl → Cl—Cl",
+                    desc: "Two Chlorine atoms share a single electron pair, bringing their 3p⁵ subshells to a full 3p⁶ octet configuration.",
+                    type: "covalent",
+                    atomA: { 
+                        name: "Chlorine (Cl)", symbol: "Cl", protons: 17, neutrons: 18, shells: [2, 8, 7],
+                        initialBohr: "2, 8, 7", finalBohr: "2, 8, 8 (Shared)",
+                        initialSub: "1s² 2s² 2p⁶ 3s² 3p⁵", finalSub: "1s² 2s² 2p⁶ 3s² 3p⁶ (Shared)",
+                        change: "Shares 1 e⁻"
+                    },
+                    atomB: { 
+                        name: "Chlorine (Cl)", symbol: "Cl", protons: 17, neutrons: 18, shells: [2, 8, 7],
+                        initialBohr: "2, 8, 7", finalBohr: "2, 8, 8 (Shared)",
+                        initialSub: "1s² 2s² 2p⁶ 3s² 3p⁵", finalSub: "1s² 2s² 2p⁶ 3s² 3p⁶ (Shared)",
+                        change: "Shares 1 e⁻"
+                    },
+                    sharedPairs: 1,
+                    bondLabel: "Single Covalent Bond (—)"
+                }
+            ],
+            coordinate: [
+                {
+                    name: "Ammonia-Boron Trifluoride Adduct",
+                    formula: "H₃N: + BF₃ → H₃N → BF₃",
+                    desc: "Nitrogen in NH₃ donates its unshared 2s² lone pair to Boron in BF₃, allowing Boron's 2p orbital to complete an octet.",
+                    type: "coordinate",
+                    atomA: { 
+                        name: "Nitrogen Donor (in NH₃)", symbol: "N", protons: 7, neutrons: 7, shells: [2, 5],
+                        initialBohr: "2, 5", finalBohr: "2, 8 (Donates Pair)",
+                        initialSub: "1s² 2s² 2p³", finalSub: "1s² 2s² 2p⁶ (Donated Pair)",
+                        change: "Donates 2 e⁻ Pair"
+                    },
+                    atomB: { 
+                        name: "Boron Acceptor (in BF₃)", symbol: "B", protons: 5, neutrons: 6, shells: [2, 3],
+                        initialBohr: "2, 3 (6e⁻ total in BF₃)", finalBohr: "2, 8 (Acc. Octet)",
+                        initialSub: "1s² 2s² 2p¹", finalSub: "1s² 2s² 2p⁶ (Acc. Octet)",
+                        change: "Accepts 2 e⁻ Pair"
+                    },
+                    bondLabel: "Coordinate Bond (H₃N → BF₃)"
+                },
+                {
+                    name: "Fluoride to Boron Dative Pair (F⁻ → B)",
+                    formula: "F⁻ + BF₃ → [BF₄]⁻",
+                    desc: "Fluoride ion (F⁻) donates a 2p⁶ lone pair into Boron's empty orbital, filling Boron's outer valence shell to 8 electrons.",
+                    type: "coordinate",
+                    atomA: { 
+                        name: "Fluoride Ion Donor (F⁻)", symbol: "F⁻", protons: 9, neutrons: 10, shells: [2, 8],
+                        initialBohr: "2, 8", finalBohr: "2, 8 (Shared Pair)",
+                        initialSub: "1s² 2s² 2p⁶", finalSub: "1s² 2s² 2p⁶ (Donated Pair)",
+                        change: "Donates 2 e⁻ Pair"
+                    },
+                    atomB: { 
+                        name: "Boron Acceptor (in BF₃)", symbol: "B", protons: 5, neutrons: 6, shells: [2, 3],
+                        initialBohr: "2, 3", finalBohr: "2, 8 (Acc. Octet)",
+                        initialSub: "1s² 2s² 2p¹", finalSub: "1s² 2s² 2p⁶ (Acc. Octet)",
+                        change: "Accepts 2 e⁻ Pair"
+                    },
+                    bondLabel: "Pure Ion Dative Bond (F⁻ → B)"
+                },
+                {
+                    name: "Ammonium Ion Pair (NH₃ + H⁺)",
+                    formula: "NH₃ + H⁺ → [NH₄]⁺",
+                    desc: "Nitrogen donates a lone pair to H⁺ (0 electrons, empty 1s orbital), granting Hydrogen a 1s² duet configuration.",
+                    type: "coordinate",
+                    atomA: { 
+                        name: "Nitrogen Donor (in NH₃)", symbol: "N", protons: 7, neutrons: 7, shells: [2, 5],
+                        initialBohr: "2, 5", finalBohr: "2, 8 (Donates Pair)",
+                        initialSub: "1s² 2s² 2p³", finalSub: "1s² 2s² 2p⁶ (Donated Pair)",
+                        change: "Donates 2 e⁻ Pair"
+                    },
+                    atomB: { 
+                        name: "Hydrogen Ion Acceptor (H⁺)", symbol: "H⁺", protons: 1, neutrons: 0, shells: [0],
+                        initialBohr: "0", finalBohr: "2 (Duet)",
+                        initialSub: "1s⁰ (Empty)", finalSub: "1s² (Duet)",
+                        change: "Accepts 2 e⁻ Pair"
+                    },
+                    bondLabel: "Coordinate Bond (N → H⁺)"
+                },
+                {
+                    name: "Hydronium Ion Pair (H₂O + H⁺)",
+                    formula: "H₂O + H⁺ → [H₃O]⁺",
+                    desc: "Oxygen in Water donates a lone pair from its 2p subshell into the empty 1s orbital of H⁺.",
+                    type: "coordinate",
+                    atomA: { 
+                        name: "Oxygen Donor (in H₂O)", symbol: "O", protons: 8, neutrons: 8, shells: [2, 6],
+                        initialBohr: "2, 6", finalBohr: "2, 8 (Donates Pair)",
+                        initialSub: "1s² 2s² 2p⁴", finalSub: "1s² 2s² 2p⁶ (Donated Pair)",
+                        change: "Donates 2 e⁻ Pair"
+                    },
+                    atomB: { 
+                        name: "Hydrogen Ion Acceptor (H⁺)", symbol: "H⁺", protons: 1, neutrons: 0, shells: [0],
+                        initialBohr: "0", finalBohr: "2 (Duet)",
+                        initialSub: "1s⁰ (Empty)", finalSub: "1s² (Duet)",
+                        change: "Accepts 2 e⁻ Pair"
+                    },
+                    bondLabel: "Coordinate Bond (O → H⁺)"
+                },
+                {
+                    name: "Aluminum Chloride Dative Pair (Cl → Al)",
+                    formula: "Cl⁻ + AlCl₃ → [AlCl₄]⁻",
+                    desc: "Chlorine donates a lone pair into an empty 3p orbital of Aluminum, bringing Aluminum to a complete octet.",
+                    type: "coordinate",
+                    atomA: { 
+                        name: "Chlorine Donor (Cl)", symbol: "Cl", protons: 17, neutrons: 18, shells: [2, 8, 7],
+                        initialBohr: "2, 8, 7", finalBohr: "2, 8, 8 (Donates Pair)",
+                        initialSub: "1s² 2s² 2p⁶ 3s² 3p⁵", finalSub: "1s² 2s² 2p⁶ 3s² 3p⁶",
+                        change: "Donates 2 e⁻ Pair"
+                    },
+                    atomB: { 
+                        name: "Aluminum Acceptor (Al)", symbol: "Al", protons: 13, neutrons: 14, shells: [2, 8, 3],
+                        initialBohr: "2, 8, 3", finalBohr: "2, 8, 8 (Acc. Octet)",
+                        initialSub: "1s² 2s² 2p⁶ 3s² 3p¹", finalSub: "1s² 2s² 2p⁶ 3s² 3p⁶",
+                        change: "Accepts 2 e⁻ Pair"
+                    },
+                    bondLabel: "Pure Element Dative Bond (Cl → Al)"
+                }
+            ]
+        };
+
+        // Application State
+        let currentCategory = 'ionic';
+        let currentExampleIndex = 0;
+        let isAnimating = false;
+        let progress = 0;
+
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            draw();
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        function switchBondType(type) {
+            currentCategory = type;
+            currentExampleIndex = 0;
+            progress = 0;
+            isAnimating = false;
+            document.getElementById('playBtn').innerText = "Animate";
+
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            renderExampleButtons();
+            loadExample();
+        }
+
+        function renderExampleButtons() {
+            const container = document.getElementById('example-buttons');
+            container.innerHTML = '';
+            
+            bondData[currentCategory].forEach((ex, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `example-btn ${idx === currentExampleIndex ? 'active' : ''}`;
+                btn.innerText = ex.name;
+                btn.onclick = () => {
+                    document.querySelectorAll('.example-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentExampleIndex = idx;
+                    progress = 0;
+                    isAnimating = false;
+                    document.getElementById('playBtn').innerText = "Animate";
+                    loadExample();
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function loadExample() {
+            const item = bondData[currentCategory][currentExampleIndex];
+            document.getElementById('compound-name').innerText = `${item.name} (${item.formula})`;
+            document.getElementById('compound-desc').innerText = item.desc;
+            draw();
+        }
+
+        // FIXED ANIMATION TOGGLE & REPLAY FUNCTIONALITY
+        function toggleAnimation() {
+            // If animation reached completion, reset progress to start fresh on replay
+            if (progress >= 1) {
+                progress = 0;
+            }
+
+            isAnimating = !isAnimating;
+            document.getElementById('playBtn').innerText = isAnimating ? "Pause" : "Animate";
+            
+            if (isAnimating) {
+                animate();
+            }
+        }
+
+        function resetAnimation() {
+            isAnimating = false;
+            progress = 0;
+            document.getElementById('playBtn').innerText = "Animate";
+            draw();
+        }
+
+        function animate() {
+            if (!isAnimating) return;
+            progress += 0.006;
+            if (progress > 1) {
+                progress = 1;
+                isAnimating = false;
+                document.getElementById('playBtn').innerText = "Replay";
+            }
+            draw();
+            if (isAnimating) requestAnimationFrame(animate);
+        }
+
+        // --- DRAWING ENGINE ---
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const item = bondData[currentCategory][currentExampleIndex];
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2 - 40;
+
+            let initialDist = 240;
+            let finalDist = item.type === 'ionic' ? 180 : 120;
+            let currentDist = initialDist - (initialDist - finalDist) * progress;
+
+            let posA = { x: centerX - currentDist, y: centerY };
+            let posB = { x: centerX + currentDist, y: centerY };
+
+            if (item.type === 'ionic') {
+                drawIonicBond(ctx, posA, posB, item, progress);
+            } else if (item.type === 'covalent') {
+                drawCovalentBond(ctx, posA, posB, item, progress);
+            } else if (item.type === 'coordinate') {
+                drawCoordinateBond(ctx, posA, posB, item, progress);
+            }
+        }
+
+        // Draw Complete Atom
+        function drawAtom(ctx, pos, atomData, valenceColor, prog) {
+            const baseRadius = 35;
+            const shellGap = 28;
+            const numShells = atomData.shells.length;
+
+            // Nucleus
+            let nucleusRadius = 24;
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, nucleusRadius, 0, Math.PI * 2);
+            ctx.fillStyle = "#1e293b";
+            ctx.strokeStyle = valenceColor;
+            ctx.lineWidth = 2;
+            ctx.fill();
+            ctx.stroke();
+
+            // Nucleus Text
+            ctx.font = "bold 11px sans-serif";
+            ctx.fillStyle = "#f8fafc";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(`${atomData.protons}P | ${atomData.neutrons}N`, pos.x, pos.y);
+
+            // Shells & Inner Electrons
+            for (let s = 0; s < numShells; s++) {
+                let r = baseRadius + (s * shellGap);
+                let electronCount = atomData.shells[s];
+                let isValenceShell = (s === numShells - 1);
+
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
+                ctx.strokeStyle = isValenceShell ? valenceColor : "#334155";
+                ctx.lineWidth = isValenceShell ? 2 : 1;
+                if (isValenceShell) ctx.setLineDash([4, 4]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                if (isValenceShell) continue;
+
+                for (let e = 0; e < electronCount; e++) {
+                    let angle = (e * (2 * Math.PI / electronCount)) - Math.PI / 2;
+                    let ex = pos.x + r * Math.cos(angle);
+                    let ey = pos.y + r * Math.sin(angle);
+                    drawElectron(ctx, ex, ey, "#64748b", 4);
+                }
+            }
+
+            // Name
+            let outerRadius = baseRadius + (Math.max(0, numShells - 1) * shellGap);
+            let textY = pos.y + outerRadius + 28;
+            ctx.font = "bold 16px sans-serif";
+            ctx.fillStyle = "#f8fafc";
+            ctx.textAlign = "center";
+            ctx.fillText(atomData.name, pos.x, textY);
+
+            // Dynamic Electronic Configuration Displays
+            let currBohr = prog > 0.8 ? atomData.finalBohr : atomData.initialBohr;
+            let currSub = prog > 0.8 ? atomData.finalSub : atomData.initialSub;
+
+            let panelY = textY + 18;
+
+            ctx.font = "12px monospace";
+            ctx.fillStyle = "#38bdf8";
+            ctx.fillText(`Bohr: [ ${currBohr} ]`, pos.x, panelY);
+
+            ctx.fillStyle = "#c084fc";
+            ctx.fillText(`Subshell: ${currSub}`, pos.x, panelY + 16);
+
+            ctx.font = "bold 11px sans-serif";
+            if (atomData.change.includes("Loss") || atomData.change.includes("Donates")) {
+                ctx.fillStyle = "#f472b6";
+            } else if (atomData.change.includes("Gain") || atomData.change.includes("Accepts")) {
+                ctx.fillStyle = "#4ade80";
+            } else {
+                ctx.fillStyle = "#facc15";
+            }
+            ctx.fillText(`e⁻ Shift: ${atomData.change}`, pos.x, panelY + 32);
+        }
+
+        // Draw Electron
+        function drawElectron(ctx, x, y, color, radius = 6) {
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.shadowBlur = 6;
+            ctx.shadowColor = color;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        // --- IONIC BOND RENDERING ---
+        function drawIonicBond(ctx, posA, posB, item, prog) {
+            drawAtom(ctx, posA, item.atomA, "#38bdf8", prog);
+            drawAtom(ctx, posB, item.atomB, "#f472b6", prog);
+
+            let rA = 35 + ((item.atomA.shells.length - 1) * 28);
+            let rB = 35 + ((item.atomB.shells.length - 1) * 28);
+
+            let valenceA = item.atomA.shells[item.atomA.shells.length - 1];
+            for (let i = item.transferCount; i < valenceA; i++) {
+                let angle = (i * (2 * Math.PI / valenceA)) + Math.PI / 2;
+                let ex = posA.x + rA * Math.cos(angle);
+                let ey = posA.y + rA * Math.sin(angle);
+                drawElectron(ctx, ex, ey, "#38bdf8");
+            }
+
+            let valenceB = item.atomB.shells[item.atomB.shells.length - 1];
+            for (let i = 0; i < valenceB; i++) {
+                let angle = (i * (2 * Math.PI / 8)) - Math.PI / 2;
+                let ex = posB.x + rB * Math.cos(angle);
+                let ey = posB.y + rB * Math.sin(angle);
+                drawElectron(ctx, ex, ey, "#f472b6");
+            }
+
+            for (let i = 0; i < item.transferCount; i++) {
+                let startX = posA.x + rA * Math.cos(0);
+                let startY = posA.y + (i * 15 - 10);
+                let endAngle = ((valenceB + i) * (2 * Math.PI / 8)) - Math.PI / 2;
+                let endX = posB.x + rB * Math.cos(endAngle);
+                let endY = posB.y + rB * Math.sin(endAngle);
+
+                let curX = startX + (endX - startX) * prog;
+                let curY = startY + (endY - startY) * prog;
+
+                drawElectron(ctx, curX, curY, prog > 0.8 ? "#facc15" : "#38bdf8", 7);
+            }
+
+            if (prog >= 0.85) {
+                let chargeA = item.transferCount === 1 ? "+" : `${item.transferCount}+`;
+                let chargeB = item.transferCount === 1 ? "-" : `${item.transferCount}-`;
+
+                ctx.font = "bold 24px sans-serif";
+                ctx.fillStyle = "#38bdf8";
+                ctx.fillText(`[${item.atomA.symbol}]${chargeA}`, posA.x, posA.y - rA - 20);
+
+                ctx.fillStyle = "#f472b6";
+                ctx.fillText(`[${item.atomB.symbol}]${chargeB}`, posB.x, posB.y - rB - 20);
+
+                ctx.font = "bold 15px sans-serif";
+                ctx.fillStyle = "#facc15";
+                let midX = (posA.x + posB.x) / 2;
+                ctx.fillText("⚡ Ionic Bond (Electrostatic Attraction) ⚡", midX, posA.y - 85);
+            }
+        }
+
+        // --- COVALENT BOND RENDERING ---
+        function drawCovalentBond(ctx, posA, posB, item, prog) {
+            drawAtom(ctx, posA, item.atomA, "#38bdf8", prog);
+            drawAtom(ctx, posB, item.atomB, "#f472b6", prog);
+
+            let rA = 35 + ((item.atomA.shells.length - 1) * 28);
+            let rB = 35 + ((item.atomB.shells.length - 1) * 28);
+
+            let valenceA = item.atomA.shells[item.atomA.shells.length - 1];
+            let valenceB = item.atomB.shells[item.atomB.shells.length - 1];
+
+            for (let i = item.sharedPairs; i < valenceA; i++) {
+                let angle = (i * (2 * Math.PI / valenceA)) + Math.PI / 2;
+                let ex = posA.x + rA * Math.cos(angle);
+                let ey = posA.y + rA * Math.sin(angle);
+                drawElectron(ctx, ex, ey, "#38bdf8");
+            }
+
+            for (let i = item.sharedPairs; i < valenceB; i++) {
+                let angle = (i * (2 * Math.PI / valenceB)) - Math.PI / 2;
+                let ex = posB.x + rB * Math.cos(angle);
+                let ey = posB.y + rB * Math.sin(angle);
+                drawElectron(ctx, ex, ey, "#f472b6");
+            }
+
+            let midX = (posA.x + posB.x) / 2;
+            for (let p = 0; p < item.sharedPairs; p++) {
+                let offsetY = (p - (item.sharedPairs - 1) / 2) * 22;
+
+                let e1StartX = posA.x + rA;
+                let e1EndX = midX - 8;
+                let e1X = e1StartX + (e1EndX - e1StartX) * prog;
+                let e1Y = posA.y + offsetY;
+                drawElectron(ctx, e1X, e1Y, prog > 0.8 ? "#facc15" : "#38bdf8", 6);
+
+                let e2StartX = posB.x - rB;
+                let e2EndX = midX + 8;
+                let e2X = e2StartX + (e2EndX - e2StartX) * prog;
+                let e2Y = posB.y + offsetY;
+                drawElectron(ctx, e2X, e2Y, prog > 0.8 ? "#facc15" : "#f472b6", 6);
+            }
+
+            if (prog >= 0.85) {
+                ctx.font = "bold 16px sans-serif";
+                ctx.fillStyle = "#4ade80";
+                ctx.fillText(`🤝 ${item.bondLabel}`, midX, posA.y - 85);
+            }
+        }
+
+        // --- COORDINATE BOND RENDERING ---
+        function drawCoordinateBond(ctx, posA, posB, item, prog) {
+            drawAtom(ctx, posA, item.atomA, "#38bdf8", prog);
+            drawAtom(ctx, posB, item.atomB, "#f472b6", prog);
+
+            let rA = 35 + ((item.atomA.shells.length - 1) * 28);
+            let rB = 35 + ((Math.max(1, item.atomB.shells.length) - 1) * 28);
+
+            let midX = (posA.x + posB.x) / 2;
+
+            let eStartX = posA.x + rA;
+            let eEndX = midX;
+            let eX = eStartX + (eEndX - eStartX) * prog;
+
+            drawElectron(ctx, eX, posA.y - 10, "#facc15", 6);
+            drawElectron(ctx, eX, posA.y + 10, "#facc15", 6);
+
+            if (prog >= 0.85) {
+                ctx.font = "bold 16px sans-serif";
+                ctx.fillStyle = "#c084fc";
+                ctx.fillText(`➡️ ${item.bondLabel}`, midX, posA.y - 85);
+
+                ctx.beginPath();
+                ctx.strokeStyle = "#facc15";
+                ctx.lineWidth = 3;
+                ctx.moveTo(posA.x + rA, posA.y - 35);
+                ctx.lineTo(posB.x - rB, posA.y - 35);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.fillStyle = "#facc15";
+                ctx.moveTo(posB.x - rB, posA.y - 35);
+                ctx.lineTo(posB.x - rB - 10, posA.y - 41);
+                ctx.lineTo(posB.x - rB - 10, posA.y - 29);
+                ctx.fill();
+            }
+        }
+
+        // Init App
+        renderExampleButtons();
+        resizeCanvas();
+        loadExample();
+    </script>
+</body>
+</html>

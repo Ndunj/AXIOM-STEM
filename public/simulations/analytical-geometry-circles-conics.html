@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STEM Virtual Laboratory: Circles, Tangents &amp; Conics</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Custom scrollbars for sidebars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 h-screen flex flex-col overflow-hidden">
+
+    <header class="bg-slate-800 border-b border-slate-700 px-6 py-3 flex items-center justify-between shrink-0 shadow-md">
+        <div class="flex items-center space-x-3">
+            <div class="bg-blue-600 p-2 rounded-lg text-white font-bold text-xl shadow-inner">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight text-white">STEM Virtual Lab: Analytical Geometry</h1>
+                <p class="text-xs text-slate-400">Explore circles, tangent lines, and conic sections in real-time coordinate space</p>
+            </div>
+        </div>
+
+        <!-- Main Mode Tabs -->
+        <div class="flex bg-slate-900 p-1 rounded-xl border border-slate-700">
+            <button id="mode-circle-btn" onclick="switchMode('circle')" class="px-5 py-2 text-sm font-semibold rounded-lg transition-all duration-200 bg-blue-600 text-white shadow">
+                Mode A: Circles &amp; Tangents
+            </button>
+            <button id="mode-conics-btn" onclick="switchMode('conics')" class="px-5 py-2 text-sm font-semibold rounded-lg transition-all duration-200 text-slate-400 hover:text-white">
+                Mode B: Conic Sections
+            </button>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            <button onclick="resetCurrentMode()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium rounded-lg transition border border-slate-600 flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                Reset View
+            </button>
+            <button onclick="toggleHelpModal()" class="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-xs font-medium rounded-lg transition border border-blue-500/30 flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Guide
+            </button>
+        </div>
+    </header>
+
+    <div class="flex-1 flex overflow-hidden">
+        <!-- Sidebar Controls -->
+        <aside class="w-96 bg-slate-800/90 border-r border-slate-700 flex flex-col z-10 shadow-xl overflow-y-auto">
+            
+            <!-- CIRCLE MODE CONTROLS -->
+            <div id="controls-circle" class="p-5 space-y-5">
+                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/80">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-blue-400 mb-3 flex items-center justify-between">
+                        <span>Circle Parameters</span>
+                        <span class="text-xs text-slate-400 font-normal">(h, k) and r</span>
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Center X (h): <strong id="val-circle-h" class="text-blue-400">0.0</strong></span>
+                            </div>
+                            <input type="range" id="slider-circle-h" min="-10" max="10" step="0.5" value="0" class="w-full accent-blue-500 bg-slate-700 h-2 rounded-lg cursor-pointer">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Center Y (k): <strong id="val-circle-k" class="text-emerald-400">0.0</strong></span>
+                            </div>
+                            <input type="range" id="slider-circle-k" min="-10" max="10" step="0.5" value="0" class="w-full accent-emerald-500 bg-slate-700 h-2 rounded-lg cursor-pointer">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Radius (r): <strong id="val-circle-r" class="text-amber-400">4.0</strong></span>
+                            </div>
+                            <input type="range" id="slider-circle-r" min="1" max="12" step="0.5" value="4" class="w-full accent-amber-500 bg-slate-700 h-2 rounded-lg cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- External / Tangent Point Controls -->
+                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/80">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-purple-400 mb-3 flex items-center justify-between">
+                        <span>Tangent Point P(x1, y1)</span>
+                        <span class="text-xs text-slate-400 font-normal">External or on circle</span>
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Point X1: <strong id="val-tangent-x1" class="text-purple-400">6.0</strong></span>
+                            </div>
+                            <input type="range" id="slider-tangent-x1" min="-15" max="15" step="0.5" value="6" class="w-full accent-purple-500 bg-slate-700 h-2 rounded-lg cursor-pointer">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Point Y1: <strong id="val-tangent-y1" class="text-purple-400">4.0</strong></span>
+                            </div>
+                            <input type="range" id="slider-tangent-y1" min="-15" max="15" step="0.5" value="4" class="w-full accent-purple-500 bg-slate-700 h-2 rounded-lg cursor-pointer">
+                        </div>
+                        <div class="flex gap-2 pt-1">
+                            <button onclick="setTangentPointOnCircle(1)" class="flex-1 bg-slate-800 hover:bg-slate-700 text-xs py-2 px-2 rounded border border-slate-600 text-slate-300 transition">Snap to Tangent 1</button>
+                            <button onclick="setTangentPointOnCircle(-1)" class="flex-1 bg-slate-800 hover:bg-slate-700 text-xs py-2 px-2 rounded border border-slate-600 text-slate-300 transition">Snap to Tangent 2</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Equation Readout (Circle & Tangent) -->
+                <div class="bg-slate-900/80 p-4 rounded-xl border border-blue-500/30 shadow-inner">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Live Equation Analysis</h2>
+                    <div id="readout-circle-eq" class="font-mono text-sm text-blue-300 bg-slate-950 p-2.5 rounded border border-slate-800 mb-2">
+                        (x - 0)^2 + (y - 0)^2 = 16
+                    </div>
+                    <div id="readout-tangent-eq" class="font-mono text-xs text-purple-300 bg-slate-950 p-2.5 rounded border border-slate-800 space-y-1">
+                        <div>Tangent line: Loading...</div>
+                    </div>
+                </div>
+
+                <!-- Circle Presets -->
+                <div class="space-y-2">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Quick Presets</span>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="loadCirclePreset('unit')" class="bg-slate-700 hover:bg-slate-600 text-xs py-1.5 px-2 rounded text-slate-200 transition">Unit Circle</button>
+                        <button onclick="loadCirclePreset('offset')" class="bg-slate-700 hover:bg-slate-600 text-xs py-1.5 px-2 rounded text-slate-200 transition">Shifted (3, -2)</button>
+                        <button onclick="loadCirclePreset('external')" class="bg-slate-700 hover:bg-slate-600 text-xs py-1.5 px-2 rounded text-slate-200 transition">External Point</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONICS MODE CONTROLS -->
+            <div id="controls-conics" class="p-5 space-y-5 hidden">
+                <!-- Conic Shape Selector -->
+                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/80">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-emerald-400 mb-3">Conic Type</h2>
+                    <div class="grid grid-cols-3 gap-1.5">
+                        <button id="conic-type-ellipse" onclick="setConicType('ellipse')" class="py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white transition">Ellipse</button>
+                        <button id="conic-type-parabola" onclick="setConicType('parabola')" class="py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Parabola</button>
+                        <button id="conic-type-hyperbola" onclick="setConicType('hyperbola')" class="py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Hyperbola</button>
+                    </div>
+                </div>
+
+                <!-- Orientation for Parabola -->
+                <div id="conic-sub-orientation" class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/80 hidden">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-amber-400 mb-3">Axis Orientation</h2>
+                    <div class="flex gap-2">
+                        <button id="parabola-orient-v" onclick="setParabolaOrientation('vertical')" class="flex-1 py-1.5 text-xs font-semibold rounded bg-amber-600 text-white transition">Vertical (x^2 = 4py)</button>
+                        <button id="parabola-orient-h" onclick="setParabolaOrientation('horizontal')" class="flex-1 py-1.5 text-xs font-semibold rounded bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Horizontal (y^2 = 4px)</button>
+                    </div>
+                </div>
+
+                <!-- Conic Parameters (h, k, a, b) -->
+                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/80">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-emerald-400 mb-3 flex items-center justify-between">
+                        <span>Shape Parameters</span>
+                        <span class="text-xs text-slate-400 font-normal">h, k, a, b</span>
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Center X (h): <strong id="val-conic-h" class="text-blue-400">0.0</strong></span>
+                            </div>
+                            <input type="range" id="slider-conic-h" min="-8" max="8" step="0.5" value="0" class="w-full accent-blue-500 bg-slate-700 h-2 rounded-lg cursor-pointer">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Center Y (k): <strong id="val-conic-k" class="text-emerald-400">0.0</strong></span>
+                            </div>
+                            <input type="range" id="slider-conic-k" min="-8" max="8" step="0.5" value="0" class="w-full accent-emerald-500 bg-slate-700 h-2 rounded-lg cursor-pointer">
+                        </div>
+                        <div id="wrapper-param-a">
+                            <div class="flex justify-between text-xs mb-1">
+                                <span id="label-param-a" class="text-slate-300">Semi-axis X (a): <strong id="val-conic-a" class="text-amber-400">5.0</strong></span>
+                            </div>
+                            <input type="range" id="slider-conic-a" min="1" max="10" step="0.5" value="5" class="w-full accent-amber-500 bg-slate-700 h-2 rounded-lg cursor-pointer">
+                        </div>
+                        <div id="wrapper-param-b">
+                            <div class="flex justify-between text-xs mb-1">
+                                <span id="label-param-b" class="text-slate-300">Semi-axis Y (b): <strong id="val-conic-b" class="text-purple-400">3.0</strong></span>
+                            </div>
+                            <input type="range" id="slider-conic-b" min="1" max="10" step="0.5" value="3" class="w-full accent-purple-500 bg-slate-700 h-2 rounded-lg cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Geometric Feature Overlays (Checkboxes) -->
+                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/80">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-emerald-400 mb-3">Geometric Overlays</h2>
+                    <div class="space-y-2.5 text-xs">
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" id="chk-show-foci" checked class="rounded bg-slate-700 border-slate-600 text-emerald-500 focus:ring-0">
+                            <span class="text-slate-300">Show Foci Points</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" id="chk-show-vertices" checked class="rounded bg-slate-700 border-slate-600 text-emerald-500 focus:ring-0">
+                            <span class="text-slate-300">Show Vertices &amp; Axes</span>
+                        </label>
+                        <label id="label-chk-extra" class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" id="chk-show-extra" checked class="rounded bg-slate-700 border-slate-600 text-emerald-500 focus:ring-0">
+                            <span id="text-chk-extra" class="text-slate-300">Show Asymptotes / Directrix</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Live Equation Box (Conics) -->
+                <div class="bg-slate-900/80 p-4 rounded-xl border border-emerald-500/30 shadow-inner">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Cartesian Equation</h2>
+                    <div id="readout-conic-eq" class="font-mono text-xs text-emerald-300 bg-slate-950 p-3 rounded border border-slate-800 space-y-1">
+                        Loading equation...
+                    </div>
+                </div>
+
+                <!-- Conic Presets -->
+                <div class="space-y-2">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Quick Presets</span>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="loadConicPreset('ellipse')" class="bg-slate-700 hover:bg-slate-600 text-xs py-1.5 px-2 rounded text-slate-200 transition">Standard Ellipse</button>
+                        <button onclick="loadConicPreset('parabola')" class="bg-slate-700 hover:bg-slate-600 text-xs py-1.5 px-2 rounded text-slate-200 transition">Parabola</button>
+                        <button onclick="loadConicPreset('hyperbola')" class="bg-slate-700 hover:bg-slate-600 text-xs py-1.5 px-2 rounded text-slate-200 transition">Hyperbola</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 mt-auto border-t border-slate-700/80 text-center text-xs text-slate-400">
+                Interactive Canvas: Drag center points or shapes directly!
+            </div>
+        </aside>
+
+        <!-- Main Interactive Canvas Area -->
+        <main class="flex-1 relative bg-slate-950 flex flex-col items-center justify-center overflow-hidden">
+            <!-- Canvas Toolbar overlay -->
+            <div class="absolute top-4 right-4 z-10 flex items-center space-x-2 bg-slate-900/80 backdrop-blur border border-slate-700 p-1.5 rounded-xl shadow-lg">
+                <button onclick="zoomCanvas(1.2)" class="p-2 hover:bg-slate-800 text-slate-300 rounded-lg transition" title="Zoom In">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                </button>
+                <button onclick="zoomCanvas(0.8)" class="p-2 hover:bg-slate-800 text-slate-300 rounded-lg transition" title="Zoom Out">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+                </button>
+                <div class="h-4 w-px bg-slate-700"></div>
+                <button onclick="resetCanvasTransform()" class="px-3 py-1 text-xs font-medium text-slate-300 hover:bg-slate-800 rounded-lg transition">Center Origin</button>
+            </div>
+
+            <!-- Coordinate Canvas -->
+            <canvas id="simCanvas" class="w-full h-full cursor-grab active:cursor-grabbing"></canvas>
+
+            <!-- Tooltip Hover Overlay -->
+            <div id="canvas-tooltip" class="absolute pointer-events-none bg-slate-900/90 text-slate-200 text-xs px-3 py-2 rounded-lg border border-slate-700 shadow-xl hidden z-20">
+                Tooltip Content
+            </div>
+        </main>
+    </div>
+
+    <div id="help-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="px-6 py-4 bg-slate-800 border-b border-slate-700 flex justify-between items-center">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                    Formula Guide &amp; Lab Instructions
+                </h3>
+                <button onclick="toggleHelpModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto space-y-6 text-sm text-slate-300">
+                <div>
+                    <h4 class="font-bold text-blue-400 mb-2">Mode A: Circles &amp; Tangent Lines</h4>
+                    <p class="mb-2">A circle is defined by the standard Cartesian equation: <strong>(x - h)^2 + (y - k)^2 = r^2</strong>, where (h, k) is the center and r is the radius.</p>
+                    <ul class="list-disc pl-5 space-y-1 text-xs text-slate-400">
+                        <li><strong>Radius Vector:</strong> Connects the center (h, k) to the point of tangency on the circle.</li>
+                        <li><strong>Tangent Line:</strong> A line touching the circle at exactly one point. It is strictly perpendicular to the radius vector at the point of contact (slope product m1 * m2 = -1).</li>
+                        <li><strong>External Point Tangents:</strong> When point P is outside the circle, exactly two distinct tangent lines can be drawn from P to the circle.</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-emerald-400 mb-2">Mode B: Conic Sections</h4>
+                    <p class="mb-2">Conic sections are curves formed by intersecting a plane with a double right circular cone:</p>
+                    <ul class="list-disc pl-5 space-y-1 text-xs text-slate-400">
+                        <li><strong>Ellipse: ((x - h)^2 / a^2) + ((y - k)^2 / b^2) = 1.</strong> The sum of distances from any point on the ellipse to the two foci is constant (2a or 2b). Eccentricity e = sqrt(1 - b^2/a^2).</li>
+                        <li><strong>Parabola: (x - h)^2 = 4p(y - k).</strong> The set of all points equidistant from a fixed point (focus) and a fixed line (directrix).</li>
+                        <li><strong>Hyperbola: ((x - h)^2 / a^2) - ((y - k)^2 / b^2) = 1.</strong> The absolute difference of distances from any point on the hyperbola to the two foci is constant (2a). Asymptotes pass through the center with slopes +/- (b/a).</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-purple-400 mb-2">Interactive Navigation</h4>
+                    <p class="text-xs text-slate-400">You can pan the coordinate plane by clicking and dragging anywhere on the background canvas, zoom in/out using the toolbar buttons, or drag shape handles directly on the graph.</p>
+                </div>
+            </div>
+            <div class="px-6 py-3 bg-slate-800/60 border-t border-slate-700 flex justify-end">
+                <button onclick="toggleHelpModal()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-semibold transition">Got It</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simulation State
+        let currentMode = 'circle'; // 'circle' or 'conics'
+
+        // Circle State
+        let circle = { h: 0, k: 0, r: 4 };
+        let tangentPoint = { x1: 6, y1: 4 };
+
+        // Conics State
+        let conic = {
+            type: 'ellipse', // 'ellipse', 'parabola', 'hyperbola'
+            orientation: 'vertical', // 'vertical' or 'horizontal' for parabola
+            h: 0,
+            k: 0,
+            a: 5,
+            b: 3,
+            p: 2 // focal parameter for parabola
+        };
+
+        // Canvas View Transform
+        let canvas, ctx;
+        let scale = 40; // pixels per unit
+        let panX = 0; // pixel offset from center
+        let panY = 0;
+        let isDraggingCanvas = false;
+        let dragStartX = 0, dragStartY = 0;
+        let activeDragItem = null; // 'circle-center', 'circle-rim', 'tangent-pt', 'conic-center', etc.
+
+        // Hover inspection state
+        let hoverInfo = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            canvas = document.getElementById('simCanvas');
+            ctx = canvas.getContext('2d');
+
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            // Initialize UI controls & listeners
+            setupEventListeners();
+            updateAllControlsFromState();
+            render();
+        });
+
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            render();
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            const circleBtn = document.getElementById('mode-circle-btn');
+            const conicsBtn = document.getElementById('mode-conics-btn');
+            const circleControls = document.getElementById('controls-circle');
+            const conicsControls = document.getElementById('controls-conics');
+
+            if (mode === 'circle') {
+                circleBtn.className = "px-5 py-2 text-sm font-semibold rounded-lg transition-all duration-200 bg-blue-600 text-white shadow";
+                conicsBtn.className = "px-5 py-2 text-sm font-semibold rounded-lg transition-all duration-200 text-slate-400 hover:text-white";
+                circleControls.classList.remove('hidden');
+                conicsControls.classList.add('hidden');
+            } else {
+                conicsBtn.className = "px-5 py-2 text-sm font-semibold rounded-lg transition-all duration-200 bg-emerald-600 text-white shadow";
+                circleBtn.className = "px-5 py-2 text-sm font-semibold rounded-lg transition-all duration-200 text-slate-400 hover:text-white";
+                conicsControls.classList.remove('hidden');
+                circleControls.classList.add('hidden');
+            }
+            render();
+        }
+
+        // Coordinate transformations
+        function toScreenX(x) {
+            return canvas.width / 2 + panX + x * scale;
+        }
+
+        function toScreenY(y) {
+            return canvas.height / 2 + panY - y * scale; // inverted Y for Cartesian plane
+        }
+
+        function toMathX(screenX) {
+            return (screenX - canvas.width / 2 - panX) / scale;
+        }
+
+        function toMathY(screenY) {
+            return (canvas.height / 2 + panY - screenY) / scale;
+        }
+
+        // Event Listeners for UI Sliders and Inputs
+        function setupEventListeners() {
+            // Circle Sliders
+            bindSlider('slider-circle-h', 'val-circle-h', (v) => { circle.h = v; updateCircleEquations(); render(); });
+            bindSlider('slider-circle-k', 'val-circle-k', (v) => { circle.k = v; updateCircleEquations(); render(); });
+            bindSlider('slider-circle-r', 'val-circle-r', (v) => { circle.r = Math.max(0.5, v); updateCircleEquations(); render(); });
+
+            bindSlider('slider-tangent-x1', 'val-tangent-x1', (v) => { tangentPoint.x1 = v; updateCircleEquations(); render(); });
+            bindSlider('slider-tangent-y1', 'val-tangent-y1', (v) => { tangentPoint.y1 = v; updateCircleEquations(); render(); });
+
+            // Conic Sliders
+            bindSlider('slider-conic-h', 'val-conic-h', (v) => { conic.h = v; updateConicEquations(); render(); });
+            bindSlider('slider-conic-k', 'val-conic-k', (v) => { conic.k = v; updateConicEquations(); render(); });
+            bindSlider('slider-conic-a', 'val-conic-a', (v) => { conic.a = Math.max(0.5, v); conic.p = conic.a; updateConicEquations(); render(); });
+            bindSlider('slider-conic-b', 'val-conic-b', (v) => { conic.b = Math.max(0.5, v); updateConicEquations(); render(); });
+
+            // Checkboxes
+            ['chk-show-foci', 'chk-show-vertices', 'chk-show-extra'].forEach(id => {
+                document.getElementById(id).addEventListener('change', () => render());
+            });
+
+            // Mouse interaction for panning and dragging handles
+            canvas.addEventListener('mousedown', onMouseDown);
+            canvas.addEventListener('mousemove', onMouseMove);
+            canvas.addEventListener('mouseup', onMouseUp);
+            canvas.addEventListener('mouseleave', onMouseUp);
+
+            // Touch support
+            canvas.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    const touch = e.touches[0];
+                    onMouseDown({ clientX: touch.clientX, clientY: touch.clientY });
+                }
+            });
+            canvas.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 1) {
+                    const touch = e.touches[0];
+                    onMouseMove({ clientX: touch.clientX, clientY: touch.clientY });
+                }
+            });
+            canvas.addEventListener('touchend', onMouseUp);
+        }
+
+        function bindSlider(sliderId, readoutId, callback) {
+            const slider = document.getElementById(sliderId);
+            const readout = document.getElementById(readoutId);
+            slider.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                readout.textContent = val.toFixed(1);
+                callback(val);
+            });
+        }
+
+        function updateAllControlsFromState() {
+            setSliderValue('slider-circle-h', 'val-circle-h', circle.h);
+            setSliderValue('slider-circle-k', 'val-circle-k', circle.k);
+            setSliderValue('slider-circle-r', 'val-circle-r', circle.r);
+            setSliderValue('slider-tangent-x1', 'val-tangent-x1', tangentPoint.x1);
+            setSliderValue('slider-tangent-y1', 'val-tangent-y1', tangentPoint.y1);
+
+            setSliderValue('slider-conic-h', 'val-conic-h', conic.h);
+            setSliderValue('slider-conic-k', 'val-conic-k', conic.k);
+            setSliderValue('slider-conic-a', 'val-conic-a', conic.a);
+            setSliderValue('slider-conic-b', 'val-conic-b', conic.b);
+
+            updateCircleEquations();
+            updateConicEquations();
+        }
+
+        function setSliderValue(sliderId, readoutId, val) {
+            const slider = document.getElementById(sliderId);
+            const readout = document.getElementById(readoutId);
+            if (slider && readout) {
+                slider.value = val;
+                readout.textContent = val.toFixed(1);
+            }
+        }
+
+        // Presets
+        function loadCirclePreset(type) {
+            if (type === 'unit') {
+                circle = { h: 0, k: 0, r: 3 };
+                tangentPoint = { x1: 3, y1: 0 };
+            } else if (type === 'offset') {
+                circle = { h: 2, k: -1, r: 4 };
+                tangentPoint = { x1: 6, y1: 3 };
+            } else if (type === 'external') {
+                circle = { h: 0, k: 0, r: 3 };
+                tangentPoint = { x1: 5, y1: 5 };
+            }
+            updateAllControlsFromState();
+            render();
+        }
+
+        function loadConicPreset(type) {
+            setConicType(type);
+            if (type === 'ellipse') {
+                conic = { type: 'ellipse', orientation: 'vertical', h: 0, k: 0, a: 6, b: 3, p: 3 };
+            } else if (type === 'parabola') {
+                conic = { type: 'parabola', orientation: 'vertical', h: 0, k: 0, a: 2, b: 2, p: 2 };
+            } else if (type === 'hyperbola') {
+                conic = { type: 'hyperbola', orientation: 'vertical', h: 0, k: 0, a: 4, b: 3, p: 4 };
+            }
+            updateAllControlsFromState();
+            render();
+        }
+
+        function setConicType(type) {
+            conic.type = type;
+            ['ellipse', 'parabola', 'hyperbola'].forEach(t => {
+                const btn = document.getElementById(`conic-type-${t}`);
+                if (t === type) {
+                    btn.className = "py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white transition shadow";
+                } else {
+                    btn.className = "py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition";
+                }
+            });
+
+            const subOrient = document.getElementById('conic-sub-orientation');
+            const wrapperB = document.getElementById('wrapper-param-b');
+            const labelA = document.getElementById('label-param-a');
+            const labelB = document.getElementById('label-param-b');
+            const textExtra = document.getElementById('text-chk-extra');
+
+            if (type === 'parabola') {
+                subOrient.classList.remove('hidden');
+                wrapperB.classList.add('hidden');
+                labelA.innerHTML = `Focal Parameter (p): <strong id="val-conic-a" class="text-amber-400">${conic.a.toFixed(1)}</strong>`;
+                textExtra.textContent = "Show Directrix & Focus";
+            } else {
+                subOrient.classList.add('hidden');
+                wrapperB.classList.remove('hidden');
+                if (type === 'ellipse') {
+                    labelA.innerHTML = `Semi-axis X (a): <strong id="val-conic-a" class="text-amber-400">${conic.a.toFixed(1)}</strong>`;
+                    labelB.innerHTML = `Semi-axis Y (b): <strong id="val-conic-b" class="text-purple-400">${conic.b.toFixed(1)}</strong>`;
+                    textExtra.textContent = "Show Foci & Eccentricity";
+                } else {
+                    labelA.innerHTML = `Transverse (a): <strong id="val-conic-a" class="text-amber-400">${conic.a.toFixed(1)}</strong>`;
+                    labelB.innerHTML = `Conjugate (b): <strong id="val-conic-b" class="text-purple-400">${conic.b.toFixed(1)}</strong>`;
+                    textExtra.textContent = "Show Asymptotes & Foci";
+                }
+            }
+            updateConicEquations();
+            render();
+        }
+
+        function setParabolaOrientation(orient) {
+            conic.orientation = orient;
+            const btnV = document.getElementById('parabola-orient-v');
+            const btnH = document.getElementById('parabola-orient-h');
+            if (orient === 'vertical') {
+                btnV.className = "flex-1 py-1.5 text-xs font-semibold rounded bg-amber-600 text-white transition";
+                btnH.className = "flex-1 py-1.5 text-xs font-semibold rounded bg-slate-800 text-slate-300 hover:bg-slate-700 transition";
+            } else {
+                btnH.className = "flex-1 py-1.5 text-xs font-semibold rounded bg-amber-600 text-white transition";
+                btnV.className = "flex-1 py-1.5 text-xs font-semibold rounded bg-slate-800 text-slate-300 hover:bg-slate-700 transition";
+            }
+            updateConicEquations();
+            render();
+        }
+
+        function setTangentPointOnCircle(sign) {
+            // Place tangent point on the circle at angle theta
+            const dx = tangentPoint.x1 - circle.h;
+            const dy = tangentPoint.y1 - circle.k;
+            let angle = Math.atan2(dy, dx);
+            angle += sign * 0.5; // shift angle
+            tangentPoint.x1 = circle.h + circle.r * Math.cos(angle);
+            tangentPoint.y1 = circle.k + circle.r * Math.sin(angle);
+            setSliderValue('slider-tangent-x1', 'val-tangent-x1', tangentPoint.x1);
+            setSliderValue('slider-tangent-y1', 'val-tangent-y1', tangentPoint.y1);
+            updateCircleEquations();
+            render();
+        }
+
+        // Equation string generators
+        function updateCircleEquations() {
+            const hStr = circle.h >= 0 ? `- ${circle.h.toFixed(1)}` : `+ ${Math.abs(circle.h).toFixed(1)}`;
+            const kStr = circle.k >= 0 ? `- ${circle.k.toFixed(1)}` : `+ ${Math.abs(circle.k).toFixed(1)}`;
+            const r2 = (circle.r * circle.r).toFixed(2);
+            document.getElementById('readout-circle-eq').textContent = `(x ${hStr})^2 + (y ${kStr})^2 = ${r2}`;
+
+            // Tangent calculations
+            const distSq = (tangentPoint.x1 - circle.h)**2 + (tangentPoint.y1 - circle.k)**2;
+            const rSq = circle.r * circle.r;
+            const diff = distSq - rSq;
+
+            let html = '';
+            const mRadius = (tangentPoint.x1 - circle.h) === 0 ? 'Undefined (Vertical)' : ((tangentPoint.y1 - circle.k) / (tangentPoint.x1 - circle.h)).toFixed(3);
+            
+            if (Math.abs(diff) < 0.1) {
+                // Point is on circle -> 1 unique tangent
+                const dx = tangentPoint.x1 - circle.h;
+                const dy = tangentPoint.y1 - circle.k;
+                if (Math.abs(dy) < 0.001) {
+                    html += `<div>Point is ON circle. Tangent: x = ${tangentPoint.x1.toFixed(2)}</div>`;
+                } else if (Math.abs(dx) < 0.001) {
+                    html += `<div>Point is ON circle. Tangent: y = ${tangentPoint.y1.toFixed(2)}</div>`;
+                } else {
+                    const mTan = -dx / dy;
+                    const cTan = tangentPoint.y1 - mTan * tangentPoint.x1;
+                    html += `<div>Point is ON circle.</div>`;
+                    html += `<div>Radius slope: ${mRadius} | Tangent slope: ${mTan.toFixed(3)}</div>`;
+                    html += `<div>Tangent Eq: y = ${mTan.toFixed(2)}x + ${cTan.toFixed(2)}</div>`;
+                }
+            } else if (diff < 0) {
+                html += `<div>Point is INSIDE circle (No real tangents).</div>`;
+            } else {
+                // Point is outside -> 2 tangents
+                html += `<div>Point is OUTSIDE circle (2 Tangents exist).</div>`;
+                html += `<div>Distance to center: ${Math.sqrt(distSq).toFixed(2)} > Radius (${circle.r.toFixed(1)})</div>`;
+            }
+            document.getElementById('readout-tangent-eq').innerHTML = html;
+        }
+
+        function updateConicEquations() {
+            const hStr = conic.h >= 0 ? `- ${conic.h.toFixed(1)}` : `+ ${Math.abs(conic.h).toFixed(1)}`;
+            const kStr = conic.k >= 0 ? `- ${conic.k.toFixed(1)}` : `+ ${Math.abs(conic.k).toFixed(1)}`;
+            let eqText = '';
+
+            if (conic.type === 'ellipse') {
+                const a2 = (conic.a * conic.a).toFixed(1);
+                const b2 = (conic.b * conic.b).toFixed(1);
+                eqText = `((x ${hStr})^2 / ${a2}) + ((y ${kStr})^2 / ${b2}) = 1`;
+            } else if (conic.type === 'parabola') {
+                const p4 = (4 * conic.a).toFixed(1);
+                if (conic.orientation === 'vertical') {
+                    eqText = `(x ${hStr})^2 = ${p4}(y ${kStr})`;
+                } else {
+                    eqText = `(y ${kStr})^2 = ${p4}(x ${hStr})`;
+                }
+            } else if (conic.type === 'hyperbola') {
+                const a2 = (conic.a * conic.a).toFixed(1);
+                const b2 = (conic.b * conic.b).toFixed(1);
+                eqText = `((x ${hStr})^2 / ${a2}) - ((y ${kStr})^2 / ${b2}) = 1`;
+            }
+            document.getElementById('readout-conic-eq').textContent = eqText;
+        }
+
+        // Canvas Rendering Engine
+        function render() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawGrid();
+
+            if (currentMode === 'circle') {
+                drawCircleMode();
+            } else {
+                drawConicsMode();
+            }
+        }
+
+        function drawGrid() {
+            ctx.save();
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 1;
+
+            const left = toMathX(0);
+            const right = toMathX(canvas.width);
+            const bottom = toMathY(canvas.height);
+            const top = toMathY(0);
+
+            // Grid lines
+            const step = scale < 20 ? 2 : (scale > 80 ? 0.5 : 1);
+            
+            for (let x = Math.floor(left / step) * step; x <= right; x += step) {
+                const sx = toScreenX(x);
+                ctx.beginPath();
+                ctx.moveTo(sx, 0);
+                ctx.lineTo(sx, canvas.height);
+                ctx.stroke();
+
+                // Axis ticks text
+                if (Math.abs(x) > 0.01) {
+                    ctx.fillStyle = '#64748b';
+                    ctx.font = '10px Inter, sans-serif';
+                    ctx.fillText(x.toFixed(x < 1 ? 1 : 0), sx + 3, toScreenY(0) + 12);
+                }
+            }
+
+            for (let y = Math.floor(bottom / step) * step; y <= top; y += step) {
+                const sy = toScreenY(y);
+                ctx.beginPath();
+                ctx.moveTo(0, sy);
+                ctx.lineTo(canvas.width, sy);
+                ctx.stroke();
+
+                if (Math.abs(y) > 0.01) {
+                    ctx.fillStyle = '#64748b';
+                    ctx.font = '10px Inter, sans-serif';
+                    ctx.fillText(y.toFixed(y < 1 ? 1 : 0), toScreenX(0) + 6, sy + 3);
+                }
+            }
+
+            // Major Axes (X and Y)
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 2;
+
+            // X Axis
+            ctx.beginPath();
+            ctx.moveTo(0, toScreenY(0));
+            ctx.lineTo(canvas.width, toScreenY(0));
+            ctx.stroke();
+
+            // Y Axis
+            ctx.beginPath();
+            ctx.moveTo(toScreenX(0), 0);
+            ctx.lineTo(toScreenX(0), canvas.height);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function drawCircleMode() {
+            ctx.save();
+
+            const cx = toScreenX(circle.h);
+            const cy = toScreenY(circle.k);
+            const cr = circle.r * scale;
+
+            // 1. Draw Circle Fill & Stroke
+            ctx.beginPath();
+            ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(59, 130, 246, 0.08)';
+            ctx.fill();
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // 2. Draw Center Point (h, k)
+            drawPoint(cx, cy, '#3b82f6', `Center (${circle.h.toFixed(1)}, ${circle.k.toFixed(1)})`);
+
+            // 3. Draw Tangent Point P(x1, y1)
+            const px1 = toScreenX(tangentPoint.x1);
+            const py1 = toScreenY(tangentPoint.y1);
+            drawPoint(px1, py1, '#a855f7', `Point P (${tangentPoint.x1.toFixed(1)}, ${tangentPoint.y1.toFixed(1)})`);
+
+            // 4. Radius Vector from Center to Tangent Point
+            ctx.strokeStyle = '#0ea5e9';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(px1, py1);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 5. Tangent Line(s) calculation and rendering
+            const distSq = (tangentPoint.x1 - circle.h)**2 + (tangentPoint.y1 - circle.k)**2;
+            const rSq = circle.r * circle.r;
+            const diff = distSq - rSq;
+
+            if (Math.abs(diff) < 0.1) {
+                // Point is on circle -> single perpendicular tangent line
+                const dx = tangentPoint.x1 - circle.h;
+                const dy = tangentPoint.y1 - circle.k;
+                if (Math.abs(dy) > 0.001) {
+                    const mTan = -dx / dy;
+                    const cTan = tangentPoint.y1 - mTan * tangentPoint.x1;
+                    drawInfiniteLine(mTan, cTan, '#a855f7', 2);
+                } else {
+                    // Vertical tangent at x = x1
+                    ctx.strokeStyle = '#a855f7';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(px1, 0);
+                    ctx.lineTo(px1, canvas.height);
+                    ctx.stroke();
+                }
+                // Right angle indicator at point of tangency
+                drawRightAngleIndicator(cx, cy, px1, py1);
+            } else if (diff > 0) {
+                // Point outside circle -> two tangent points & lines
+                // Using geometry of right triangle formed by center, external point, and point of contact
+                const d = Math.sqrt(distSq);
+                const l = Math.sqrt(distSq - rSq); // distance from P to point of tangency
+                const alpha = Math.atan2(circle.k - tangentPoint.y1, circle.h - tangentPoint.x1);
+                const phi = Math.acos(circle.r / d);
+
+                const angle1 = alpha + phi;
+                const angle2 = alpha - phi;
+
+                const t1x = circle.h + circle.r * Math.cos(angle1);
+                const t1y = circle.k + circle.r * Math.sin(angle1);
+                const t2x = circle.h + circle.r * Math.cos(angle2);
+                const t2y = circle.k + circle.r * Math.sin(angle2);
+
+                // Draw contact points T1 and T2
+                drawPoint(toScreenX(t1x), toScreenY(t1y), '#ec4899', 'Tangent Point 1');
+                drawPoint(toScreenX(t2x), toScreenY(t2y), '#ec4899', 'Tangent Point 2');
+
+                // Draw tangent lines from P(x1, y1) through T1 and T2
+                drawLineSegment(px1, py1, toScreenX(t1x), toScreenY(t1y), '#a855f7', 2);
+                drawLineSegment(px1, py1, toScreenX(t2x), toScreenY(t2y), '#a855f7', 2);
+            }
+
+            ctx.restore();
+        }
+
+        function drawConicsMode() {
+            ctx.save();
+            const cx = toScreenX(conic.h);
+            const cy = toScreenY(conic.k);
+            const showFoci = document.getElementById('chk-show-foci').checked;
+            const showVertices = document.getElementById('chk-show-vertices').checked;
+            const showExtra = document.getElementById('chk-show-extra').checked;
+
+            if (conic.type === 'ellipse') {
+                const rx = conic.a * scale;
+                const ry = conic.b * scale;
+
+                // Draw Ellipse Curve
+                ctx.beginPath();
+                ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(16, 185, 129, 0.08)';
+                ctx.fill();
+                ctx.strokeStyle = '#10b981';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // Center
+                drawPoint(cx, cy, '#10b981', `Center (${conic.h}, ${conic.k})`);
+
+                // Vertices and Axes
+                if (showVertices) {
+                    drawPoint(cx + rx, cy, '#34d399', 'Vertex (+a)');
+                    drawPoint(cx - rx, cy, '#34d399', 'Vertex (-a)');
+                    drawPoint(cx, cy - ry, '#34d399', 'Vertex (+b)');
+                    drawPoint(cx, cy + ry, '#34d399', 'Vertex (-b)');
+
+                    // Major/Minor axes lines
+                    ctx.strokeStyle = 'rgba(16, 185, 129, 0.3)';
+                    ctx.setLineDash([3, 3]);
+                    ctx.beginPath();
+                    ctx.moveTo(cx - rx, cy); ctx.lineTo(cx + rx, cy);
+                    ctx.moveTo(cx, cy - ry); ctx.lineTo(cx, cy + ry);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+
+                // Foci
+                if (showFoci && conic.a !== conic.b) {
+                    const c = Math.abs(conic.a**2 - conic.b**2)**0.5;
+                    const isHorizontal = conic.a >= conic.b;
+                    if (isHorizontal) {
+                        drawPoint(toScreenX(conic.h + c), cy, '#f59e0b', 'Focus 1');
+                        drawPoint(toScreenX(conic.h - c), cy, '#f59e0b', 'Focus 2');
+                    } else {
+                        drawPoint(cx, toScreenY(conic.k + c), '#f59e0b', 'Focus 1');
+                        drawPoint(cx, toScreenY(conic.k - c), '#f59e0b', 'Focus 2');
+                    }
+                }
+
+            } else if (conic.type === 'parabola') {
+                const p = conic.a; // using 'a' slider as focal parameter p
+                ctx.strokeStyle = '#10b981';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+
+                if (conic.orientation === 'vertical') {
+                    // x^2 = 4py -> y = k + (x-h)^2 / (4p)
+                    const step = 0.5;
+                    let first = true;
+                    for (let screenX = 0; screenX <= canvas.width; screenX += 2) {
+                        const x = toMathX(screenX);
+                        const y = conic.k + ((x - conic.h)**2) / (4 * p);
+                        const sy = toScreenY(y);
+                        if (first) { ctx.moveTo(screenX, sy); first = false; }
+                        else { ctx.lineTo(screenX, sy); }
+                    }
+                    ctx.stroke();
+
+                    // Focus & Directrix
+                    const focusX = conic.h;
+                    const focusY = conic.k + p;
+                    const directrixY = conic.k - p;
+
+                    if (showFoci) {
+                        drawPoint(toScreenX(focusX), toScreenY(focusY), '#f59e0b', `Focus (${focusX}, ${focusY})`);
+                    }
+                    if (showExtra) {
+                        // Directrix line y = k - p
+                        ctx.strokeStyle = '#ef4444';
+                        ctx.setLineDash([5, 5]);
+                        ctx.beginPath();
+                        ctx.moveTo(0, toScreenY(directrixY));
+                        ctx.lineTo(canvas.width, toScreenY(directrixY));
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    }
+                    if (showVertices) {
+                        drawPoint(cx, cy, '#34d399', `Vertex (${conic.h}, ${conic.k})`);
+                    }
+
+                } else {
+                    // y^2 = 4px -> x = h + (y-k)**2 / (4p)
+                    let first = true;
+                    ctx.beginPath();
+                    for (let screenY = 0; screenY <= canvas.height; screenY += 2) {
+                        const y = toMathY(screenY);
+                        const x = conic.h + ((y - conic.k)**2) / (4 * p);
+                        const sx = toScreenX(x);
+                        if (first) { ctx.moveTo(sx, screenY); first = false; }
+                        else { ctx.lineTo(sx, screenY); }
+                    }
+                    ctx.stroke();
+
+                    const focusX = conic.h + p;
+                    const focusY = conic.k;
+                    const directrixX = conic.h - p;
+
+                    if (showFoci) {
+                        drawPoint(toScreenX(focusX), toScreenY(focusY), '#f59e0b', `Focus`);
+                    }
+                    if (showExtra) {
+                        ctx.strokeStyle = '#ef4444';
+                        ctx.setLineDash([5, 5]);
+                        ctx.beginPath();
+                        ctx.moveTo(toScreenX(directrixX), 0);
+                        ctx.lineTo(toScreenX(directrixX), canvas.height);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    }
+                    if (showVertices) {
+                        drawPoint(cx, cy, '#34d399', `Vertex`);
+                    }
+                }
+
+            } else if (conic.type === 'hyperbola') {
+                const a = conic.a;
+                const b = conic.b;
+                const c = Math.sqrt(a**2 + b**2);
+
+                // Draw Hyperbola branches (left and right branches for horizontal standard)
+                ctx.strokeStyle = '#10b981';
+                ctx.lineWidth = 3;
+
+                // Right branch
+                let first = true;
+                ctx.beginPath();
+                for (let y = conic.k - 15; y <= conic.k + 15; y += 0.1) {
+                    const val = 1 + ((y - conic.k)**2) / (b**2);
+                    const x = conic.h + a * Math.sqrt(val);
+                    const sx = toScreenX(x);
+                    const sy = toScreenY(y);
+                    if (sx >= 0 && sx <= canvas.width && sy >= 0 && sy <= canvas.height) {
+                        if (first) { ctx.moveTo(sx, sy); first = false; }
+                        else { ctx.lineTo(sx, sy); }
+                    }
+                }
+                ctx.stroke();
+
+                // Left branch
+                first = true;
+                ctx.beginPath();
+                for (let y = conic.k - 15; y <= conic.k + 15; y += 0.1) {
+                    const val = 1 + ((y - conic.k)**2) / (b**2);
+                    const x = conic.h - a * Math.sqrt(val);
+                    const sx = toScreenX(x);
+                    const sy = toScreenY(y);
+                    if (sx >= 0 && sx <= canvas.width && sy >= 0 && sy <= canvas.height) {
+                        if (first) { ctx.moveTo(sx, sy); first = false; }
+                        else { ctx.lineTo(sx, sy); }
+                    }
+                }
+                ctx.stroke();
+
+                // Center & Vertices
+                if (showVertices) {
+                    drawPoint(cx, cy, '#10b981', `Center (${conic.h}, ${conic.k})`);
+                    drawPoint(toScreenX(conic.h + a), cy, '#34d399', 'Vertex');
+                    drawPoint(toScreenX(conic.h - a), cy, '#34d399', 'Vertex');
+                }
+
+                // Foci
+                if (showFoci) {
+                    drawPoint(toScreenX(conic.h + c), cy, '#f59e0b', 'Focus 1');
+                    drawPoint(toScreenX(conic.h - c), cy, '#f59e0b', 'Focus 2');
+                }
+
+                // Asymptotes: y - k = ± (b/a)(x - h)
+                if (showExtra) {
+                    const m1 = b / a;
+                    const c1 = conic.k - m1 * conic.h;
+                    drawInfiniteLine(m1, c1, 'rgba(239, 68, 68, 0.6)', 1.5, [4, 4]);
+
+                    const m2 = -b / a;
+                    const c2 = conic.k - m2 * conic.h;
+                    drawInfiniteLine(m2, c2, 'rgba(239, 68, 68, 0.6)', 1.5, [4, 4]);
+                }
+            }
+
+            ctx.restore();
+        }
+
+        // Helper rendering primitives
+        function drawPoint(x, y, color, label) {
+            ctx.save();
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            if (label) {
+                ctx.fillStyle = '#cbd5e1';
+                ctx.font = '11px Inter, sans-serif';
+                ctx.fillText(label, x + 10, y - 6);
+            }
+            ctx.restore();
+        }
+
+        function drawLineSegment(x1, y1, x2, y2, color, width) {
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawInfiniteLine(m, c, color, width, dash = []) {
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            if (dash.length > 0) ctx.setLineDash(dash);
+
+            const xLeft = toMathX(0);
+            const yLeft = m * xLeft + c;
+            const xRight = toMathX(canvas.width);
+            const yRight = m * xRight + c;
+
+            ctx.beginPath();
+            ctx.moveTo(toScreenX(xLeft), toScreenY(yLeft));
+            ctx.lineTo(toScreenX(xRight), toScreenY(yRight));
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawRightAngleIndicator(cx, cy, px, py) {
+            ctx.save();
+            ctx.strokeStyle = '#a855f7';
+            ctx.lineWidth = 1.5;
+            // Draw small square at point P indicating 90-degree angle between radius and tangent
+            // Vector from P to Center
+            const vx = cx - px;
+            const vy = cy - py;
+            const len = Math.sqrt(vx*vx + vy*vy);
+            if (len === 0) return;
+            const ux = vx / len;
+            const uy = vy / len;
+            // Perpendicular unit vector along tangent
+            const tx = -uy;
+            const ty = ux;
+
+            const size = 12;
+            const corner1X = px + ux * size;
+            const corner1Y = py + uy * size;
+            const corner2X = corner1X + tx * size;
+            const corner2Y = corner1Y + ty * size;
+            const corner3X = px + tx * size;
+            const corner3Y = py + ty * size;
+
+            ctx.beginPath();
+            ctx.moveTo(corner1X, corner1Y);
+            ctx.lineTo(corner2X, corner2Y);
+            ctx.lineTo(corner3X, corner3Y);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // Mouse Dragging & Interaction Handling
+        function onMouseDown(e) {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            const mathX = toMathX(mouseX);
+            const mathY = toMathY(mouseY);
+
+            if (currentMode === 'circle') {
+                // Check if dragging circle center, circle rim, or tangent point
+                const distCenter = Math.hypot(mathX - circle.h, mathY - circle.k);
+                const distRim = Math.abs(distCenter - circle.r);
+                const distTangent = Math.hypot(mathX - tangentPoint.x1, mathY - tangentPoint.y1);
+
+                if (distTangent < 0.8) {
+                    activeDragItem = 'tangent';
+                    return;
+                } else if (distCenter < 0.8) {
+                    activeDragItem = 'circle-center';
+                    return;
+                } else if (distRim < 0.8) {
+                    activeDragItem = 'circle-rim';
+                    return;
+                }
+            } else {
+                const distCenter = Math.hypot(mathX - conic.h, mathY - conic.k);
+                if (distCenter < 0.8) {
+                    activeDragItem = 'conic-center';
+                    return;
+                }
+            }
+
+            // Default: Pan canvas
+            isDraggingCanvas = true;
+            dragStartX = mouseX - panX;
+            dragStartY = mouseY - panY;
+        }
+
+        function onMouseMove(e) {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const mathX = toMathX(mouseX);
+            const mathY = toMathY(mouseY);
+
+            if (activeDragItem === 'circle-center') {
+                circle.h = Math.round(mathX * 2) / 2;
+                circle.k = Math.round(mathY * 2) / 2;
+                updateAllControlsFromState();
+                render();
+                return;
+            } else if (activeDragItem === 'circle-rim') {
+                const newR = Math.hypot(mathX - circle.h, mathY - circle.k);
+                circle.r = Math.max(0.5, Math.round(newR * 2) / 2);
+                updateAllControlsFromState();
+                render();
+                return;
+            } else if (activeDragItem === 'tangent') {
+                tangentPoint.x1 = Math.round(mathX * 2) / 2;
+                tangentPoint.y1 = Math.round(mathY * 2) / 2;
+                updateAllControlsFromState();
+                render();
+                return;
+            } else if (activeDragItem === 'conic-center') {
+                conic.h = Math.round(mathX * 2) / 2;
+                conic.k = Math.round(mathY * 2) / 2;
+                updateAllControlsFromState();
+                render();
+                return;
+            }
+
+            if (isDraggingCanvas) {
+                panX = mouseX - dragStartX;
+                panY = mouseY - dragStartY;
+                render();
+            }
+        }
+
+        function onMouseUp() {
+            isDraggingCanvas = false;
+            activeDragItem = null;
+        }
+
+        // Canvas Zoom and Reset
+        function zoomCanvas(factor) {
+            scale = Math.max(15, Math.min(120, scale * factor));
+            render();
+        }
+
+        function resetCanvasTransform() {
+            panX = 0;
+            panY = 0;
+            scale = 40;
+            render();
+        }
+
+        function resetCurrentMode() {
+            if (currentMode === 'circle') {
+                loadCirclePreset('unit');
+            } else {
+                loadConicPreset('ellipse');
+            }
+            resetCanvasTransform();
+        }
+
+        function toggleHelpModal() {
+            const modal = document.getElementById('help-modal');
+            modal.classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>
