@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trigonometric Functions &amp; Graphs Lab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 h-screen flex flex-col overflow-hidden">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between shrink-0 shadow-lg z-20">
+        <div class="flex items-center space-x-3">
+            <div class="bg-indigo-600 p-2 rounded-xl text-white font-bold shadow-md flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-base font-bold tracking-tight text-white">Trigonometric Laboratory &amp; Graph Explorer</h1>
+                <p class="text-xs text-slate-400">Interactive transformations, radian graphs, and arbitrary function challenge mode</p>
+            </div>
+        </div>
+
+        <!-- Mode Switcher Tabs -->
+        <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 shadow-inner">
+            <button id="btn-mode-explorer" onclick="switchMode('explorer')" class="px-5 py-2 text-xs font-semibold rounded-lg transition-all duration-200 bg-indigo-600 text-white shadow">
+                Mode A: Function Explorer
+            </button>
+            <button id="btn-mode-challenge" onclick="switchMode('challenge')" class="px-5 py-2 text-xs font-semibold rounded-lg transition-all duration-200 text-slate-400 hover:text-white">
+                Mode B: Random Challenge Mode
+            </button>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            <button onclick="resetExplorer()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg transition border border-slate-700 flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                Reset View
+            </button>
+            <button onclick="toggleGuideModal()" class="px-3 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 text-xs font-medium rounded-lg transition border border-indigo-500/30 flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Math Guide
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace Layout -->
+    <div class="flex-1 flex overflow-hidden">
+        
+        <!-- Sidebar Controls -->
+        <aside class="w-96 bg-slate-900 border-r border-slate-800 flex flex-col z-10 shadow-xl overflow-y-auto">
+            
+            <!-- MODE A CONTROLS -->
+            <div id="panel-explorer" class="p-5 space-y-5">
+                
+                <!-- Base Function Selector -->
+                <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-400 mb-2">Base Trigonometric Function</h2>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setBaseFunc('sin')" id="btn-func-sin" class="py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition shadow">sin(x)</button>
+                        <button onclick="setBaseFunc('cos')" id="btn-func-cos" class="py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">cos(x)</button>
+                        <button onclick="setBaseFunc('tan')" id="btn-func-tan" class="py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">tan(x)</button>
+                        <button onclick="setBaseFunc('csc')" id="btn-func-csc" class="py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">csc(x)</button>
+                        <button onclick="setBaseFunc('sec')" id="btn-func-sec" class="py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">sec(x)</button>
+                        <button onclick="setBaseFunc('cot')" id="btn-func-cot" class="py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">cot(x)</button>
+                    </div>
+                </div>
+
+                <!-- Parameters Sliders & Inputs -->
+                <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-4">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-400 mb-1 flex items-center justify-between">
+                        <span>Transformation Parameters</span>
+                        <span class="text-[10px] text-slate-400 font-normal">y = A func(B(x - C)) + D</span>
+                    </h2>
+
+                    <!-- Amplitude A -->
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-slate-300">Amplitude (A): <strong id="val-a" class="text-indigo-400">1.0</strong></span>
+                        </div>
+                        <input type="range" id="slider-a" min="-5" max="5" step="0.5" value="1" class="w-full accent-indigo-500 bg-slate-800 h-2 rounded-lg cursor-pointer">
+                    </div>
+
+                    <!-- Frequency B -->
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-slate-300">Frequency (B): <strong id="val-b" class="text-emerald-400">1.0</strong></span>
+                        </div>
+                        <input type="range" id="slider-b" min="0.25" max="4" step="0.25" value="1" class="w-full accent-emerald-500 bg-slate-800 h-2 rounded-lg cursor-pointer">
+                    </div>
+
+                    <!-- Phase Shift C -->
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-slate-300">Phase Shift (C): <strong id="val-c" class="text-amber-400">0.00</strong></span>
+                        </div>
+                        <input type="range" id="slider-c" min="-3.14" max="3.14" step="0.1" value="0" class="w-full accent-amber-500 bg-slate-800 h-2 rounded-lg cursor-pointer">
+                    </div>
+
+                    <!-- Vertical Shift D -->
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-slate-300">Vertical Shift (D): <strong id="val-d" class="text-purple-400">0.0</strong></span>
+                        </div>
+                        <input type="range" id="slider-d" min="-4" max="4" step="0.5" value="0" class="w-full accent-purple-500 bg-slate-800 h-2 rounded-lg cursor-pointer">
+                    </div>
+                </div>
+
+                <!-- Live Equation & Calculated Properties Box -->
+                <div class="bg-slate-950/80 p-4 rounded-xl border border-indigo-500/30 shadow-inner space-y-3">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Equation &amp; Key Properties</h2>
+                    <div id="readout-equation" class="font-mono text-sm text-indigo-300 bg-slate-900 p-3 rounded-lg border border-slate-800 text-center font-bold">
+                        y = 1 sin(1(x - 0)) + 0
+                    </div>
+                    <div id="readout-properties" class="grid grid-cols-2 gap-2 text-xs text-slate-300 font-mono">
+                        <div class="bg-slate-900 p-2 rounded border border-slate-800">
+                            <span class="text-slate-400 block text-[10px]">Period (T):</span> <span id="prop-period" class="text-emerald-400 font-bold">6.28</span>
+                        </div>
+                        <div class="bg-slate-900 p-2 rounded border border-slate-800">
+                            <span class="text-slate-400 block text-[10px]">Midline:</span> <span id="prop-midline" class="text-purple-400 font-bold">y = 0.0</span>
+                        </div>
+                        <div class="bg-slate-900 p-2 rounded border border-slate-800">
+                            <span class="text-slate-400 block text-[10px]">Max Value:</span> <span id="prop-max" class="text-amber-400 font-bold">1.0</span>
+                        </div>
+                        <div class="bg-slate-900 p-2 rounded border border-slate-800">
+                            <span class="text-slate-400 block text-[10px]">Min Value:</span> <span id="prop-min" class="text-amber-400 font-bold">-1.0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Toggles for Overlays -->
+                <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-2">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-400 mb-2">Graph Overlays</h2>
+                    <label class="flex items-center space-x-2 text-xs cursor-pointer">
+                        <input type="checkbox" id="chk-midline" checked class="rounded bg-slate-800 border-slate-700 text-indigo-500 focus:ring-0">
+                        <span class="text-slate-300">Show Midline Axis</span>
+                    </label>
+                    <label class="flex items-center space-x-2 text-xs cursor-pointer">
+                        <input type="checkbox" id="chk-extrema" checked class="rounded bg-slate-800 border-slate-700 text-indigo-500 focus:ring-0">
+                        <span class="text-slate-300">Highlight Peaks &amp; Troughs</span>
+                    </label>
+                    <label class="flex items-center space-x-2 text-xs cursor-pointer">
+                        <input type="checkbox" id="chk-asymptotes" checked class="rounded bg-slate-800 border-slate-700 text-indigo-500 focus:ring-0">
+                        <span class="text-slate-300">Show Vertical Asymptotes</span>
+                    </label>
+                </div>
+
+                <!-- Presets -->
+                <div class="space-y-2">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Quick Presets</span>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="loadPreset('standard')" class="bg-slate-800 hover:bg-slate-700 text-xs py-1.5 px-2 rounded text-slate-200 transition">Standard Sine</button>
+                        <button onclick="loadPreset('shifted')" class="bg-slate-800 hover:bg-slate-700 text-xs py-1.5 px-2 rounded text-slate-200 transition">Phase Shifted</button>
+                        <button onclick="loadPreset('complex')" class="bg-slate-800 hover:bg-slate-700 text-xs py-1.5 px-2 rounded text-slate-200 transition">Complex Wave</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODE B CONTROLS (Random Challenge) -->
+            <div id="panel-challenge" class="p-5 space-y-5 hidden">
+                <div class="bg-slate-950/80 p-5 rounded-xl border border-emerald-500/40 text-center space-y-3">
+                    <h2 class="text-sm font-bold text-emerald-400 uppercase tracking-wider">Random Function Challenge</h2>
+                    <p class="text-xs text-slate-300">Test your trigonometric analysis skills! A random function has been generated on the coordinate plane.</p>
+                    <button onclick="generateRandomChallenge()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg shadow transition flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        Generate New Challenge
+                    </button>
+                </div>
+
+                <!-- Challenge Student Answer / Inspection Box -->
+                <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-emerald-400">Guided Analysis &amp; Breakdown</h2>
+                    <p class="text-xs text-slate-400">Inspect the graphed wave to determine its properties:</p>
+                    <button onclick="toggleChallengeAnswer()" id="btn-toggle-answer" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition border border-slate-700">
+                        Reveal Correct Equation &amp; Breakdown
+                    </button>
+                    
+                    <div id="challenge-answer-box" class="hidden font-mono text-xs bg-slate-900 p-3 rounded-lg border border-emerald-500/30 space-y-2 text-emerald-300">
+                        <div><strong>Function:</strong> <span id="ch-eq-str">y = 2 sin(x)</span></div>
+                        <div><strong>Amplitude |A|:</strong> <span id="ch-amp">2</span></div>
+                        <div><strong>Period T:</strong> <span id="ch-per">6.28</span></div>
+                        <div><strong>Phase Shift C:</strong> <span id="ch-phase">0</span></div>
+                        <div><strong>Midline D:</strong> <span id="ch-mid">0</span></div>
+                    </div>
+                </div>
+
+                <div class="p-3 bg-indigo-950/30 rounded-xl border border-indigo-500/20 text-xs text-indigo-300 space-y-1">
+                    <strong>Tip:</strong> Hover over peaks and troughs on the canvas to read exact coordinates in radians.
+                </div>
+            </div>
+
+            <div class="p-4 mt-auto border-t border-slate-800 text-center text-[10px] text-slate-500">
+                STEM Interactive Virtual Lab &bull; Trigonometry Module
+            </div>
+        </aside>
+
+        <!-- Main Canvas Area -->
+        <main class="flex-1 relative bg-slate-950 flex flex-col items-center justify-center overflow-hidden">
+            
+            <!-- Floating Canvas Toolbar -->
+            <div class="absolute top-4 right-4 z-10 flex items-center space-x-2 bg-slate-900/90 backdrop-blur border border-slate-800 p-1.5 rounded-xl shadow-lg">
+                <button onclick="zoomCanvas(1.2)" class="p-2 hover:bg-slate-800 text-slate-300 rounded-lg transition" title="Zoom In">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                </button>
+                <button onclick="zoomCanvas(0.8)" class="p-2 hover:bg-slate-800 text-slate-300 rounded-lg transition" title="Zoom Out">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+                </button>
+                <div class="h-4 w-px bg-slate-800"></div>
+                <button onclick="resetCanvasTransform()" class="px-3 py-1 text-xs font-medium text-slate-300 hover:bg-slate-800 rounded-lg transition">Center Origin</button>
+            </div>
+
+            <!-- Canvas Element -->
+            <canvas id="trigCanvas" class="w-full h-full cursor-grab active:cursor-grabbing"></canvas>
+
+            <!-- Hover Tooltip Box -->
+            <div id="canvas-tooltip" class="absolute pointer-events-none bg-slate-900/95 text-slate-200 text-xs px-3 py-2 rounded-lg border border-slate-700 shadow-xl hidden z-20 font-mono">
+                Tooltip
+            </div>
+        </main>
+    </div>
+
+    <!-- Mathematical Guide Modal -->
+    <div id="guide-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="px-6 py-4 bg-slate-800 border-b border-slate-700 flex justify-between items-center">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                    Trigonometric Transformations &amp; Formula Guide
+                </h3>
+                <button onclick="toggleGuideModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto space-y-6 text-sm text-slate-300">
+                <div>
+                    <h4 class="font-bold text-indigo-400 mb-2">General Transformation Form</h4>
+                    <p class="mb-2 font-mono bg-slate-950 p-2.5 rounded text-indigo-300">y = A func(B(x - C)) + D</p>
+                    <p class="text-xs text-slate-400">Every parameter modifies the shape and position of the standard trigonometric wave on the Cartesian plane.</p>
+                </div>
+                <div class="space-y-3 text-xs">
+                    <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                        <strong class="text-indigo-400 block mb-1">1. Amplitude (A)</strong>
+                        Controls the vertical stretch or compression. If A is negative, the graph reflects across its midline. Max/Min values are given by D + |A| and D - |A|.
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                        <strong class="text-emerald-400 block mb-1">2. Frequency / Angular Velocity (B)</strong>
+                        Determines the wave frequency. The period T of sine and cosine waves is calculated as T = 2 * pi / |B|.
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                        <strong class="text-amber-400 block mb-1">3. Phase Shift / Horizontal Shift (C)</strong>
+                        Shifts the graph horizontally to the right by C units (if x - C) or to the left (if x + C).
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                        <strong class="text-purple-400 block mb-1">4. Vertical Shift (D)</strong>
+                        Shifts the entire sinusoidal midline up or down by D units (equation of midline: y = D).
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-bold text-indigo-400 mb-2">Asymptotes &amp; Reciprocal Functions</h4>
+                    <p class="text-xs text-slate-400">Functions like tan(x), csc(x), sec(x), and cot(x) feature vertical asymptotes where the denominator equals zero, resulting in undefined vertical bounds.</p>
+                </div>
+            </div>
+            <div class="px-6 py-3 bg-slate-800 border-t border-slate-700 flex justify-end">
+                <button onclick="toggleGuideModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-semibold transition">Got It</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Engine -->
+    <script>
+        // Simulation Mode ('explorer' or 'challenge')
+        let currentMode = 'explorer';
+
+        // Explorer State
+        let explorer = {
+            funcType: 'sin', // 'sin', 'cos', 'tan', 'csc', 'sec', 'cot'
+            A: 1.0,
+            B: 1.0,
+            C: 0.0,
+            D: 0.0
+        };
+
+        // Challenge State
+        let challenge = {
+            funcType: 'sin',
+            A: 2.0,
+            B: 1.0,
+            C: 0.5,
+            D: 1.0
+        };
+
+        // Canvas & Transformation
+        let canvas, ctx;
+        let scaleX = 80; // pixels per radian
+        let scaleY = 60; // pixels per unit on Y axis
+        let panX = 0; // pixel offset from center
+        let panY = 0;
+        let isDraggingCanvas = false;
+        let dragStartX = 0, dragStartY = 0;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            canvas = document.getElementById('trigCanvas');
+            ctx = canvas.getContext('2d');
+
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            setupEventListeners();
+            updateExplorerUI();
+            render();
+        });
+
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            render();
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            const btnExp = document.getElementById('btn-mode-explorer');
+            const btnChal = document.getElementById('btn-mode-challenge');
+            const panelExp = document.getElementById('panel-explorer');
+            const panelChal = document.getElementById('panel-challenge');
+
+            if (mode === 'explorer') {
+                btnExp.className = "px-5 py-2 text-xs font-semibold rounded-lg transition-all duration-200 bg-indigo-600 text-white shadow";
+                btnChal.className = "px-5 py-2 text-xs font-semibold rounded-lg transition-all duration-200 text-slate-400 hover:text-white";
+                panelExp.classList.remove('hidden');
+                panelChal.classList.add('hidden');
+            } else {
+                btnChal.className = "px-5 py-2 text-xs font-semibold rounded-lg transition-all duration-200 bg-emerald-600 text-white shadow";
+                btnExp.className = "px-5 py-2 text-xs font-semibold rounded-lg transition-all duration-200 text-slate-400 hover:text-white";
+                panelChal.classList.remove('hidden');
+                panelExp.classList.add('hidden');
+                generateRandomChallenge();
+            }
+            render();
+        }
+
+        // Coordinate Mapping Helpers
+        function toScreenX(x) {
+            return canvas.width / 2 + panX + x * scaleX;
+        }
+
+        function toScreenY(y) {
+            return canvas.height / 2 + panY - y * scaleY;
+        }
+
+        function toMathX(screenX) {
+            return (screenX - canvas.width / 2 - panX) / scaleX;
+        }
+
+        function toMathY(screenY) {
+            return (canvas.height / 2 + panY - screenY) / scaleY;
+        }
+
+        // Event Listeners for Sliders & Inputs
+        function setupEventListeners() {
+            bindSlider('slider-a', 'val-a', (v) => { explorer.A = v; updateExplorerUI(); render(); });
+            bindSlider('slider-b', 'val-b', (v) => { explorer.B = v; updateExplorerUI(); render(); });
+            bindSlider('slider-c', 'val-c', (v) => { explorer.C = v; updateExplorerUI(); render(); });
+            bindSlider('slider-d', 'val-d', (v) => { explorer.D = v; updateExplorerUI(); render(); });
+
+            canvas.addEventListener('mousedown', onMouseDown);
+            canvas.addEventListener('mousemove', onMouseMove);
+            canvas.addEventListener('mouseup', onMouseUp);
+            canvas.addEventListener('mouseleave', onMouseUp);
+        }
+
+        function bindSlider(sliderId, readoutId, callback) {
+            const slider = document.getElementById(sliderId);
+            const readout = document.getElementById(readoutId);
+            slider.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                readout.textContent = val.toFixed(2);
+                callback(val);
+            });
+        }
+
+        function setBaseFunc(func) {
+            explorer.funcType = func;
+            ['sin', 'cos', 'tan', 'csc', 'sec', 'cot'].forEach(f => {
+                const btn = document.getElementById(`btn-func-${f}`);
+                if (f === func) {
+                    btn.className = "py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition shadow";
+                } else {
+                    btn.className = "py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition";
+                }
+            });
+            updateExplorerUI();
+            render();
+        }
+
+        function loadPreset(preset) {
+            if (preset === 'standard') {
+                explorer = { funcType: 'sin', A: 1, B: 1, C: 0, D: 0 };
+            } else if (preset === 'shifted') {
+                explorer = { funcType: 'cos', A: 2, B: 1, C: 1.57, D: 1 };
+            } else if (preset === 'complex') {
+                explorer = { funcType: 'sin', A: 3, B: 2, C: -0.78, D: -1 };
+            }
+            setBaseFunc(explorer.funcType);
+            syncSlidersFromExplorer();
+            updateExplorerUI();
+            render();
+        }
+
+        function syncSlidersFromExplorer() {
+            setSliderVal('slider-a', 'val-a', explorer.A);
+            setSliderVal('slider-b', 'val-b', explorer.B);
+            setSliderVal('slider-c', 'val-c', explorer.C);
+            setSliderVal('slider-d', 'val-d', explorer.D);
+        }
+
+        function setSliderVal(sliderId, readoutId, val) {
+            document.getElementById(sliderId).value = val;
+            document.getElementById(readoutId).textContent = val.toFixed(2);
+        }
+
+        function updateExplorerUI() {
+            const { funcType, A, B, C, D } = explorer;
+            const cStr = C >= 0 ? `- ${C.toFixed(2)}` : `+ ${Math.abs(C).toFixed(2)}`;
+            const dStr = D >= 0 ? `+ ${D.toFixed(1)}` : `- ${Math.abs(D).toFixed(1)}`;
+            document.getElementById('readout-equation').textContent = `y = ${A.toFixed(1)} ${funcType}(${B.toFixed(1)}(x ${cStr})) ${dStr}`;
+
+            const period = (2 * Math.PI) / Math.abs(B);
+            document.getElementById('prop-period').textContent = period.toFixed(2) + " rad";
+            document.getElementById('prop-midline').textContent = `y = ${D.toFixed(1)}`;
+            document.getElementById('prop-max').textContent = (D + Math.abs(A)).toFixed(2);
+            document.getElementById('prop-min').textContent = (D - Math.abs(A)).toFixed(2);
+        }
+
+        // Random Challenge Generator
+        function generateRandomChallenge() {
+            const funcs = ['sin', 'cos'];
+            challenge.funcType = funcs[Math.floor(Math.random() * funcs.length)];
+            challenge.A = (Math.random() * 3 + 1) * (Math.random() > 0.5 ? 1 : -1);
+            challenge.B = [0.5, 1, 1.5, 2][Math.floor(Math.random() * 4)];
+            challenge.C = Math.round((Math.random() * 3.14 - 1.57) * 10) / 10;
+            challenge.D = Math.round((Math.random() * 4 - 2) * 2) / 2;
+
+            document.getElementById('challenge-answer-box').classList.add('hidden');
+            document.getElementById('btn-toggle-answer').textContent = "Reveal Correct Equation & Breakdown";
+
+            const cStr = challenge.C >= 0 ? `- ${challenge.C.toFixed(2)}` : `+ ${Math.abs(challenge.C).toFixed(2)}`;
+            const dStr = challenge.D >= 0 ? `+ ${challenge.D.toFixed(1)}` : `- ${Math.abs(challenge.D).toFixed(1)}`;
+            
+            document.getElementById('ch-eq-str').textContent = `y = ${challenge.A.toFixed(1)} ${challenge.funcType}(${challenge.B.toFixed(1)}(x ${cStr})) ${dStr}`;
+            document.getElementById('ch-amp').textContent = Math.abs(challenge.A).toFixed(2);
+            document.getElementById('ch-per').textContent = ((2 * Math.PI) / challenge.B).toFixed(2);
+            document.getElementById('ch-phase').textContent = challenge.C.toFixed(2);
+            document.getElementById('ch-mid').textContent = challenge.D.toFixed(2);
+            render();
+        }
+
+        function toggleChallengeAnswer() {
+            const box = document.getElementById('challenge-answer-box');
+            const btn = document.getElementById('btn-toggle-answer');
+            box.classList.toggle('hidden');
+            btn.textContent = box.classList.contains('hidden') ? "Reveal Correct Equation & Breakdown" : "Hide Breakdown";
+        }
+
+        // Function Evaluation Helper
+        const fnVal = function(func, x) {
+            switch(func) {
+                case 'sin': return Math.sin(x);
+                case 'cos': return Math.cos(x);
+                case 'tan': return Math.tan(x);
+                case 'csc': return 1 / Math.sin(x);
+                case 'sec': return 1 / Math.cos(x);
+                case 'cot': return 1 / Math.tan(x);
+                default: return Math.sin(x);
+            }
+        };
+
+        // Render Engine
+        function render() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawCartesianGrid();
+
+            if (currentMode === 'explorer') {
+                drawTrigCurve(explorer, '#6366f1', true);
+            } else {
+                drawTrigCurve(challenge, '#10b981', false);
+            }
+        }
+
+        function drawCartesianGrid() {
+            ctx.save();
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 1;
+
+            const leftMath = toMathX(0);
+            const rightMath = toMathX(canvas.width);
+            const bottomMath = toMathY(canvas.height);
+            const topMath = toMathY(0);
+
+            // Radian intervals on X axis (multiples of PI/2)
+            const piStep = Math.PI / 2;
+            const startX = Math.floor(leftMath / piStep) * piStep;
+
+            for (let x = startX; x <= rightMath; x += piStep) {
+                const sx = toScreenX(x);
+                ctx.beginPath();
+                ctx.moveTo(sx, 0);
+                ctx.lineTo(sx, canvas.height);
+                ctx.stroke();
+
+                // Label radian ticks
+                if (Math.abs(x) > 0.01) {
+                    ctx.fillStyle = '#64748b';
+                    ctx.font = '10px Inter, sans-serif';
+                    let label = formatRadianLabel(x);
+                    ctx.fillText(label, sx - 10, toScreenY(0) + 14);
+                }
+            }
+
+            // Y Axis integer ticks
+            for (let y = Math.floor(bottomMath); y <= topMath; y++) {
+                if (y === 0) continue;
+                const sy = toScreenY(y);
+                ctx.beginPath();
+                ctx.moveTo(0, sy);
+                ctx.lineTo(canvas.width, sy);
+                ctx.stroke();
+
+                ctx.fillStyle = '#64748b';
+                ctx.font = '10px Inter, sans-serif';
+                ctx.fillText(y.toString(), toScreenX(0) + 6, sy + 3);
+            }
+
+            // Main X and Y Axes
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 2;
+
+            // X Axis
+            ctx.beginPath();
+            ctx.moveTo(0, toScreenY(0));
+            ctx.lineTo(canvas.width, toScreenY(0));
+            ctx.stroke();
+
+            // Y Axis
+            ctx.beginPath();
+            ctx.moveTo(toScreenX(0), 0);
+            ctx.lineTo(toScreenX(0), canvas.height);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function formatRadianLabel(x) {
+            const ratio = x / Math.PI;
+            if (Math.abs(ratio - 0.5) < 0.01) return "pi/2";
+            if (Math.abs(ratio - 1) < 0.01) return "pi";
+            if (Math.abs(ratio - 1.5) < 0.01) return "3pi/2";
+            if (Math.abs(ratio - 2) < 0.01) return "2pi";
+            if (Math.abs(ratio + 0.5) < 0.01) return "-pi/2";
+            if (Math.abs(ratio + 1) < 0.01) return "-pi";
+            if (Math.abs(ratio + 1.5) < 0.01) return "-3pi/2";
+            if (Math.abs(ratio + 2) < 0.01) return "-2pi";
+            return (ratio).toFixed(1) + "pi";
+        }
+
+        function drawTrigCurve(params, color, isExplorer) {
+            ctx.save();
+            const { funcType, A, B, C, D } = params;
+
+            // 1. Draw Midline if explorer
+            if (isExplorer && document.getElementById('chk-midline').checked) {
+                ctx.strokeStyle = 'rgba(168, 85, 247, 0.4)';
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([4, 4]);
+                const syMid = toScreenY(D);
+                ctx.beginPath();
+                ctx.moveTo(0, syMid);
+                ctx.lineTo(canvas.width, syMid);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // 2. Plot Curve
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+
+            let firstPoint = true;
+            const step = 2; // pixel step
+
+            for (let sx = 0; sx <= canvas.width; sx += step) {
+                const x = toMathX(sx);
+                const innerArg = B * (x - C);
+                
+                // Check for vertical asymptotes in tan, csc, sec, cot
+                let val;
+                try {
+                    const rawVal = fnVal(funcType, innerArg);
+                    val = A * rawVal + D;
+                } catch(e) {
+                    val = NaN;
+                }
+
+                const sy = toScreenY(val);
+
+                // Handle discontinuity / asymptotes
+                if (isNaN(val) || !isFinite(val) || Math.abs(val) > 50) {
+                    firstPoint = true;
+                    if (isExplorer && document.getElementById('chk-asymptotes').checked) {
+                        ctx.save();
+                        ctx.strokeStyle = 'rgba(239, 68, 68, 0.3)';
+                        ctx.lineWidth = 1;
+                        ctx.setLineDash([2, 2]);
+                        ctx.beginPath();
+                        ctx.moveTo(sx, 0);
+                        ctx.lineTo(sx, canvas.height);
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+                    continue;
+                }
+
+                if (firstPoint) {
+                    ctx.moveTo(sx, sy);
+                    firstPoint = false;
+                } else {
+                    ctx.lineTo(sx, sy);
+                }
+            }
+            ctx.stroke();
+
+            // 3. Highlight Extrema (Peaks and Troughs) for Sine/Cosine in Explorer mode
+            if (isExplorer && (funcType === 'sin' || funcType === 'cos') && document.getElementById('chk-extrema').checked) {
+                ctx.fillStyle = '#f59e0b';
+                const period = (2 * Math.PI) / Math.abs(B);
+                const startMathX = toMathX(0);
+                const endMathX = toMathX(canvas.width);
+
+                for (let k = -10; k <= 10; k++) {
+                    // Critical points offset based on sin/cos
+                    let offset = funcType === 'sin' ? (Math.PI / (2 * B)) + C : C;
+                    let peakX = k * (period / 2) + offset;
+
+                    if (peakX >= startMathX && peakX <= endMathX) {
+                        const inner = B * (peakX - C);
+                        const val = A * fnVal(funcType, inner) + D;
+                        const sx = toScreenX(peakX);
+                        const sy = toScreenY(val);
+
+                        ctx.beginPath();
+                        ctx.arc(sx, sy, 5, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.lineWidth = 1.5;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            ctx.restore();
+        }
+
+        // Canvas Panning
+        function onMouseDown(e) {
+            const rect = canvas.getBoundingClientRect();
+            isDraggingCanvas = true;
+            dragStartX = (e.clientX - rect.left) - panX;
+            dragStartY = (e.clientY - rect.top) - panY;
+        }
+
+        function onMouseMove(e) {
+            if (!isDraggingCanvas) return;
+            const rect = canvas.getBoundingClientRect();
+            panX = (e.clientX - rect.left) - dragStartX;
+            panY = (e.clientY - rect.top) - dragStartY;
+            render();
+        }
+
+        function onMouseUp() {
+            isDraggingCanvas = false;
+        }
+
+        function zoomCanvas(factor) {
+            scaleX = Math.max(30, Math.min(200, scaleX * factor));
+            scaleY = Math.max(20, Math.min(150, scaleY * factor));
+            render();
+        }
+
+        function resetCanvasTransform() {
+            panX = 0;
+            panY = 0;
+            scaleX = 80;
+            scaleY = 60;
+            render();
+        }
+
+        function resetExplorer() {
+            loadPreset('standard');
+            resetCanvasTransform();
+        }
+
+        function toggleGuideModal() {
+            document.getElementById('guide-modal').classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>

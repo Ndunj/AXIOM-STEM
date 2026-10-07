@@ -1697,5 +1697,114 @@ export const RESTORED_SIMULATIONS: SimulationItem[] = [
     ],
     isHtmlApp: true,
     htmlUrl: "/simulations/analytical-geometry-circles-conics.html"
+  },
+
+  // 22. MATHEMATICS: Trigonometric Functions & Graphs Lab
+  {
+    id: "sim-trigonometric-functions-graphs-lab",
+    title: "Trigonometric Functions & Graphs Lab",
+    tagline: "Interactive trigonometric transformations: sine, cosine, tangent, reciprocal curves, radian axes, and arbitrary challenge mode",
+    discipline: "mathematics",
+    gradeLevel: ["High School (9-12)", "AP / IB STEM", "Undergraduate"],
+    standards: ["CCSS.MATH.HSF.TF.B.5", "CCSS.MATH.HSF.IF.C.7.E", "CCSS.MATH.HSF.BF.B.3", "NGSS SEP-2"],
+    description: "An interactive trigonometric laboratory and graph explorer. Investigate transformations of the 6 fundamental circular functions (sin, cos, tan, csc, sec, cot) in the general form y = A·func(B(x - C)) + D. Explore how amplitude (A), frequency (B), horizontal phase shift (C), and vertical shift (D) deform sinusoidal waves and generate periodic asymptotes. Features Mode A (Function Explorer with real-time property readouts, midline overlays, and peak/trough extrema markers) and Mode B (Random Function Challenge for student mastery).",
+    learningObjectives: [
+      "Analyze transformations of circular trigonometric functions using the standard parameter form y = A func(B(x - C)) + D",
+      "Calculate the period T = 2π / |B| (or π / |B| for tangent) and determine amplitude, midline, and range boundaries",
+      "Interpret horizontal phase shifts C in radian measure and identify vertical asymptotes for reciprocal and tangent functions",
+      "Reverse-engineer unknown trigonometric curves from their visual extrema, midlines, and periodic wavelength intervals"
+    ],
+    thumbnailGradient: "from-indigo-600 via-purple-700 to-slate-950",
+    badgeColor: "bg-indigo-500/10 text-indigo-300 border-indigo-500/20",
+    iconName: "Activity",
+    rating: 4.99,
+    reviewCount: 88,
+    teacherCount: 395,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 200,
+      districtUnlimited: 400
+    },
+    features: [
+      "All 6 circular functions supported: Sine, Cosine, Tangent, Cosecant, Secant, and Cotangent",
+      "Interactive sliders for Amplitude (A), Angular Frequency (B), Horizontal Phase Shift (C), and Vertical Midline Shift (D)",
+      "Mode A (Function Explorer) with real-time Period (T), Midline, Peak, and Trough property readouts",
+      "Mode B (Random Function Challenge) generating arbitrary wave problems with student self-checking and full equation reveal",
+      "Continuous radian coordinate plane with standard fractional π tick intervals (π/2, π, 3π/2, 2π) and smooth canvas panning/zoom"
+    ],
+    parameterDefaults: {
+      funcType: "sin",
+      A: 1.0,
+      B: 1.0,
+      C: 0.0,
+      D: 0.0
+    },
+    parameterControls: [
+      {
+        key: "A",
+        label: "Amplitude (A)",
+        min: -5,
+        max: 5,
+        step: 0.5,
+        unit: "",
+        description: "Vertical stretch factor and reflection"
+      },
+      {
+        key: "B",
+        label: "Frequency (B)",
+        min: 0.25,
+        max: 4,
+        step: 0.25,
+        unit: "",
+        description: "Angular frequency determining the wave period T = 2π/B"
+      },
+      {
+        key: "C",
+        label: "Phase Shift (C)",
+        min: -3.14,
+        max: 3.14,
+        step: 0.1,
+        unit: "rad",
+        description: "Horizontal translation in radians"
+      },
+      {
+        key: "D",
+        label: "Vertical Shift (D)",
+        min: -4,
+        max: 4,
+        step: 0.5,
+        unit: "",
+        description: "Vertical translation defining the sinusoidal midline y = D"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-trig-1",
+        title: "Match the Wave Period",
+        instruction: "Adjust the frequency parameter B so that the sine wave completes one full cycle across an interval of π radians (T = 3.14).",
+        targetMetric: "Period Matched",
+        targetValue: 3.14,
+        tolerance: 0.05,
+        currentValueKey: "period_rad",
+        rewardBadge: "Harmonic Wave Specialist"
+      },
+      {
+        id: "ch-trig-2",
+        title: "Random Challenge Master",
+        instruction: "Switch to Mode B, inspect the random wave's peaks and period, and correctly identify its amplitude and midline.",
+        targetMetric: "Challenge Solved",
+        targetValue: 1,
+        tolerance: 0,
+        currentValueKey: "challenge_solved",
+        rewardBadge: "Trigonometry Virtuoso"
+      }
+    ],
+    previewFacts: [
+      "Fourier proved that any periodic wave—from musical timbre to ocean tides—can be represented as an infinite sum of simple sine and cosine harmonics.",
+      "The tangent function has vertical asymptotes at x = ±π/2, ±3π/2... where cos(x) = 0, causing the function values to approach ±infinity."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/trigonometric-functions-graphs-lab.html"
   }
 ];
