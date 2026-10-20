@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Tuning Fork Physics Simulator - Mechanics & Resonance</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Three.js and OrbitControls CDNs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .font-mono-code { font-family: 'JetBrains Mono', monospace; }
+    input[type=range] { accent-color: #06b6d4; }
+    
+    /* Custom Glassmorphism Utility */
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.82);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(51, 65, 85, 0.6);
+    }
+    
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+<body class="h-full flex flex-col overflow-hidden select-none bg-slate-950 text-slate-100">
+
+  <!-- Main Navigation Header -->
+  <header class="border-b border-slate-800/80 bg-slate-900/90 backdrop-blur px-5 py-3 flex flex-wrap items-center justify-between gap-4 z-30 shrink-0">
+    <div class="flex items-center gap-3">
+      <div class="p-2 bg-cyan-500/10 border border-cyan-500/30 rounded-xl text-cyan-400">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L5.601 15.1a2 2 0 00-1.2.148l-1.2.6a2 2 0 00-1.001 1.761V19a2 2 0 002 2h16a2 2 0 002-2v-1.127a2 2 0 00-.972-1.722l-.972-.572z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v12" />
+        </svg>
+      </div>
+      <div>
+        <h1 class="font-bold text-lg leading-tight text-slate-100 tracking-wide">3D Tuning Fork Mechanics & Resonance</h1>
+        <p class="text-xs text-slate-400">Interactive Acoustics & Wave Motion Physics Lab</p>
+      </div>
+    </div>
+
+    <!-- Live Telemetry Dashboard Pills -->
+    <div class="flex items-center flex-wrap gap-2 text-xs font-mono-code">
+      <div class="bg-slate-800/80 border border-slate-700/60 px-3 py-1.5 rounded-lg flex items-center gap-2">
+        <span class="text-slate-400">Freq (f1):</span>
+        <span id="pill-f1" class="text-cyan-400 font-semibold">440.0 Hz</span>
+      </div>
+      <div class="bg-slate-800/80 border border-slate-700/60 px-3 py-1.5 rounded-lg flex items-center gap-2">
+        <span class="text-slate-400">Period (T):</span>
+        <span id="pill-period" class="text-emerald-400 font-semibold">2.27 ms</span>
+      </div>
+      <div class="bg-slate-800/80 border border-slate-700/60 px-3 py-1.5 rounded-lg flex items-center gap-2">
+        <span class="text-slate-400">Wavelength (λ):</span>
+        <span id="pill-lambda" class="text-amber-400 font-semibold">0.78 m</span>
+      </div>
+      <div id="pill-beat-container" class="bg-slate-800/80 border border-slate-700/60 px-3 py-1.5 rounded-lg flex items-center gap-2 hidden">
+        <span class="text-slate-400">Beat Freq (f_beat):</span>
+        <span id="pill-beat" class="text-rose-400 font-semibold">4.0 Hz</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Viewport Layout -->
+  <div class="flex-1 flex flex-col lg:flex-row min-h-0 relative overflow-hidden">
+
+    <!-- 3D WebGL Canvas Area -->
+    <div id="canvas-container" class="flex-1 h-full w-full relative bg-slate-950 cursor-grab active:cursor-grabbing">
+      
+      <!-- Overlay 3D Navigation Instructions HUD -->
+      <div class="absolute top-4 left-4 z-10 pointer-events-none flex flex-col gap-2">
+        <div class="bg-slate-900/80 backdrop-blur border border-slate-800 px-3 py-2 rounded-xl text-[11px] text-slate-300 flex items-center gap-2.5 shadow-lg">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+          </svg>
+          <span>Left-Click + Drag: Rotate 3D View | Scroll: Zoom | Right-Click: Pan</span>
+        </div>
+      </div>
+
+      <!-- Strike Mallet Quick Button (Floats in 3D View) -->
+      <div class="absolute bottom-6 left-6 z-10 flex gap-3">
+        <button id="btn-strike" class="px-5 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-sm rounded-xl shadow-lg shadow-cyan-500/20 active:scale-95 transition flex items-center gap-2.5">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          <span>STRIKE TUNING FORK</span>
+        </button>
+
+        <button id="btn-mute" class="px-4 py-3 bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-200 font-semibold text-xs rounded-xl transition backdrop-blur flex items-center gap-2 shadow-lg">
+          <svg id="icon-sound" class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M17.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+          </svg>
+          <span id="text-sound">Audio Active</span>
+        </button>
+      </div>
+
+      <!-- Overlaid Real-Time 2D Oscilloscope Graph Canvas (Mode A) -->
+      <div id="oscilloscope-card" class="absolute top-4 right-4 z-10 w-80 lg:w-96 glass-panel rounded-2xl overflow-hidden shadow-2xl transition-all duration-300">
+        <div class="px-3.5 py-2 bg-slate-900/90 border-b border-slate-800 flex justify-between items-center text-xs">
+          <span class="font-semibold text-slate-200 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+            Real-Time Oscilloscope Output
+          </span>
+          <span class="font-mono-code text-[10px] text-cyan-400" id="osc-amplitude-text">y(t) = A·e^(-γt)·sin(2πft)</span>
+        </div>
+        <div class="p-2 bg-slate-950/80">
+          <canvas id="oscilloscopeCanvas" width="360" height="130" class="w-full h-32 block rounded-lg"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Sidebar Controls & Educational Settings Panel -->
+    <aside class="w-full lg:w-96 border-t lg:border-t-0 lg:border-l border-slate-800/80 bg-slate-900/95 p-5 flex flex-col gap-5 overflow-y-auto z-20 shrink-0">
+      
+      <!-- Section 1: Experiment Mode Selector -->
+      <div class="space-y-2.5">
+        <label class="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+          <span>1. Experiment Mode</span>
+          <span class="text-[10px] bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-2 py-0.5 rounded font-mono-code">Acoustic Lab</span>
+        </label>
+        <div class="grid grid-cols-1 gap-2">
+          <button data-mode="A" class="mode-btn active bg-cyan-600/20 border-cyan-500 text-cyan-300 border p-3 rounded-xl text-xs font-medium text-left transition flex items-start gap-3">
+            <div class="p-2 rounded-lg bg-cyan-500/20 text-cyan-400 mt-0.5">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <div>
+              <div class="font-bold text-slate-100">Mode A: Wave Radiation & Pressure</div>
+              <div class="text-[11px] text-slate-400 leading-normal">Visualize dynamic 3D sound waves & live oscilloscope waveform.</div>
+            </div>
+          </button>
+
+          <button data-mode="B" class="mode-btn bg-slate-800/60 border-slate-700/80 text-slate-300 border p-3 rounded-xl text-xs font-medium text-left transition flex items-start gap-3 hover:border-slate-600">
+            <div class="p-2 rounded-lg bg-slate-700/40 text-emerald-400 mt-0.5">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+              </svg>
+            </div>
+            <div>
+              <div class="font-bold text-slate-100">Mode B: Sympathetic Resonance & Beats</div>
+              <div class="text-[11px] text-slate-400 leading-normal">Dual tuning forks demonstrating energy transfer & acoustic beats.</div>
+            </div>
+          </button>
+
+          <button data-mode="C" class="mode-btn bg-slate-800/60 border-slate-700/80 text-slate-300 border p-3 rounded-xl text-xs font-medium text-left transition flex items-start gap-3 hover:border-slate-600">
+            <div class="p-2 rounded-lg bg-slate-700/40 text-amber-400 mt-0.5">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L5.601 15.1a2 2 0 00-1.2.148l-1.2.6a2 2 0 00-1.001 1.761V19a2 2 0 002 2h16a2 2 0 002-2v-1.127a2 2 0 00-.972-1.722l-.972-.572z" />
+              </svg>
+            </div>
+            <div>
+              <div class="font-bold text-slate-100">Mode C: Mechanical Energy Transfer</div>
+              <div class="text-[11px] text-slate-400 leading-normal">Water immersion splashing test & bouncing ping-pong ball.</div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Section 2: Physical Parameters Controls -->
+      <div class="space-y-4 border-t border-slate-800 pt-4">
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 block">2. Frequency & Physical Setup</span>
+        
+        <!-- Frequency Presets -->
+        <div class="space-y-1.5">
+          <label class="text-xs text-slate-300 font-medium">Standard Pitch Presets (Fork 1)</label>
+          <div class="grid grid-cols-3 gap-1.5 font-mono-code text-xs">
+            <button data-preset="256" class="preset-btn px-2.5 py-1.5 bg-slate-800 border border-slate-700 hover:border-cyan-500/50 rounded-lg transition">C4 (256Hz)</button>
+            <button data-preset="440" class="preset-btn px-2.5 py-1.5 bg-cyan-600/30 border border-cyan-500 text-cyan-300 rounded-lg transition">A4 (440Hz)</button>
+            <button data-preset="512" class="preset-btn px-2.5 py-1.5 bg-slate-800 border border-slate-700 hover:border-cyan-500/50 rounded-lg transition">C5 (512Hz)</button>
+          </div>
+        </div>
+
+        <!-- Frequency Slider Fork 1 -->
+        <div class="space-y-1">
+          <div class="flex justify-between text-xs">
+            <label for="slider-f1" class="text-slate-300 font-medium">Fork 1 Frequency (f1)</label>
+            <span id="val-f1" class="font-mono-code text-cyan-400 font-semibold">440 Hz</span>
+          </div>
+          <input type="range" id="slider-f1" min="100" max="1000" step="1" value="440" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+        </div>
+
+        <!-- Mode B Detuning Clamp Control (Hidden unless in Mode B) -->
+        <div id="group-detuning" class="space-y-1.5 bg-slate-800/40 p-3 rounded-xl border border-slate-800 hidden">
+          <div class="flex justify-between text-xs">
+            <label for="slider-f2" class="text-slate-300 font-medium flex items-center gap-1.5">
+              <span>Fork 2 Detuning Clamp</span>
+              <span id="tag-resonance" class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Resonance!</span>
+            </label>
+            <span id="val-f2" class="font-mono-code text-rose-400 font-semibold">444 Hz (+4Hz)</span>
+          </div>
+          <input type="range" id="slider-f2" min="-20" max="20" step="0.5" value="4" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+          <div class="text-[10px] text-slate-400 leading-normal">
+            Adjusting mass on Fork 2 detunes its natural frequency, generating acoustic beats ($f_{\text{beat}} = |f_1 - f_2|$).
+          </div>
+        </div>
+
+        <!-- Toggle Switches -->
+        <div class="space-y-2 pt-1">
+          <label class="flex items-center justify-between cursor-pointer p-2.5 rounded-xl bg-slate-800/40 border border-slate-800 hover:bg-slate-800/70 transition">
+            <span class="text-xs text-slate-300 font-medium">Wooden Soundbox (Forced Amplification)</span>
+            <input type="checkbox" id="toggle-box" checked class="w-4 h-4 rounded text-cyan-500 focus:ring-cyan-500/20 accent-cyan-500">
+          </label>
+
+          <label class="flex items-center justify-between cursor-pointer p-2.5 rounded-xl bg-slate-800/40 border border-slate-800 hover:bg-slate-800/70 transition">
+            <span class="text-xs text-slate-300 font-medium">Continuous Vibration Mode (No Decay)</span>
+            <input type="checkbox" id="toggle-continuous" class="w-4 h-4 rounded text-cyan-500 focus:ring-cyan-500/20 accent-cyan-500">
+          </label>
+        </div>
+
+      </div>
+
+      <!-- Section 3: Educational Physics Guide Drawer -->
+      <div class="mt-auto border-t border-slate-800 pt-4">
+        <details class="group bg-slate-800/30 border border-slate-800 rounded-xl overflow-hidden text-xs" open>
+          <summary class="p-3 font-semibold text-slate-300 cursor-pointer flex justify-between items-center group-open:bg-slate-800/60 transition">
+            <span class="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+              Physics Principles Explained
+            </span>
+            <svg class="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </summary>
+          <div class="p-3 space-y-2 text-slate-300 leading-relaxed border-t border-slate-800" id="guide-content">
+            <p><strong>Fundamental Pitch & Pure Harmonics:</strong><br>
+            A tuning fork produces an almost pure sinusoidal sound wave. The tines oscillate in flexural mode—moving symmetrically inward and outward.</p>
+            
+            <p><strong>Speed of Sound:</strong><br>
+            Using $v = 343\text{ m/s}$ in air, wavelength is calculated via $\lambda = v / f$. Higher frequencies yield shorter wavelengths.</p>
+          </div>
+        </details>
+      </div>
+
+    </aside>
+
+  </div>
+
+  <!-- JavaScript Simulation Application -->
+  <script>
+    // --- Global Simulation State ---
+    const state = {
+      mode: 'A',            // 'A': Wave radiation, 'B': Sympathetic resonance, 'C': Mechanical transfer
+      f1: 440,              // Primary tuning fork frequency (Hz)
+      f2Offset: 4,          // Detuning offset for Fork 2 in Mode B (Hz)
+      hasBox: true,         // Wooden soundbox mounted
+      isContinuous: false,  // Continuous oscillation without exponential decay
+      audioActive: true,    // Sound synthesis enabled
+      amplitude1: 0,        // Current vibration amplitude Fork 1 (0.0 to 1.0)
+      amplitude2: 0,        // Current vibration amplitude Fork 2 (0.0 to 1.0)
+      decayRate: 0.8,       // Exponential decay rate factor
+      time: 0
+    };
+
+    // --- Web Audio API Initialization ---
+    let audioCtx = null;
+    let osc1 = null, osc2 = null;
+    let gain1 = null, gain2 = null;
+
+    function initAudio() {
+      if (audioCtx) return;
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AudioContext();
+
+      // Fork 1 Audio Node Chain
+      osc1 = audioCtx.createOscillator();
+      gain1 = audioCtx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(state.f1, audioCtx.currentTime);
+      gain1.gain.setValueAtTime(0, audioCtx.currentTime);
+      osc1.connect(gain1);
+      gain1.connect(audioCtx.destination);
+      osc1.start();
+
+      // Fork 2 Audio Node Chain
+      osc2 = audioCtx.createOscillator();
+      gain2 = audioCtx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(state.f1 + state.f2Offset, audioCtx.currentTime);
+      gain2.gain.setValueAtTime(0, audioCtx.currentTime);
+      osc2.connect(gain2);
+      gain2.connect(audioCtx.destination);
+      osc2.start();
+    }
+
+    function updateAudioParams() {
+      if (!audioCtx) return;
+      
+      const boxVolumeBoost = state.hasBox ? 1.5 : 0.8;
+
+      if (!state.audioActive) {
+        gain1.gain.setTargetAtTime(0, audioCtx.currentTime, 0.01);
+        gain2.gain.setTargetAtTime(0, audioCtx.currentTime, 0.01);
+        return;
+      }
+
+      // Update frequencies
+      osc1.frequency.setTargetAtTime(state.f1, audioCtx.currentTime, 0.01);
+      osc2.frequency.setTargetAtTime(state.f1 + state.f2Offset, audioCtx.currentTime, 0.01);
+
+      // Gain follows visual oscillation amplitudes
+      const vol1 = Math.min(0.25, state.amplitude1 * 0.25 * boxVolumeBoost);
+      const vol2 = Math.min(0.25, state.amplitude2 * 0.25 * boxVolumeBoost);
+
+      gain1.gain.setTargetAtTime(vol1, audioCtx.currentTime, 0.01);
+      
+      if (state.mode === 'B') {
+        gain2.gain.setTargetAtTime(vol2, audioCtx.currentTime, 0.01);
+      } else {
+        gain2.gain.setTargetAtTime(0, audioCtx.currentTime, 0.01);
+      }
+    }
+
+    // Trigger Mallet Strike Impact
+    function strikeFork() {
+      initAudio();
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      state.amplitude1 = 1.0;
+
+      if (state.mode === 'B') {
+        // If frequencies match exactly, sympathetic resonance transfers energy instantly
+        if (Math.abs(state.f2Offset) < 0.1) {
+          state.amplitude2 = 0.85;
+        } else {
+          state.amplitude2 = 0.15; // Minimal off-resonance forced excitation
+        }
+      }
+
+      // Animate Mallet 3D Strike
+      triggerMalletAnimation();
+    }
+
+    // --- Three.js 3D Engine Setup ---
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x090d16);
+
+    // Camera Setup
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+    camera.position.set(0, 4, 12);
+
+    // Renderer Setup
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    // OrbitControls
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.maxPolarAngle = Math.PI / 2 + 0.1; // Don't go far below ground
+    controls.target.set(0, 2, 0);
+
+    // --- Lighting Setup ---
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+    dirLight.position.set(5, 12, 8);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    scene.add(dirLight);
+
+    const pointLight = new THREE.PointLight(0x06b6d4, 1.5, 10);
+    pointLight.position.set(0, 3, 2);
+    scene.add(pointLight);
+
+    // --- Procedural Materials ---
+    const metalMaterial = new THREE.MeshStandardMaterial({
+      color: 0xe2e8f0,
+      metalness: 0.9,
+      roughness: 0.15,
+      envMapIntensity: 1.0
+    });
+
+    const woodMaterial = new THREE.MeshStandardMaterial({
+      color: 0x854d0e,
+      roughness: 0.7,
+      metalness: 0.1
+    });
+
+    const rubberMaterial = new THREE.MeshStandardMaterial({
+      color: 0x1e293b,
+      roughness: 0.9
+    });
+
+    // Floor Mesh
+    const floorGeo = new THREE.PlaneGeometry(30, 30);
+    const floorMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -0.01;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    // --- Procedural 3D Tuning Fork Construction ---
+    function createTuningFork() {
+      const forkGroup = new THREE.Group();
+
+      // Stem (Handle)
+      const stemGeo = new THREE.CylinderGeometry(0.12, 0.12, 1.2, 16);
+      const stem = new THREE.Mesh(stemGeo, metalMaterial);
+      stem.position.y = 0.6;
+      stem.castShadow = true;
+      forkGroup.add(stem);
+
+      // Base Handle Knob
+      const knobGeo = new THREE.SphereGeometry(0.18, 16, 16);
+      const knob = new THREE.Mesh(knobGeo, metalMaterial);
+      knob.position.y = 0;
+      knob.castShadow = true;
+      forkGroup.add(knob);
+
+      // Rounded Shoulder Curve
+      const shoulderGeo = new THREE.CylinderGeometry(0.35, 0.15, 0.3, 16);
+      const shoulder = new THREE.Mesh(shoulderGeo, metalMaterial);
+      shoulder.position.y = 1.35;
+      shoulder.castShadow = true;
+      forkGroup.add(shoulder);
+
+      // Left Tine Group (for flexural vibration)
+      const leftTineGroup = new THREE.Group();
+      leftTineGroup.position.set(-0.22, 1.5, 0);
+      
+      const tineGeo = new THREE.CylinderGeometry(0.08, 0.08, 2.4, 16);
+      const leftTine = new THREE.Mesh(tineGeo, metalMaterial);
+      leftTine.position.y = 1.2;
+      leftTine.castShadow = true;
+      leftTineGroup.add(leftTine);
+
+      // Right Tine Group
+      const rightTineGroup = new THREE.Group();
+      rightTineGroup.position.set(0.22, 1.5, 0);
+
+      const rightTine = new THREE.Mesh(tineGeo, metalMaterial);
+      rightTine.position.y = 1.2;
+      rightTine.castShadow = true;
+      rightTineGroup.add(rightTine);
+
+      forkGroup.add(leftTineGroup);
+      forkGroup.add(rightTineGroup);
+
+      return {
+        group: forkGroup,
+        leftTineGroup: leftTineGroup,
+        rightTineGroup: rightTineGroup,
+        leftTineMesh: leftTine,
+        rightTineMesh: rightTine
+      };
+    }
+
+    // --- Procedural Wooden Soundbox Construction ---
+    function createResonanceBox() {
+      const boxGroup = new THREE.Group();
+
+      // Hollow wooden resonator box
+      const boxGeo = new THREE.BoxGeometry(1.6, 1.0, 3.2);
+      const box = new THREE.Mesh(boxGeo, woodMaterial);
+      box.position.y = -0.5;
+      box.castShadow = true;
+      box.receiveShadow = true;
+      boxGroup.add(box);
+
+      // Circular sound cavity hole on front
+      const holeGeo = new THREE.CircleGeometry(0.35, 24);
+      const holeMat = new THREE.MeshBasicMaterial({ color: 0x090d16 });
+      const hole = new THREE.Mesh(holeGeo, holeMat);
+      hole.position.set(0, -0.5, 1.601);
+      boxGroup.add(hole);
+
+      // Metal socket on top
+      const socketGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.2, 16);
+      const socket = new THREE.Mesh(socketGeo, metalMaterial);
+      socket.position.y = 0.05;
+      boxGroup.add(socket);
+
+      return boxGroup;
+    }
+
+    // Instantiate 3D Fork Assembly 1 & Soundbox 1
+    const fork1Obj = createTuningFork();
+    const box1Obj = createResonanceBox();
+
+    const assembly1Group = new THREE.Group();
+    assembly1Group.add(box1Obj);
+    assembly1Group.add(fork1Obj.group);
+    assembly1Group.position.set(0, 1, 0);
+    scene.add(assembly1Group);
+
+    // Instantiate 3D Fork Assembly 2 (Used in Mode B)
+    const fork2Obj = createTuningFork();
+    const box2Obj = createResonanceBox();
+
+    const assembly2Group = new THREE.Group();
+    assembly2Group.add(box2Obj);
+    assembly2Group.add(fork2Obj.group);
+    assembly2Group.position.set(3.5, 1, 0);
+    scene.add(assembly2Group);
+
+    // Detuning Clamp Mass Mesh on Fork 2 Right Tine
+    const clampGeo = new THREE.BoxGeometry(0.22, 0.15, 0.22);
+    const clampMat = new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.5, roughness: 0.3 });
+    const clampMesh = new THREE.Mesh(clampGeo, clampMat);
+    clampMesh.position.set(0, 1.8, 0);
+    fork2Obj.rightTineGroup.add(clampMesh);
+
+    // --- Mode A: Dynamic 3D Wave Radiation Particles/Rings ---
+    const waveRings = [];
+    const NUM_WAVE_RINGS = 8;
+    for (let i = 0; i < NUM_WAVE_RINGS; i++) {
+      const ringGeo = new THREE.RingGeometry(0.2, 0.3, 32);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: 0x06b6d4,
+        transparent: true,
+        opacity: 0,
+        side: THREE.DoubleSide
+      });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.rotation.x = Math.PI / 2;
+      ring.position.set(0, 2.7, 0);
+      scene.add(ring);
+      waveRings.push(ring);
+    }
+
+    // --- Mode C: Water Beaker & Splash Particles ---
+    const beakerGroup = new THREE.Group();
+    
+    // Glass Beaker Cylinder
+    const beakerGeo = new THREE.CylinderGeometry(0.8, 0.8, 1.4, 24, 1, true);
+    const beakerMat = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.35,
+      roughness: 0.1,
+      transmission: 0.9,
+      thickness: 0.5
+    });
+    const beaker = new THREE.Mesh(beakerGeo, beakerMat);
+    beaker.position.y = 0.7;
+    beakerGroup.add(beaker);
+
+    // Water Content Cylinder
+    const waterGeo = new THREE.CylinderGeometry(0.76, 0.76, 1.1, 24);
+    const waterMat = new THREE.MeshStandardMaterial({
+      color: 0x0284c7,
+      transparent: true,
+      opacity: 0.75,
+      roughness: 0.2
+    });
+    const water = new THREE.Mesh(waterGeo, waterMat);
+    water.position.y = 0.55;
+    beakerGroup.add(water);
+
+    beakerGroup.position.set(0, 1.8, 0); // Positioned directly under tines in Mode C
+    scene.add(beakerGroup);
+
+    // Water Splash Particle System
+    const SPLASH_COUNT = 40;
+    const splashGeo = new THREE.BufferGeometry();
+    const splashPositions = new Float32Array(SPLASH_COUNT * 3);
+    const splashVelocities = [];
+
+    for (let i = 0; i < SPLASH_COUNT; i++) {
+      splashPositions[i * 3] = 0;
+      splashPositions[i * 3 + 1] = 2.7;
+      splashPositions[i * 3 + 2] = 0;
+      splashVelocities.push(new THREE.Vector3(0, 0, 0));
+    }
+
+    splashGeo.setAttribute('position', new THREE.BufferAttribute(splashPositions, 3));
+    const splashMat = new THREE.PointsMaterial({
+      color: 0x38bdf8,
+      size: 0.08,
+      transparent: true,
+      opacity: 0.8
+    });
+    const splashParticles = new THREE.Points(splashGeo, splashMat);
+    scene.add(splashParticles);
+
+    // --- Mode C: Ping-Pong Ball Suspended on String ---
+    const pingPongGroup = new THREE.Group();
+    
+    // Stand Frame
+    const standGeo = new THREE.CylinderGeometry(0.04, 0.04, 3.2, 12);
+    const stand = new THREE.Mesh(standGeo, metalMaterial);
+    stand.position.set(0.9, 1.6, 0);
+    pingPongGroup.add(stand);
+
+    const armGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.8, 12);
+    const arm = new THREE.Mesh(armGeo, metalMaterial);
+    arm.rotation.z = Math.PI / 2;
+    arm.position.set(0.5, 3.2, 0);
+    pingPongGroup.add(arm);
+
+    // Suspension String
+    const stringGeo = new THREE.BufferGeometry();
+    const stringPositions = new Float32Array([0.22, 3.2, 0, 0.22, 2.7, 0]);
+    stringGeo.setAttribute('position', new THREE.BufferAttribute(stringPositions, 3));
+    const stringMat = new THREE.LineBasicMaterial({ color: 0x94a3b8 });
+    const stringLine = new THREE.Line(stringGeo, stringMat);
+    pingPongGroup.add(stringLine);
+
+    // Ping-Pong Ball Mesh
+    const ballGeo = new THREE.SphereGeometry(0.12, 16, 16);
+    const ballMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.4 });
+    const ballMesh = new THREE.Mesh(ballGeo, ballMat);
+    ballMesh.position.set(0.22, 2.7, 0); // Resting against right tine
+    pingPongGroup.add(ballMesh);
+
+    scene.add(pingPongGroup);
+
+    // --- 3D Mallet (Strike Animation Tool) ---
+    const malletGroup = new THREE.Group();
+
+    const malletShaftGeo = new THREE.CylinderGeometry(0.05, 0.05, 2.0, 12);
+    const malletShaft = new THREE.Mesh(malletShaftGeo, woodMaterial);
+    malletShaft.position.y = -1.0;
+    malletGroup.add(malletShaft);
+
+    const malletHeadGeo = new THREE.SphereGeometry(0.25, 16, 16);
+    const malletHead = new THREE.Mesh(malletHeadGeo, rubberMaterial);
+    malletHead.position.y = 0;
+    malletGroup.add(malletHead);
+
+    malletGroup.position.set(-2.0, 2.7, 0);
+    malletGroup.rotation.z = -Math.PI / 3;
+    scene.add(malletGroup);
+
+    let isStrikingAnimation = false;
+    let strikeTime = 0;
+
+    function triggerMalletAnimation() {
+      isStrikingAnimation = true;
+      strikeTime = 0;
+    }
+
+    // --- Oscilloscope Canvas 2D Renderer ---
+    const oscCanvas = document.getElementById('oscilloscopeCanvas');
+    const oscCtx = oscCanvas.getContext('2d');
+
+    function renderOscilloscope() {
+      const width = oscCanvas.width;
+      const height = oscCanvas.height;
+      const centerY = height / 2;
+
+      oscCtx.clearRect(0, 0, width, height);
+
+      // Draw Grid Lines
+      oscCtx.strokeStyle = '#1e293b';
+      oscCtx.lineWidth = 1;
+      
+      oscCtx.beginPath();
+      oscCtx.moveTo(0, centerY);
+      oscCtx.lineTo(width, centerY);
+      oscCtx.stroke();
+
+      for (let x = 0; x < width; x += 40) {
+        oscCtx.beginPath();
+        oscCtx.moveTo(x, 0);
+        oscCtx.lineTo(x, height);
+        oscCtx.stroke();
+      }
+
+      // Draw Waveform Signal
+      oscCtx.save();
+      oscCtx.shadowColor = '#06b6d4';
+      oscCtx.shadowBlur = 6;
+      oscCtx.strokeStyle = '#06b6d4';
+      oscCtx.lineWidth = 2;
+      oscCtx.beginPath();
+
+      const timebase = 0.02; // Seconds displayed across canvas
+      const omega1 = 2 * Math.PI * state.f1;
+      const omega2 = 2 * Math.PI * (state.f1 + state.f2Offset);
+
+      for (let px = 0; px < width; px++) {
+        const t = (px / width) * timebase + state.time;
+        
+        let signal = 0;
+        if (state.mode === 'B') {
+          // Combined beat signal from both forks
+          signal = (state.amplitude1 * Math.sin(omega1 * t)) + (state.amplitude2 * Math.sin(omega2 * t));
+          signal /= 2.0;
+        } else {
+          signal = state.amplitude1 * Math.sin(omega1 * t);
+        }
+
+        const py = centerY - signal * (height * 0.4);
+
+        if (px === 0) oscCtx.moveTo(px, py);
+        else oscCtx.lineTo(px, py);
+      }
+
+      oscCtx.stroke();
+      oscCtx.restore();
+    }
+
+    // --- Mode-Specific Visibility Logic ---
+    function updateModeLayout() {
+      // Hide all mode-specific 3D objects initially
+      beakerGroup.visible = false;
+      pingPongGroup.visible = false;
+      splashParticles.visible = false;
+      assembly2Group.visible = false;
+      document.getElementById('oscilloscope-card').style.display = 'none';
+      document.getElementById('group-detuning').classList.add('hidden');
+      document.getElementById('pill-beat-container').classList.add('hidden');
+
+      if (state.mode === 'A') {
+        document.getElementById('oscilloscope-card').style.display = 'block';
+        // Center Camera on Fork 1
+        controls.target.set(0, 2, 0);
+      } else if (state.mode === 'B') {
+        assembly2Group.visible = true;
+        document.getElementById('oscilloscope-card').style.display = 'block';
+        document.getElementById('group-detuning').classList.remove('hidden');
+        document.getElementById('pill-beat-container').classList.remove('hidden');
+        // Frame both forks in camera center
+        controls.target.set(1.75, 2, 0);
+      } else if (state.mode === 'C') {
+        beakerGroup.visible = true;
+        pingPongGroup.visible = true;
+        splashParticles.visible = true;
+        controls.target.set(0, 2, 0);
+      }
+
+      // Soundbox Visibility Toggle
+      box1Obj.visible = state.hasBox;
+      box2Obj.visible = state.hasBox;
+    }
+
+    // --- Main Physics & Animation Loop ---
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const dt = clock.getDelta();
+      state.time += dt;
+
+      // 1. Amplitude Exponential Decay
+      if (!state.isContinuous) {
+        if (state.amplitude1 > 0) {
+          state.amplitude1 -= state.decayRate * dt * 0.15;
+          if (state.amplitude1 < 0) state.amplitude1 = 0;
+        }
+        if (state.amplitude2 > 0) {
+          state.amplitude2 -= state.decayRate * dt * 0.15;
+          if (state.amplitude2 < 0) state.amplitude2 = 0;
+        }
+      }
+
+      // 2. Mechanical Tine Oscillation Dynamics
+      const omega1 = 2 * Math.PI * state.f1;
+      const flexDisplacement1 = Math.sin(omega1 * state.time) * state.amplitude1 * 0.08;
+
+      fork1Obj.leftTineGroup.position.x = -0.22 - flexDisplacement1;
+      fork1Obj.rightTineGroup.position.x = 0.22 + flexDisplacement1;
+
+      if (state.mode === 'B') {
+        const omega2 = 2 * Math.PI * (state.f1 + state.f2Offset);
+        const flexDisplacement2 = Math.sin(omega2 * state.time) * state.amplitude2 * 0.08;
+
+        fork2Obj.leftTineGroup.position.x = -0.22 - flexDisplacement2;
+        fork2Obj.rightTineGroup.position.x = 0.22 + flexDisplacement2;
+
+        // Reposition Detuning Clamp based on slider value
+        clampMesh.position.y = 1.2 + (state.f2Offset / 20.0) * 0.8;
+      }
+
+      // 3. Mode A: Acoustic Wavefront Ring Propagation
+      if (state.mode === 'A') {
+        const waveSpeed = 2.5; // Visual expansion speed
+        for (let i = 0; i < NUM_WAVE_RINGS; i++) {
+          const ring = waveRings[i];
+          if (state.amplitude1 > 0.02) {
+            const progress = ((state.time * waveSpeed + i * 0.4) % 3.0);
+            const scale = 1.0 + progress * 2.5;
+            ring.scale.set(scale, scale, 1);
+            ring.material.opacity = (1.0 - progress / 3.0) * state.amplitude1 * 0.7;
+            ring.visible = true;
+          } else {
+            ring.visible = false;
+          }
+        }
+      } else {
+        waveRings.forEach(r => r.visible = false);
+      }
+
+      // 4. Mode C: Water Splash & Ping-Pong Ball Dynamics
+      if (state.mode === 'C') {
+        // Water surface ripples
+        water.position.y = 0.55 + Math.sin(omega1 * state.time) * state.amplitude1 * 0.03;
+
+        // Ping-Pong Ball bouncing reaction off right tine
+        const ballBounce = Math.abs(Math.sin(omega1 * state.time)) * state.amplitude1 * 0.6;
+        ballMesh.position.x = 0.22 + flexDisplacement1 + ballBounce;
+        
+        // Update suspension string endpoint to follow ball
+        const positions = stringLine.geometry.attributes.position.array;
+        positions[3] = ballMesh.position.x;
+        stringLine.geometry.attributes.position.needsUpdate = true;
+
+        // Water Splash Particles
+        const positionsArr = splashParticles.geometry.attributes.position.array;
+        for (let i = 0; i < SPLASH_COUNT; i++) {
+          if (state.amplitude1 > 0.1 && Math.random() < 0.2) {
+            // Re-spawn splash particle
+            positionsArr[i * 3] = (Math.random() - 0.5) * 0.4;
+            positionsArr[i * 3 + 1] = 2.5;
+            positionsArr[i * 3 + 2] = (Math.random() - 0.5) * 0.4;
+            splashVelocities[i].set(
+              (Math.random() - 0.5) * 1.5 * state.amplitude1,
+              (Math.random() * 2.0 + 1.0) * state.amplitude1,
+              (Math.random() - 0.5) * 1.5 * state.amplitude1
+            );
+          }
+
+          // Apply physics gravity to active particles
+          positionsArr[i * 3] += splashVelocities[i].x * dt;
+          positionsArr[i * 3 + 1] += splashVelocities[i].y * dt;
+          positionsArr[i * 3 + 2] += splashVelocities[i].z * dt;
+          splashVelocities[i].y -= 9.8 * dt; // Gravity
+
+          // Ground/water plane collision floor
+          if (positionsArr[i * 3 + 1] < 2.3) {
+            positionsArr[i * 3 + 1] = 2.3;
+          }
+        }
+        splashParticles.geometry.attributes.position.needsUpdate = true;
+      }
+
+      // 5. Mallet Strike 3D Animation
+      if (isStrikingAnimation) {
+        strikeTime += dt * 8.0;
+        if (strikeTime < Math.PI) {
+          const swing = Math.sin(strikeTime);
+          malletGroup.position.set(-2.0 + swing * 1.5, 2.7, 0);
+          malletGroup.rotation.z = -Math.PI / 3 + swing * (Math.PI / 3.5);
+        } else {
+          isStrikingAnimation = false;
+          malletGroup.position.set(-2.0, 2.7, 0);
+          malletGroup.rotation.z = -Math.PI / 3;
+        }
+      }
+
+      // Render Web Audio Updates & Oscilloscope
+      updateAudioParams();
+      if (state.mode === 'A' || state.mode === 'B') {
+        renderOscilloscope();
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    // --- UI Telemetry Updates ---
+    function updateTelemetry() {
+      const f1 = state.f1;
+      const periodMs = (1.0 / f1) * 1000;
+      const lambdaM = 343.0 / f1; // v = 343 m/s in air
+      const beatFreq = Math.abs(state.f2Offset);
+
+      document.getElementById('pill-f1').textContent = `${f1.toFixed(1)} Hz`;
+      document.getElementById('val-f1').textContent = `${f1} Hz`;
+      document.getElementById('pill-period').textContent = `${periodMs.toFixed(2)} ms`;
+      document.getElementById('pill-lambda').textContent = `${lambdaM.toFixed(2)} m`;
+      
+      document.getElementById('pill-beat').textContent = `${beatFreq.toFixed(1)} Hz`;
+      document.getElementById('val-f2').textContent = `${(f1 + state.f2Offset).toFixed(1)} Hz (${state.f2Offset >= 0 ? '+' : ''}${state.f2Offset}Hz)`;
+
+      const resTag = document.getElementById('tag-resonance');
+      if (beatFreq < 0.2) {
+        resTag.textContent = "Sympathetic Resonance!";
+        resTag.className = "text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+      } else {
+        resTag.textContent = `Beats: ${beatFreq.toFixed(1)} Hz`;
+        resTag.className = "text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30";
+      }
+
+      // Dynamic Guide Content Update based on Mode
+      const guideContent = document.getElementById('guide-content');
+      if (state.mode === 'A') {
+        guideContent.innerHTML = `
+          <p><strong>Wave Radiation & Oscilloscope:</strong><br>
+          Sound propagates as a longitudinal pressure wave through air v = 343ms⁻¹. The live oscilloscope maps time displacement y(t) = A sin(2πft), showing pure harmonic motion..</p>
+        `;
+      } else if (state.mode === 'B') {
+        guideContent.innerHTML = `
+          <p><strong>Sympathetic Resonance & Acoustic Beats:</strong><br>
+          When Fork 1 and Fork 2 have identical natural frequencies (f₁ = f₂), energy transfers across the air gap. Detuning Fork 2 creates periodic constructive and destructive interference—producing beats at frequency f₋beat = |f₁ - f₂|.</p>
+        `;
+      } else {
+        guideContent.innerHTML = `
+          <p><strong>Mechanical Energy Transfer:</strong><br>
+          Though sound waves in air seem invisible, the vibrating tines possess significant mechanical kinetic energy (E ∝ f² A²).. Splashing water and propelling a ping-pong ball physically demonstrate this rapid momentum transfer.</p>
+        `;
+      }
+    }
+
+    // --- DOM Event Listeners ---
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.mode-btn').forEach(b => {
+          b.classList.remove('active', 'bg-cyan-600/20', 'border-cyan-500', 'text-cyan-300');
+          b.classList.add('bg-slate-800/60', 'border-slate-700/80', 'text-slate-300');
+        });
+
+        const target = e.currentTarget;
+        target.classList.add('active', 'bg-cyan-600/20', 'border-cyan-500', 'text-cyan-300');
+        target.classList.remove('bg-slate-800/60', 'border-slate-700/80', 'text-slate-300');
+
+        state.mode = target.dataset.mode;
+        updateModeLayout();
+        updateTelemetry();
+      });
+    });
+
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const f = parseFloat(e.currentTarget.dataset.preset);
+        state.f1 = f;
+        document.getElementById('slider-f1').value = f;
+        updateTelemetry();
+      });
+    });
+
+    document.getElementById('slider-f1').addEventListener('input', (e) => {
+      state.f1 = parseFloat(e.target.value);
+      updateTelemetry();
+    });
+
+    document.getElementById('slider-f2').addEventListener('input', (e) => {
+      state.f2Offset = parseFloat(e.target.value);
+      updateTelemetry();
+    });
+
+    document.getElementById('toggle-box').addEventListener('change', (e) => {
+      state.hasBox = e.target.checked;
+      updateModeLayout();
+    });
+
+    document.getElementById('toggle-continuous').addEventListener('change', (e) => {
+      state.isContinuous = e.target.checked;
+      if (state.isContinuous) {
+        state.amplitude1 = 0.8;
+      }
+    });
+
+    document.getElementById('btn-strike').addEventListener('click', strikeFork);
+
+    const btnMute = document.getElementById('btn-mute');
+    const textSound = document.getElementById('text-sound');
+    const iconSound = document.getElementById('icon-sound');
+
+    btnMute.addEventListener('click', () => {
+      initAudio();
+      state.audioActive = !state.audioActive;
+
+      if (state.audioActive) {
+        textSound.textContent = "Audio Active";
+        iconSound.classList.add('text-emerald-400');
+        iconSound.classList.remove('text-rose-400');
+      } else {
+        textSound.textContent = "Muted";
+        iconSound.classList.remove('text-emerald-400');
+        iconSound.classList.add('text-rose-400');
+      }
+    });
+
+    // --- Responsive Window Resize Handling ---
+    window.addEventListener('resize', () => {
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    });
+
+    // --- Application Bootstrapping ---
+    window.addEventListener('load', () => {
+      updateModeLayout();
+      updateTelemetry();
+      animate();
+    });
+  </script>
+</body>
+</html>

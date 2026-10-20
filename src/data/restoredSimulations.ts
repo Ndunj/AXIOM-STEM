@@ -1806,5 +1806,188 @@ export const RESTORED_SIMULATIONS: SimulationItem[] = [
     ],
     isHtmlApp: true,
     htmlUrl: "/simulations/trigonometric-functions-graphs-lab.html"
+  },
+
+  // 23. PHYSICS / WAVES & ACOUSTICS: Sound and Its Propagation
+  {
+    id: "sim-sound-and-propagation",
+    title: "Sound & Its Propagation Lab",
+    tagline: "Interactive longitudinal acoustic waves: particle displacement, dynamic pressure oscilloscope, medium elasticity (air, water, steel, vacuum), and real-time pitch synthesis",
+    discipline: "physics",
+    gradeLevel: ["Middle School (6-8)", "High School (9-12)", "AP / IB STEM"],
+    standards: ["NGSS MS-PS4-1", "NGSS MS-PS4-2", "NGSS HS-PS4-1", "AP Physics 1: Mechanical Waves"],
+    description: "An interactive senior high school acoustic physics laboratory exploring the mechanical propagation of sound. Investigate longitudinal displacement where vibrating particles transfer kinetic energy through compression (high pressure) and rarefaction (low pressure) zones. Compare wave speeds across physical media (Air at 343 m/s, Water at 1,480 m/s, Steel at 5,100 m/s, and Vacuum at 0 m/s), inspect the enlarged dynamic pressure oscilloscope (ΔP = ΔP_max sin(kx - ωt)), reposition a draggable microphone probe with real-time Pascal readouts, and listen to synthesized audio pitch across 50 to 500 Hz.",
+    learningObjectives: [
+      "Demonstrate that sound is a mechanical longitudinal wave requiring a material medium for propagation",
+      "Model compressions and rarefactions as periodic local density and pressure variations (ΔP)",
+      "Explain how medium elasticity and phase (gas, liquid, solid) determine acoustic wave speed (v)",
+      "Relate frequency to human pitch perception and verify the wave speed relationship v = f · λ",
+      "Explain why acoustic waves cannot propagate across a vacuum"
+    ],
+    thumbnailGradient: "from-sky-600 via-blue-700 to-slate-950",
+    badgeColor: "bg-sky-500/10 text-sky-300 border-sky-500/20",
+    iconName: "Volume2",
+    rating: 4.99,
+    reviewCount: 78,
+    teacherCount: 345,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 200,
+      districtUnlimited: 400
+    },
+    features: [
+      "Dual synchronized viewports: Particle Displacement Canvas (longitudinal motion) and Enlarged Dynamic Pressure Oscilloscope (ΔP = ΔP_max sin(kx - ωt))",
+      "4 propagation media states: Air (343 m/s), Water (1,480 m/s), Steel (5,100 m/s), and Vacuum (0 m/s)",
+      "Interactive frequency/pitch slider (50–500 Hz) and amplitude/loudness slider (0–30 nm)",
+      "Draggable microphone probe with live acoustic pressure readout in Pascals (Pa)",
+      "Web Audio API real-time tone generator matching current frequency and amplitude",
+      "Collapsible guided discovery drawer explaining pitch, pressure waveforms, and elasticity mechanics"
+    ],
+    parameterDefaults: {
+      medium: "air",
+      frequency: 250,
+      amplitude: 15
+    },
+    parameterControls: [
+      {
+        key: "frequency",
+        label: "Frequency / Pitch (f)",
+        min: 50,
+        max: 500,
+        step: 5,
+        unit: "Hz",
+        description: "Acoustic oscillation rate determining perceived pitch"
+      },
+      {
+        key: "amplitude",
+        label: "Amplitude / Loudness",
+        min: 0,
+        max: 30,
+        step: 1,
+        unit: "nm",
+        description: "Displacement amplitude corresponding to acoustic loudness and peak pressure ΔP"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-sound-1",
+        title: "Wave Speed in Dense Media",
+        instruction: "Switch the medium from Air to Steel and observe how the wavelength λ expands significantly at constant frequency.",
+        targetMetric: "Wavelength Expanded",
+        targetValue: 20.4,
+        tolerance: 0.5,
+        currentValueKey: "wavelength_m",
+        rewardBadge: "Elastic Medium Master"
+      },
+      {
+        id: "ch-sound-2",
+        title: "Vacuum Condition Probe",
+        instruction: "Switch to Vacuum mode to verify the complete attenuation of mechanical particle vibration and acoustic pressure.",
+        targetMetric: "Vacuum Verified",
+        targetValue: 0,
+        tolerance: 0,
+        currentValueKey: "speed_ms",
+        rewardBadge: "Acoustic Mechanic"
+      }
+    ],
+    previewFacts: [
+      "Because steel is approximately 15 times stiffer than air relative to its density, sound travels over 14 times faster through steel rails (5,100 m/s) than through the atmosphere (343 m/s).",
+      "In space or a true vacuum, sound cannot travel at all because there are no gas or solid particles to collide and transfer compression waves."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/sound-and-propagation.html"
+  },
+
+  // 24. PHYSICS / ACOUSTICS: 3D Tuning Fork Mechanics & Resonance
+  {
+    id: "sim-3d-tuning-fork-mechanics-resonance",
+    title: "3D Tuning Fork Mechanics & Resonance Lab",
+    tagline: "Interactive 3D acoustics: flexural tine oscillations, sympathetic resonance, acoustic beats with detuning clamps, and water splash energy transfer",
+    discipline: "physics",
+    gradeLevel: ["Middle School (6-8)", "High School (9-12)", "AP / IB STEM", "Undergraduate"],
+    standards: ["NGSS HS-PS4-1", "NGSS MS-PS4-2", "AP Physics 1: Mechanical Waves", "NGSS SEP-2"],
+    description: "An interactive 3D acoustics and wave motion laboratory simulating tuning fork mechanics. Investigate pure sinusoidal harmonic oscillation and symmetric flexural tine displacement. Switch between Mode A (Wave Radiation & Real-Time Oscilloscope with y(t) = A·e^(-γt)·sin(2πft)), Mode B (Sympathetic Resonance & Acoustic Beats using dual resonance forks with adjustable mass detuning clamps generating f_beat = |f₁ - f₂|), and Mode C (Mechanical Energy Transfer with water immersion splash particle simulations and bouncing suspended ping-pong ball). Features real-time Web Audio API pitch synthesis, wooden soundbox forced resonance toggles, and pitch presets (C4 256 Hz, A4 440 Hz, C5 512 Hz).",
+    learningObjectives: [
+      "Analyze symmetric flexural tine oscillation and relate frequency to period T = 1/f and wavelength λ = v/f",
+      "Explain how a hollow wooden soundbox forces air column resonance to amplify acoustic radiation",
+      "Demonstrate sympathetic resonance where matched frequencies transfer acoustic energy across space",
+      "Quantify acoustic beat frequency f_beat = |f₁ - f₂| generated by superposition of two slightly detuned harmonic sources",
+      "Visualize the substantial mechanical kinetic energy (E ∝ f² A²) transferred during physical water splashing and momentum collisions"
+    ],
+    thumbnailGradient: "from-cyan-600 via-teal-700 to-slate-950",
+    badgeColor: "bg-cyan-500/10 text-cyan-300 border-cyan-500/20",
+    iconName: "Volume2",
+    rating: 4.99,
+    reviewCount: 84,
+    teacherCount: 360,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 200,
+      districtUnlimited: 400
+    },
+    features: [
+      "Real-time 3D Three.js viewport with procedural steel tuning forks, orbiting camera, and animated rubber mallet strike physics",
+      "Mode A: Expanding 3D acoustic wavefront rings and overlaid real-time damped 2D oscilloscope graph",
+      "Mode B: Dual resonance forks with mass detuning clamp to demonstrate acoustic beats and sympathetic resonance",
+      "Mode C: Mechanical energy transfer with water beaker splashing particle system and suspended bouncing ping-pong ball",
+      "Dual Web Audio API sine oscillators producing authentic acoustic pitch and beat interference effects",
+      "Interactive wooden soundbox mount toggle, continuous vibration mode, and standard pitch presets (C4, A4, C5)"
+    ],
+    parameterDefaults: {
+      f1: 440,
+      f2Offset: 4,
+      hasBox: true,
+      mode: "A"
+    },
+    parameterControls: [
+      {
+        key: "f1",
+        label: "Primary Fork Frequency (f₁)",
+        min: 100,
+        max: 1000,
+        step: 1,
+        unit: "Hz",
+        description: "Natural frequency of the primary tuning fork"
+      },
+      {
+        key: "f2Offset",
+        label: "Fork 2 Detuning Offset",
+        min: -20,
+        max: 20,
+        step: 0.5,
+        unit: "Hz",
+        description: "Frequency shift on Fork 2 caused by tine mass clamp"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-fork-1",
+        title: "Exact Sympathetic Resonance",
+        instruction: "Switch to Mode B and adjust the detuning clamp so Fork 2 offset is 0 Hz, achieving full sympathetic acoustic energy transfer.",
+        targetMetric: "Resonance Achieved",
+        targetValue: 0,
+        tolerance: 0.1,
+        currentValueKey: "beat_freq",
+        rewardBadge: "Resonance Virtuoso"
+      },
+      {
+        id: "ch-fork-2",
+        title: "Beat Frequency Targeting",
+        instruction: "Set Fork 1 to A4 (440 Hz) and tune Fork 2 to produce a distinct 5 Hz beat frequency.",
+        targetMetric: "Target Beat Frequency",
+        targetValue: 5,
+        tolerance: 0.2,
+        currentValueKey: "beat_freq",
+        rewardBadge: "Harmonic Interference Master"
+      }
+    ],
+    previewFacts: [
+      "A tuning fork's symmetric flexural oscillation balances opposite tine momentum, so minimal vibration escapes through the handle into the hand.",
+      "The wooden resonance soundbox acts as an acoustic impedance transformer, transferring tine energy to the surrounding air much faster and creating louder sound at the cost of faster decay."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/3d-tuning-fork-mechanics-resonance.html"
   }
 ];

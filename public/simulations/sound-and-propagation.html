@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sound and Its Propagation - Interactive Physics Simulation</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    /* Accent range sliders */
+    input[type=range] {
+      accent-color: #38bdf8;
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col overflow-x-hidden select-none bg-slate-950 text-slate-100">
+
+  <!-- Header Navigation -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur px-6 py-3.5 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-30">
+    <div class="flex items-center gap-3">
+      <div class="p-2 bg-sky-500/10 border border-sky-500/30 rounded-xl text-sky-400">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+        </svg>
+      </div>
+      <div>
+        <h1 class="font-bold text-lg leading-tight text-slate-100 tracking-wide">Sound & Its Propagation</h1>
+        <p class="text-xs text-slate-400">Interactive Senior High School Physics Lab</p>
+      </div>
+    </div>
+
+    <!-- Live Telemetry Quick Pills -->
+    <div class="flex items-center flex-wrap gap-2 text-xs font-mono-code">
+      <div class="bg-slate-800/80 border border-slate-700/60 px-3 py-1.5 rounded-lg flex items-center gap-2">
+        <span class="text-slate-400">Speed (v):</span>
+        <span id="pill-speed" class="text-sky-400 font-semibold">343 m/s</span>
+      </div>
+      <div class="bg-slate-800/80 border border-slate-700/60 px-3 py-1.5 rounded-lg flex items-center gap-2">
+        <span class="text-slate-400">Frequency / Pitch (f):</span>
+        <span id="pill-freq" class="text-emerald-400 font-semibold">250 Hz</span>
+      </div>
+      <div class="bg-slate-800/80 border border-slate-700/60 px-3 py-1.5 rounded-lg flex items-center gap-2">
+        <span class="text-slate-400">Wavelength (λ):</span>
+        <span id="pill-lambda" class="text-amber-400 font-semibold">1.37 m</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <div class="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
+
+    <!-- Left / Top: Interactive Visualization Space -->
+    <main class="flex-1 flex flex-col min-h-0 p-4 gap-4 overflow-y-auto">
+      
+      <!-- Split-View Grid: Particle View + Enlarged Oscilloscope View -->
+      <div class="flex-1 grid grid-cols-1 gap-4 min-h-0">
+
+        <!-- 1. Particle Displacement Canvas Card -->
+        <div class="relative bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col min-h-[260px] lg:min-h-[280px]">
+          <!-- Canvas Header Bar -->
+          <div class="px-4 py-2.5 bg-slate-900/90 border-b border-slate-800/80 flex justify-between items-center text-xs text-slate-400">
+            <div class="flex items-center gap-2 font-medium">
+              <span class="w-2.5 h-2.5 rounded-full bg-sky-400 animate-pulse"></span>
+              <span>Particle Displacement View (Longitudinal Acoustic Wave)</span>
+            </div>
+            <div class="flex items-center gap-4 text-xs">
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span> Compression (High Pressure)</span>
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-sky-500 inline-block"></span> Rarefaction (Low Pressure)</span>
+            </div>
+          </div>
+
+          <!-- Particle Canvas -->
+          <div class="relative flex-1 w-full bg-slate-950 min-h-[200px]" id="particle-container">
+            <canvas id="particleCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+            
+            <!-- Speaker Source Graphic Overlay on Left -->
+            <div class="absolute left-2 top-1/2 -translate-y-1/2 bg-slate-900/80 backdrop-blur-md border border-slate-700/60 p-2.5 rounded-xl flex flex-col items-center gap-1 text-slate-300 shadow-xl pointer-events-none">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-sky-400 transition-transform duration-75" id="speaker-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 5L6 9H2v6h4l5 4V5zM15.54 8.46a5 5 0 010 7.07M18.36 5.64a9 9 0 010 12.72" />
+              </svg>
+              <span class="text-[10px] font-mono-code font-bold tracking-wider text-slate-400 uppercase">Speaker</span>
+            </div>
+
+            <!-- Vacuum State Alert Banner -->
+            <div id="vacuum-overlay" class="hidden absolute inset-0 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center z-10 transition-all">
+              <div class="p-4 bg-red-500/10 border border-red-500/30 rounded-2xl max-w-md text-red-200 space-y-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 mx-auto text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                </svg>
+                <h3 class="font-bold text-base text-red-400">Vacuum Condition (No Propagation)</h3>
+                <p class="text-xs text-slate-300 leading-relaxed">
+                  Sound is a <strong>mechanical wave</strong> requiring a physical material medium. In a vacuum, there are no particles to collide or transfer kinetic energy.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. ENLARGED OSCILLOSCOPE VIEWPORT CARD (Prominent Real Estate) -->
+        <div class="relative bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col min-h-[340px] lg:min-h-[380px] flex-1">
+          <div class="px-4 py-2.5 bg-slate-900/90 border-b border-slate-800/80 flex flex-wrap justify-between items-center text-xs text-slate-400 gap-2">
+            <div class="flex items-center gap-2 font-medium">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span class="text-slate-200 font-semibold">Enlarged Dynamic Acoustic Pressure Oscilloscope: ΔP = ΔP max sin(kx - ωt)</span>
+            </div>
+            <div class="flex items-center gap-3 text-xs font-mono-code">
+              <span class="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-md" id="mic-readout">Mic Pressure: 0.00 Pa</span>
+              <span class="text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2.5 py-1 rounded-md" id="timebase-readout">Timebase: Realtime</span>
+            </div>
+          </div>
+
+          <!-- Enlarged Oscilloscope Canvas Container -->
+          <div class="relative flex-1 w-full bg-slate-950 min-h-[280px]" id="graph-container">
+            <canvas id="graphCanvas" class="w-full h-full block"></canvas>
+            
+            <!-- Oscilloscope Corner HUD Overlay -->
+            <div class="absolute bottom-3 left-3 bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl backdrop-blur text-[11px] font-mono-code text-slate-300 space-y-1 shadow-lg pointer-events-none">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                <span>Waveform: Acoustic Pressure (ΔP)</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                <span id="hud-wavelength">λ = 1.37 m</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+                <span id="hud-amplitude">Amplitude = 15 nm</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+
+    <!-- Right / Sidebar Controls & Pedagogical Panel -->
+    <aside class="w-full lg:w-96 border-t lg:border-t-0 lg:border-l border-slate-800 bg-slate-900 p-5 flex flex-col gap-6 overflow-y-auto">
+      
+      <!-- Section: Medium Selector -->
+      <div class="space-y-3">
+        <label class="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+          <span>1. Select Propagation Medium</span>
+          <span class="text-[10px] bg-slate-800 border border-slate-700 px-2 py-0.5 rounded text-sky-400 font-mono-code">Phase State</span>
+        </label>
+        <div class="grid grid-cols-2 gap-2">
+          <button data-medium="air" class="medium-btn active bg-sky-600/20 border-sky-500 text-sky-300 border p-2.5 rounded-xl text-xs font-medium text-left transition flex flex-col gap-1">
+            <span class="font-bold text-slate-100">Air (Gas)</span>
+            <span class="text-[10px] text-slate-400 font-mono-code">v = 343 m/s</span>
+          </button>
+          <button data-medium="water" class="medium-btn bg-slate-800/60 border-slate-700/80 text-slate-300 border p-2.5 rounded-xl text-xs font-medium text-left transition flex flex-col gap-1 hover:border-slate-600">
+            <span class="font-bold text-slate-100">Water (Liquid)</span>
+            <span class="text-[10px] text-slate-400 font-mono-code">v = 1,480 m/s</span>
+          </button>
+          <button data-medium="steel" class="medium-btn bg-slate-800/60 border-slate-700/80 text-slate-300 border p-2.5 rounded-xl text-xs font-medium text-left transition flex flex-col gap-1 hover:border-slate-600">
+            <span class="font-bold text-slate-100">Steel (Solid)</span>
+            <span class="text-[10px] text-slate-400 font-mono-code">v = 5,100 m/s</span>
+          </button>
+          <button data-medium="vacuum" class="medium-btn bg-slate-800/60 border-slate-700/80 text-slate-300 border p-2.5 rounded-xl text-xs font-medium text-left transition flex flex-col gap-1 hover:border-slate-600">
+            <span class="font-bold text-slate-100">Vacuum</span>
+            <span class="text-[10px] text-slate-400 font-mono-code">v = 0 m/s</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Section: Wave & Pitch Controls -->
+      <div class="space-y-4 border-t border-slate-800/80 pt-4">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">2. Wave & Pitch Parameters</span>
+          <button id="btn-pause" class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded-lg text-xs font-medium hover:bg-slate-700 transition flex items-center gap-1.5">
+            <svg id="pause-icon" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span id="pause-text">Pause</span>
+          </button>
+        </div>
+
+        <!-- Frequency / Pitch Control Slider -->
+        <div class="space-y-1.5">
+          <div class="flex justify-between text-xs">
+            <label for="slider-freq" class="text-slate-300 font-medium flex items-center gap-1.5">
+              <span>Frequency / Pitch (f)</span>
+              <span id="pitch-tag" class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Medium Pitch</span>
+            </label>
+            <span id="val-freq" class="font-mono-code text-emerald-400 font-semibold">250 Hz</span>
+          </div>
+          <input type="range" id="slider-freq" min="50" max="500" step="5" value="250" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+          <div class="flex justify-between text-[10px] text-slate-400 font-mono-code">
+            <span>50 Hz (Low Pitch / Long λ)</span>
+            <span>500 Hz (High Pitch / Short λ)</span>
+          </div>
+        </div>
+
+        <!-- Amplitude Slider -->
+        <div class="space-y-1.5">
+          <div class="flex justify-between text-xs">
+            <label for="slider-amp" class="text-slate-300 font-medium">Amplitude / Loudness (A)</label>
+            <span id="val-amp" class="font-mono-code text-sky-400 font-semibold">15 nm</span>
+          </div>
+          <input type="range" id="slider-amp" min="0" max="30" step="1" value="15" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+          <div class="flex justify-between text-[10px] text-slate-400 font-mono-code">
+            <span>0 (Silent)</span>
+            <span>30 nm (Loud / High ΔP)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Visual & Audio Toggles -->
+      <div class="space-y-3 border-t border-slate-800/80 pt-4">
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 block">3. Overlays & Audio Playback</span>
+        
+        <label class="flex items-center justify-between cursor-pointer p-2.5 rounded-xl bg-slate-800/40 border border-slate-800 hover:bg-slate-800/70 transition">
+          <span class="text-xs text-slate-300 font-medium">Compression / Rarefaction Zones</span>
+          <input type="checkbox" id="toggle-zones" checked class="w-4 h-4 rounded text-sky-500 focus:ring-sky-500/20 accent-sky-500">
+        </label>
+
+        <label class="flex items-center justify-between cursor-pointer p-2.5 rounded-xl bg-slate-800/40 border border-slate-800 hover:bg-slate-800/70 transition">
+          <span class="text-xs text-slate-300 font-medium">Draggable Microphone Probe</span>
+          <input type="checkbox" id="toggle-mic" checked class="w-4 h-4 rounded text-sky-500 focus:ring-sky-500/20 accent-sky-500">
+        </label>
+
+        <button id="btn-audio" class="w-full py-2.5 px-3 bg-slate-800 border border-slate-700 hover:bg-slate-750 text-sky-400 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" id="audio-btn-icon" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M17.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+          </svg>
+          <span id="audio-btn-text">Enable Pitch Sound Output</span>
+        </button>
+      </div>
+
+      <!-- Collapsible Guided Discovery Drawer -->
+      <div class="mt-auto border-t border-slate-800/80 pt-4">
+        <details class="group bg-slate-800/30 border border-slate-800 rounded-xl overflow-hidden text-xs" open>
+          <summary class="p-3 font-semibold text-slate-300 cursor-pointer flex justify-between items-center group-open:bg-slate-800/60 transition">
+            <span class="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+              Guided Discovery & Wave Mechanics
+            </span>
+            <svg class="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </summary>
+          <div class="p-3 space-y-2.5 text-slate-300 leading-relaxed border-t border-slate-800">
+            <p><strong>1. Pitch vs Frequency:</strong><br>
+            Pitch is the human brain's auditory perception of sound frequency. High frequency produces a high-pitched note with tightly packed wave compressions (short wavelength lambda). Low frequency creates a deep, low-pitched rumble with widely spaced compressions (long wavelength lambda).</p>
+            
+            <p><strong>2. Physical Pressure Waveform:</strong><br>
+            Sound waves in real life are longitudinal pressure variations ΔP. In the enlarged oscilloscope view, wave crests represent Compressions (high density / positive pressure ΔP) and troughs represent Rarefactions (low density / negative pressure ΔP).</p>
+
+            <p><strong>3. Medium Elasticity & Wave Speed (v = f * lambda):</strong><br>
+            When sound travels through denser and more elastic media like Steel (5,100 m/s) compared to Air (343 m/s), the wave speed v increases drastically. Because frequency f remains tied to the acoustic source, the wavelength lambda stretches significantly in solids!</p>
+          </div>
+        </details>
+      </div>
+
+    </aside>
+  </div>
+
+  <!-- JavaScript Application Logic -->
+  <script>
+    // --- Physics Constants & State Management ---
+    const MEDIA = {
+      air: { name: "Air", speed: 343, color: "rgba(56, 189, 248, 0.8)", densityMultiplier: 1.0 },
+      water: { name: "Water", speed: 1480, color: "rgba(45, 212, 191, 0.8)", densityMultiplier: 1.8 },
+      steel: { name: "Steel", speed: 5100, color: "rgba(251, 191, 36, 0.8)", densityMultiplier: 2.5 },
+      vacuum: { name: "Vacuum", speed: 0, color: "rgba(100, 116, 139, 0.2)", densityMultiplier: 0.0 }
+    };
+
+    const state = {
+      mediumKey: 'air',
+      frequency: 250, // Hz
+      amplitude: 15,  // Arbitrary scale unit
+      isPaused: false,
+      showZones: true,
+      showMic: true,
+      audioEnabled: false,
+      micXRatio: 0.5, // 0 to 1 position along canvas width
+      time: 0
+    };
+
+    // --- Particle Grid Config ---
+    const NUM_ROWS = 12;
+    const PARTICLES_PER_ROW = 80;
+    let particles = [];
+
+    // --- DOM Elements ---
+    const particleCanvas = document.getElementById('particleCanvas');
+    const pCtx = particleCanvas.getContext('2d');
+    const graphCanvas = document.getElementById('graphCanvas');
+    const gCtx = graphCanvas.getContext('2d');
+    const particleContainer = document.getElementById('particle-container');
+    const graphContainer = document.getElementById('graph-container');
+
+    const pillSpeed = document.getElementById('pill-speed');
+    const pillFreq = document.getElementById('pill-freq');
+    const pillLambda = document.getElementById('pill-lambda');
+    const hudWavelength = document.getElementById('hud-wavelength');
+    const hudAmplitude = document.getElementById('hud-amplitude');
+
+    const sliderFreq = document.getElementById('slider-freq');
+    const sliderAmp = document.getElementById('slider-amp');
+    const valFreq = document.getElementById('val-freq');
+    const valAmp = document.getElementById('val-amp');
+    const pitchTag = document.getElementById('pitch-tag');
+
+    const btnPause = document.getElementById('btn-pause');
+    const pauseText = document.getElementById('pause-text');
+    const toggleZones = document.getElementById('toggle-zones');
+    const toggleMic = document.getElementById('toggle-mic');
+    const btnAudio = document.getElementById('btn-audio');
+    const audioBtnText = document.getElementById('audio-btn-text');
+    const audioBtnIcon = document.getElementById('audio-btn-icon');
+    const vacuumOverlay = document.getElementById('vacuum-overlay');
+    const micReadout = document.getElementById('mic-readout');
+
+    // --- Web Audio API Integration ---
+    let audioCtx = null;
+    let oscillator = null;
+    let gainNode = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        oscillator = audioCtx.createOscillator();
+        gainNode = audioCtx.createGain();
+
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(state.frequency, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.start();
+      }
+    }
+
+    function updateAudio() {
+      if (!audioCtx) return;
+
+      if (!state.audioEnabled || state.mediumKey === 'vacuum' || state.isPaused || state.amplitude === 0) {
+        // Instantly/smoothly cut gain to 0 when muted or inactive
+        gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.01);
+      } else {
+        // Set target frequency and scale volume according to amplitude slider
+        oscillator.frequency.setTargetAtTime(state.frequency, audioCtx.currentTime, 0.02);
+        const volume = (state.amplitude / 30) * 0.15;
+        gainNode.gain.setTargetAtTime(volume, audioCtx.currentTime, 0.02);
+      }
+    }
+
+    // --- Resizing Canvases Responsively ---
+    function resizeCanvases() {
+      const pRect = particleContainer.getBoundingClientRect();
+      particleCanvas.width = pRect.width;
+      particleCanvas.height = pRect.height;
+
+      const gRect = graphContainer.getBoundingClientRect();
+      graphCanvas.width = gRect.width;
+      graphCanvas.height = gRect.height;
+
+      initParticles();
+    }
+
+    // Initialize particle grid positions
+    function initParticles() {
+      particles = [];
+      const width = particleCanvas.width;
+      const height = particleCanvas.height;
+
+      const spacingX = width / PARTICLES_PER_ROW;
+      const spacingY = height / (NUM_ROWS + 1);
+
+      for (let r = 0; r < NUM_ROWS; r++) {
+        for (let c = 0; c < PARTICLES_PER_ROW; c++) {
+          const eqX = c * spacingX + spacingX / 2;
+          const eqY = (r + 1) * spacingY;
+          const jitterY = (Math.random() - 0.5) * 4;
+          particles.push({
+            eqX: eqX,
+            eqY: eqY + jitterY,
+            x: eqX,
+            y: eqY + jitterY
+          });
+        }
+      }
+    }
+
+    // --- Interaction / Dragging Mic ---
+    let isDraggingMic = false;
+
+    function handlePointerDown(e) {
+      if (!state.showMic) return;
+      const rect = particleCanvas.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const micX = state.micXRatio * particleCanvas.width;
+
+      if (Math.abs(clickX - micX) < 35) {
+        isDraggingMic = true;
+      }
+    }
+
+    function handlePointerMove(e) {
+      if (!isDraggingMic) return;
+      const rect = particleCanvas.getBoundingClientRect();
+      let x = e.clientX - rect.left;
+      x = Math.max(40, Math.min(particleCanvas.width - 20, x));
+      state.micXRatio = x / particleCanvas.width;
+    }
+
+    function handlePointerUp() {
+      isDraggingMic = false;
+    }
+
+    particleCanvas.addEventListener('mousedown', handlePointerDown);
+    window.addEventListener('mousemove', handlePointerMove);
+    window.addEventListener('mouseup', handlePointerUp);
+
+    particleCanvas.addEventListener('touchstart', (e) => handlePointerDown(e.touches[0]), { passive: true });
+    window.addEventListener('touchmove', (e) => { if (isDraggingMic) handlePointerMove(e.touches[0]); }, { passive: true });
+    window.addEventListener('touchend', handlePointerUp);
+
+    // --- Physics Simulation Calculations ---
+    function updatePhysics(dt) {
+      if (state.isPaused || state.mediumKey === 'vacuum') return;
+
+      const medium = MEDIA[state.mediumKey];
+      const visualSpeed = medium.speed * 0.4;
+      const omega = 2 * Math.PI * (state.frequency / 50);
+      const k = omega / (visualSpeed + 1e-5);
+
+      state.time += dt;
+
+      for (let p of particles) {
+        const phase = k * p.eqX - omega * state.time;
+        const displacement = state.amplitude * Math.sin(phase);
+        p.x = p.eqX + displacement;
+      }
+    }
+
+    // --- Canvas Rendering Loops ---
+    function renderParticleCanvas() {
+      const width = particleCanvas.width;
+      const height = particleCanvas.height;
+      const medium = MEDIA[state.mediumKey];
+
+      pCtx.clearRect(0, 0, width, height);
+
+      // Draw Medium Background Tint
+      pCtx.fillStyle = medium.color;
+      pCtx.fillRect(0, 0, width, height);
+
+      if (state.mediumKey === 'vacuum') {
+        pCtx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        pCtx.lineWidth = 1;
+        for (let x = 0; x < width; x += 30) {
+          pCtx.beginPath();
+          pCtx.moveTo(x, 0);
+          pCtx.lineTo(x, height);
+          pCtx.stroke();
+        }
+        return;
+      }
+
+      const visualSpeed = medium.speed * 0.4;
+      const omega = 2 * Math.PI * (state.frequency / 50);
+      const k = omega / (visualSpeed + 1e-5);
+
+      // 1. Draw Compression & Rarefaction Zone Overlays
+      if (state.showZones && state.amplitude > 2) {
+        const numSlices = 120;
+        const sliceWidth = width / numSlices;
+
+        for (let i = 0; i < numSlices; i++) {
+          const x = i * sliceWidth;
+          const pressureVar = -Math.cos(k * x - omega * state.time);
+
+          if (pressureVar > 0.15) {
+            pCtx.fillStyle = `rgba(244, 63, 94, ${pressureVar * 0.25})`;
+            pCtx.fillRect(x, 0, sliceWidth + 1, height);
+          } else if (pressureVar < -0.15) {
+            pCtx.fillStyle = `rgba(14, 165, 233, ${Math.abs(pressureVar) * 0.22})`;
+            pCtx.fillRect(x, 0, sliceWidth + 1, height);
+          }
+        }
+      }
+
+      // 2. Draw Particles
+      pCtx.fillStyle = '#f8fafc';
+      for (let p of particles) {
+        pCtx.beginPath();
+        pCtx.arc(p.x, p.y, 2.2, 0, Math.PI * 2);
+        pCtx.fill();
+      }
+
+      // Highlight tracer particle
+      const tracerIndex = Math.floor(PARTICLES_PER_ROW * 0.2);
+      const tracerParticle = particles[tracerIndex + Math.floor(NUM_ROWS / 2) * PARTICLES_PER_ROW];
+      if (tracerParticle) {
+        pCtx.fillStyle = '#ef4444';
+        pCtx.beginPath();
+        pCtx.arc(tracerParticle.eqX, tracerParticle.eqY, 3, 0, Math.PI * 2);
+        pCtx.fill();
+
+        pCtx.strokeStyle = '#f43f5e';
+        pCtx.lineWidth = 2;
+        pCtx.beginPath();
+        pCtx.moveTo(tracerParticle.eqX, tracerParticle.eqY);
+        pCtx.lineTo(tracerParticle.x, tracerParticle.y);
+        pCtx.stroke();
+
+        pCtx.fillStyle = '#fbbf24';
+        pCtx.beginPath();
+        pCtx.arc(tracerParticle.x, tracerParticle.y, 5, 0, Math.PI * 2);
+        pCtx.fill();
+      }
+
+      // 3. Draw Draggable Microphone Probe
+      if (state.showMic) {
+        const micX = state.micXRatio * width;
+        
+        pCtx.save();
+        pCtx.strokeStyle = '#38bdf8';
+        pCtx.setLineDash([4, 4]);
+        pCtx.lineWidth = 1.5;
+        pCtx.beginPath();
+        pCtx.moveTo(micX, 0);
+        pCtx.lineTo(micX, height);
+        pCtx.stroke();
+        pCtx.restore();
+
+        pCtx.fillStyle = '#0284c7';
+        pCtx.strokeStyle = '#e0f2fe';
+        pCtx.lineWidth = 2;
+        pCtx.beginPath();
+        pCtx.arc(micX, height / 2, 12, 0, Math.PI * 2);
+        pCtx.fill();
+        pCtx.stroke();
+
+        pCtx.fillStyle = '#38bdf8';
+        pCtx.fillRect(micX - 3, height / 2 + 12, 6, 20);
+
+        pCtx.fillStyle = '#f8fafc';
+        pCtx.font = '10px Inter, sans-serif';
+        pCtx.textAlign = 'center';
+        pCtx.fillText("MIC PROBE", micX, height / 2 - 18);
+      }
+    }
+
+    // ENLARGED OSCILLOSCOPE GRAPH RENDERING LOOP
+    function renderGraphCanvas() {
+      const width = graphCanvas.width;
+      const height = graphCanvas.height;
+      const centerY = height / 2;
+
+      gCtx.clearRect(0, 0, width, height);
+
+      // Draw Oscilloscope Grid Lines
+      gCtx.strokeStyle = '#1e293b';
+      gCtx.lineWidth = 1;
+
+      // Horizontal equilibrium baseline (P0)
+      gCtx.beginPath();
+      gCtx.moveTo(0, centerY);
+      gCtx.lineTo(width, centerY);
+      gCtx.stroke();
+
+      // Horizontal dashed voltage/pressure limits
+      gCtx.save();
+      gCtx.setLineDash([3, 4]);
+      gCtx.strokeStyle = 'rgba(148, 163, 184, 0.25)';
+      gCtx.beginPath();
+      gCtx.moveTo(0, centerY - height * 0.38);
+      gCtx.lineTo(width, centerY - height * 0.38);
+      gCtx.moveTo(0, centerY + height * 0.38);
+      gCtx.lineTo(width, centerY + height * 0.38);
+      gCtx.stroke();
+      gCtx.restore();
+
+      // Axis labels
+      gCtx.fillStyle = 'rgba(148, 163, 184, 0.7)';
+      gCtx.font = '11px JetBrains Mono, monospace';
+      gCtx.fillText("+ΔP max (Compression Region)", 12, centerY - height * 0.38 - 6);
+      gCtx.fillText("P0 (Ambient Equilibrium)", 12, centerY - 6);
+      gCtx.fillText("-ΔP max (Rarefaction Region)", 12, centerY + height * 0.38 + 14);
+
+      // Vertical grid divisions
+      for (let x = 0; x < width; x += 50) {
+        gCtx.beginPath();
+        gCtx.moveTo(x, 0);
+        gCtx.lineTo(x, height);
+        gCtx.stroke();
+      }
+
+      if (state.mediumKey === 'vacuum') return;
+
+      const medium = MEDIA[state.mediumKey];
+      const visualSpeed = medium.speed * 0.4;
+      const omega = 2 * Math.PI * (state.frequency / 50);
+      const k = omega / (visualSpeed + 1e-5);
+
+      const lambdaPixels = (2 * Math.PI) / k;
+
+      // Render Wavelength lambda Indicator Bar
+      if (lambdaPixels > 25 && lambdaPixels < width) {
+        const startX = width * 0.12;
+        const endX = startX + lambdaPixels;
+        const barY = 24;
+
+        gCtx.strokeStyle = '#f59e0b';
+        gCtx.lineWidth = 2;
+        gCtx.beginPath();
+        gCtx.moveTo(startX, barY - 6);
+        gCtx.lineTo(startX, barY + 6);
+        gCtx.moveTo(startX, barY);
+        gCtx.lineTo(endX, barY);
+        gCtx.moveTo(endX, barY - 6);
+        gCtx.lineTo(endX, barY + 6);
+        gCtx.stroke();
+
+        gCtx.fillStyle = '#f59e0b';
+        gCtx.font = '11px JetBrains Mono, monospace';
+        gCtx.textAlign = 'center';
+        gCtx.fillText(`Wavelength λ = ${(medium.speed / state.frequency).toFixed(2)} m`, (startX + endX) / 2, barY - 6);
+      }
+
+      // Render Sinusoidal Waveform with glowing effect
+      gCtx.save();
+      gCtx.shadowColor = '#38bdf8';
+      gCtx.shadowBlur = 8;
+      gCtx.beginPath();
+      gCtx.strokeStyle = '#38bdf8';
+      gCtx.lineWidth = 3;
+
+      const amplitudePx = (state.amplitude / 30) * (height * 0.38);
+
+      for (let x = 0; x < width; x++) {
+        const pressure = -Math.cos(k * x - omega * state.time);
+        const y = centerY - pressure * amplitudePx;
+
+        if (x === 0) gCtx.moveTo(x, y);
+        else gCtx.lineTo(x, y);
+      }
+      gCtx.stroke();
+      gCtx.restore();
+
+      // Read pressure value at Microphone position
+      const micX = state.micXRatio * width;
+      const micPressure = -Math.cos(k * micX - omega * state.time) * (state.amplitude / 30);
+      micReadout.textContent = `Mic Pressure: ${(micPressure * 101.3).toFixed(2)} Pa`;
+
+      // Highlight Microphone vertical reference line on graph
+      if (state.showMic) {
+        gCtx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
+        gCtx.setLineDash([4, 4]);
+        gCtx.beginPath();
+        gCtx.moveTo(micX, 0);
+        gCtx.lineTo(micX, height);
+        gCtx.stroke();
+        gCtx.setLineDash([]);
+
+        const currentMicY = centerY - (micPressure * amplitudePx);
+        gCtx.fillStyle = '#f43f5e';
+        gCtx.beginPath();
+        gCtx.arc(micX, currentMicY, 6, 0, Math.PI * 2);
+        gCtx.fill();
+        gCtx.strokeStyle = '#ffffff';
+        gCtx.lineWidth = 1.5;
+        gCtx.stroke();
+      }
+    }
+
+    // --- UI Telemetry Calculations & Updates ---
+    function updateTelemetry() {
+      const medium = MEDIA[state.mediumKey];
+      
+      pillSpeed.textContent = `${medium.speed.toLocaleString()} m/s`;
+      valFreq.textContent = `${state.frequency} Hz`;
+      pillFreq.textContent = `${state.frequency} Hz`;
+      valAmp.textContent = `${state.amplitude} nm`;
+      hudAmplitude.textContent = `Amplitude = ${state.amplitude} nm`;
+
+      if (state.frequency < 150) {
+        pitchTag.textContent = "Low Pitch";
+        pitchTag.className = "text-[10px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30";
+      } else if (state.frequency < 350) {
+        pitchTag.textContent = "Medium Pitch";
+        pitchTag.className = "text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+      } else {
+        pitchTag.textContent = "High Pitch";
+        pitchTag.className = "text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30";
+      }
+
+      if (state.mediumKey === 'vacuum') {
+        pillLambda.textContent = "N/A";
+        hudWavelength.textContent = "λ = Infinite / Undefined";
+        vacuumOverlay.classList.remove('hidden');
+      } else {
+        vacuumOverlay.classList.add('hidden');
+        const wavelength = medium.speed / state.frequency;
+        pillLambda.textContent = `${wavelength.toFixed(2)} m`;
+        hudWavelength.textContent = `λ = ${wavelength.toFixed(2)} m`;
+      }
+
+      const speakerIcon = document.getElementById('speaker-icon');
+      if (!state.isPaused && state.mediumKey !== 'vacuum' && state.amplitude > 0) {
+        const disp = Math.sin(10 * state.time) * (state.amplitude / 30) * 4;
+        speakerIcon.style.transform = `translateX(${disp}px)`;
+      } else {
+        speakerIcon.style.transform = `translateX(0px)`;
+      }
+    }
+
+    // --- Event Listeners ---
+    document.querySelectorAll('.medium-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.medium-btn').forEach(b => {
+          b.classList.remove('active', 'bg-sky-600/20', 'border-sky-500', 'text-sky-300');
+          b.classList.add('bg-slate-800/60', 'border-slate-700/80', 'text-slate-300');
+        });
+
+        const targetBtn = e.currentTarget;
+        targetBtn.classList.add('active', 'bg-sky-600/20', 'border-sky-500', 'text-sky-300');
+        targetBtn.classList.remove('bg-slate-800/60', 'border-slate-700/80', 'text-slate-300');
+
+        state.mediumKey = targetBtn.dataset.medium;
+        updateTelemetry();
+        updateAudio();
+      });
+    });
+
+    sliderFreq.addEventListener('input', (e) => {
+      state.frequency = parseFloat(e.target.value);
+      updateTelemetry();
+      updateAudio();
+    });
+
+    sliderAmp.addEventListener('input', (e) => {
+      state.amplitude = parseFloat(e.target.value);
+      updateTelemetry();
+      updateAudio();
+    });
+
+    btnPause.addEventListener('click', () => {
+      state.isPaused = !state.isPaused;
+      pauseText.textContent = state.isPaused ? "Resume" : "Pause";
+      updateAudio();
+    });
+
+    toggleZones.addEventListener('change', (e) => {
+      state.showZones = e.target.checked;
+    });
+
+    toggleMic.addEventListener('change', (e) => {
+      state.showMic = e.target.checked;
+    });
+
+    btnAudio.addEventListener('click', () => {
+      initAudio();
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      
+      state.audioEnabled = !state.audioEnabled;
+
+      if (state.audioEnabled) {
+        audioBtnText.textContent = "Mute Sound Output";
+        btnAudio.classList.add('text-emerald-400', 'border-emerald-500/50', 'bg-emerald-500/10');
+        btnAudio.classList.remove('text-sky-400', 'text-rose-400', 'border-rose-500/50');
+        audioBtnIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M17.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />`;
+      } else {
+        audioBtnText.textContent = "Unmute / Enable Sound";
+        btnAudio.classList.remove('text-emerald-400', 'border-emerald-500/50', 'bg-emerald-500/10');
+        btnAudio.classList.add('text-rose-400', 'border-rose-500/50');
+        audioBtnIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />`;
+      }
+      
+      updateAudio();
+    });
+
+    // --- Main Animation Loop ---
+    let lastTime = performance.now();
+
+    function loop(currentTime) {
+      const dt = (currentTime - lastTime) / 1000;
+      lastTime = currentTime;
+
+      updatePhysics(dt);
+      renderParticleCanvas();
+      renderGraphCanvas();
+
+      requestAnimationFrame(loop);
+    }
+
+    // --- Initialization ---
+    window.addEventListener('resize', resizeCanvases);
+    window.addEventListener('load', () => {
+      resizeCanvases();
+      updateTelemetry();
+      requestAnimationFrame(loop);
+    });
+  </script>
+</body>
+</html>
