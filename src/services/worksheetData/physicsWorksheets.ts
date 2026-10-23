@@ -727,6 +727,43 @@ export const PHYSICS_WORKSHEETS: Record<string, SimulationWorksheetData> = {
       task: "Explain how viewing a Lissajous figure allows an audio engineer to instantly detect whether stereo left and right channels are perfectly in-phase (mono-compatible), 90° stereo-widened, or 180° out-of-phase (causing total phase cancellation in mono speakers).",
       exemplarAnswer: "If both stereo channels are identical (mono), the Lissajous display collapses into a crisp 45° diagonal line (δ = 0°). A healthy wide stereo image creates an elliptical cloud (δ ≈ 90°). However, if the display shows a negative diagonal line (δ = 180°), the channels are in direct phase opposition—when summed into a single mono speaker (like on phones or club sound systems), the two signals will destructively interfere and completely cancel each other out."
     }
+  },
+
+  "sim-3d-wave-polarization-lab": {
+    drivingQuestion: "How do transverse electromagnetic wave vectors interact with polarizing filters, and how does Malus's Law explain light extinction and the Three-Filter Paradox?",
+    hypothesisPrompt: "If natural unpolarized light passes through a linear polarizer, predict the transmitted intensity. If a second analyzer polarizer is rotated from 0° to 90°, predict how the output intensity varies with angle. What will happen if a third filter at 45° is placed between crossed polarizers?",
+    tableHeaders: ["Trial / Setup", "Source State", "Filter 1 Angle (θ₁)", "Middle Filter (θ_mid)", "Analyzer Angle (θ₂)", "Δθ Angle Difference", "Theoretical cos²(Δθ)", "Transmitted Intensity (I_final)", "Observed Extinction / State"],
+    tableRows: [
+      ["1. Natural Light Baseline", "Unpolarized (100%)", "0° (Vertical)", "None (Disabled)", "0° (Vertical)", "0°", "cos²(0°) = 1.0", "50.0% of I₀", "Linearly polarized vertical beam"],
+      ["2. Partial Analyzer Rotation", "Unpolarized (100%)", "0° (Vertical)", "None (Disabled)", "30°", "30°", "cos²(30°) = 0.75", "37.5% of I₀", "Attenuated linear transmission"],
+      ["3. Half-Power Angle", "Unpolarized (100%)", "0° (Vertical)", "None (Disabled)", "45°", "45°", "cos²(45°) = 0.50", "25.0% of I₀", "50% of polarized beam transmitted"],
+      ["4. High Attenuation", "Unpolarized (100%)", "0° (Vertical)", "None (Disabled)", "60°", "60°", "cos²(60°) = 0.25", "12.5% of I₀", "Dim linear beam"],
+      ["5. Crossed Polarizers", "Unpolarized (100%)", "0° (Vertical)", "None (Disabled)", "90° (Horizontal)", "90°", "cos²(90°) = 0.00", "0.0% of I₀", "Complete optical extinction"],
+      ["6. Three-Filter Paradox", "Unpolarized (100%)", "0° (Vertical)", "45° (Diagonal)", "90° (Horizontal)", "Δθ₁ = 45°, Δθ₂ = 45°", "cos²(45°) × cos²(45°) = 0.25", "12.5% of I₀", "Light emerges despite crossed filters!"]
+    ],
+    criticalQuestions: [
+      {
+        prompt: "1. The 50% Rule for Natural Unpolarized Light",
+        subtext: "Why does completely unpolarized natural light always drop to exactly 50% intensity (I₁ = ½ I₀) when passing through an ideal linear polarizer, regardless of the polarizer's rotation angle?",
+        exemplarAnswer: "Unpolarized light consists of rapidly fluctuating electric field vectors uniformly distributed in all orientations perpendicular to propagation. Integrating the transmitted intensity factor cos²(θ) over a full 360° circle gives an average value of ⟨cos²(θ)⟩ = ½. Therefore, an ideal polarizer always transmits exactly half of the unpolarized incident optical power."
+      },
+      {
+        prompt: "2. Mathematical Derivation of Malus's Law",
+        subtext: "If an electric field of amplitude E₁ approaches an analyzer at relative angle Δθ, explain why the transmitted intensity is proportional to cos²(Δθ) rather than simply cos(Δθ).",
+        exemplarAnswer: "The component of the electric field vector parallel to the transmission axis is E_trans = E₁ · cos(Δθ). Since optical intensity (irradiance) is proportional to the time-averaged Poynting vector and square of the electric field amplitude (I ∝ |E|²), the transmitted intensity is I_trans ∝ (E₁ · cos(Δθ))² = I₁ · cos²(Δθ)."
+      },
+      {
+        prompt: "3. Resolving the Three-Filter Paradox",
+        subtext: "Adding an absorbing barrier usually reduces light. Why does inserting a third polarizing filter at 45° between two crossed 90° filters cause light to reappear instead of blocking more light?",
+        exemplarAnswer: "The first filter polarizes light vertically (0°). Crossed at 90°, the analyzer absorbs all horizontal light because cos(90°) = 0. When a middle filter is inserted at 45°, the vertical E-vector projects onto the 45° axis with amplitude E₁ · cos(45°) = E₁ / √2 (transmitting 50% of I₁). This new diagonal beam now possesses a non-zero component along the final 90° analyzer axis: (E₁ / √2) · cos(45°) = E₁ / 2. The final intensity is (E₁ / 2)² = ¼ I₁ = 12.5% of I₀. The middle filter actively rotates the polarization state rather than merely filtering."
+      }
+    ],
+    realWorldScenario: {
+      title: "Anti-Glare Polarization & Liquid Crystal Displays (LCDs)",
+      scenario: "Modern smartphone and laptop screens utilize liquid crystal displays sandwiched between two crossed polarizers, using voltage-controlled molecular twisting to modulate pixel brightness.",
+      task: "Describe how liquid crystal molecules mimic the Three-Filter Paradox to allow backlights to pass through crossed polarizers, and why wearing polarized sunglasses at certain tilt angles can make your phone screen appear black.",
+      exemplarAnswer: "In an unpowered LCD sub-pixel, nematic liquid crystal polymers naturally form a 90° helix that gradually rotates the electric field vector of light by 90°, allowing it to easily pass through the second crossed polarizer (producing a bright pixel). Applying an electric field untwists the crystals, destroying the rotation and causing total extinction (dark pixel). If you wear polarized sunglasses oriented perpendicular to the phone screen's front polarizer, the optical axes are crossed at 90° (cos² 90° = 0), completely extinguishing all screen light until the phone is tilted."
+    }
   }
 };
 

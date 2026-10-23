@@ -1989,5 +1989,245 @@ export const RESTORED_SIMULATIONS: SimulationItem[] = [
     ],
     isHtmlApp: true,
     htmlUrl: "/simulations/3d-tuning-fork-mechanics-resonance.html"
+  },
+
+  // 25. CHEMISTRY / PHYSICAL CHEMISTRY: Chemical Kinetics & Collision Dynamics Lab
+  {
+    id: "sim-chemical-kinetics-integrated-rate-laws",
+    title: "Chemical Kinetics & Collision Dynamics Lab",
+    tagline: "Reaction order kinetics (Zero, 1st, 2nd): diagnostic linearization plots, Maxwell-Boltzmann collision dynamics, Arrhenius activation energy, and catalyst acceleration",
+    discipline: "chemistry",
+    gradeLevel: ["High School (9-12)", "AP / IB STEM", "Undergraduate"],
+    standards: ["NGSS HS-PS1-4", "NGSS HS-PS1-5", "AP Chemistry Unit 5", "IB Chemistry Topic 6 & 16"],
+    description: "An interactive physical chemistry laboratory exploring chemical reaction kinetics, rate laws, and integrated rate equations. Compare Zero Order ([A]t = -kt + [A]0), First Order (ln[A]t = -kt + ln[A]0), and Second Order (1/[A]t = kt + 1/[A]0) mechanisms. Utilize 3 diagnostic linearization plots ([A] vs t, ln[A] vs t, 1/[A] vs t) with real-time R² correlation metrics to discover true reaction orders, investigate half-life dependencies (t½ = ln(2)/k constant in 1st order!), and observe microscopic molecular collisions in an enclosed thermal chamber with Arrhenius temperature scaling (k = A e^(-Ea/RT)) and platinum catalyst activation.",
+    learningObjectives: [
+      "Distinguish between zero, first, and second-order integrated rate laws and relate their mathematical equations to graph slopes",
+      "Identify the true reaction order by evaluating which diagnostic plot ([A], ln[A], or 1/[A] vs t) yields a linear relationship (R² = 1.0)",
+      "Understand half-life behavior: constant half-life for first-order versus concentration-dependent half-lives for zero and second order",
+      "Model how thermal temperature increases effective collision rates via Maxwell-Boltzmann distribution shifts",
+      "Explain how chemical catalysts lower activation energy Ea to accelerate rate constants without being consumed"
+    ],
+    thumbnailGradient: "from-teal-600 via-emerald-700 to-slate-950",
+    badgeColor: "bg-teal-500/10 text-teal-300 border-teal-500/20",
+    iconName: "FlaskConical",
+    rating: 4.99,
+    reviewCount: 95,
+    teacherCount: 420,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 200,
+      districtUnlimited: 400
+    },
+    features: [
+      "Dual synchronized viewports: Microscopic Molecular Collision Chamber and Diagnostic Integrated Rate Law Graph",
+      "3 reaction order models: Zero-order, First-order, and Second-order with true mathematical progression",
+      "3 diagnostic plot modes: [A] vs t (slope = -k), ln[A] vs t (slope = -k), and 1/[A] vs t (slope = +k)",
+      "Real-time linear regression correlation coefficient (R²) identifying the linear signature of the reaction order",
+      "Arrhenius temperature controls (273–450 K) and Platinum catalyst toggle (reduces Ea by 25 kJ/mol)",
+      "Instantaneous telemetry: [A]t Concentration, Instant Reaction Rate, Half-Life (t½), and Elapsed Time"
+    ],
+    parameterDefaults: {
+      order: 0,
+      a0: 1.0,
+      baseK: 0.05,
+      tempK: 298
+    },
+    parameterControls: [
+      {
+        key: "order",
+        label: "Reaction Order",
+        min: 0,
+        max: 2,
+        step: 1,
+        unit: "",
+        description: "Zero Order (0), First Order (1), or Second Order (2)"
+      },
+      {
+        key: "a0",
+        label: "Initial Concentration [A]₀",
+        min: 0.2,
+        max: 2.0,
+        step: 0.05,
+        unit: "M",
+        description: "Starting molar concentration of reactant A"
+      },
+      {
+        key: "baseK",
+        label: "Rate Constant (k)",
+        min: 0.01,
+        max: 0.20,
+        step: 0.005,
+        unit: "",
+        description: "Intrinsic reaction rate coefficient"
+      },
+      {
+        key: "tempK",
+        label: "Temperature (T)",
+        min: 273,
+        max: 450,
+        step: 5,
+        unit: "K",
+        description: "Reaction chamber temperature affecting molecular velocity and collision energy"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-kinetics-1",
+        title: "Identify Unknown First-Order Kinetics",
+        instruction: "Select First-Order and find which diagnostic tab (ln[A] vs t) produces a strictly linear trendline with R² = 1.0000.",
+        targetMetric: "First-Order Linearized",
+        targetValue: 1,
+        tolerance: 0,
+        currentValueKey: "linear_match",
+        rewardBadge: "Rate Law Detective"
+      },
+      {
+        id: "ch-kinetics-2",
+        title: "Catalyst Acceleration Impact",
+        instruction: "Engage the Platinum catalyst and observe how lowering activation energy increases the rate constant and halves the reaction time.",
+        targetMetric: "Catalyst Engaged",
+        targetValue: 1,
+        tolerance: 0,
+        currentValueKey: "catalyst_state",
+        rewardBadge: "Kinetics Chemist"
+      }
+    ],
+    previewFacts: [
+      "Only first-order reactions have a half-life that is completely independent of initial reactant concentration (t½ = 0.693 / k)—a property vital for radioactive carbon dating and pharmaceutical drug dosing.",
+      "Svante Arrhenius won the 1903 Nobel Prize in Chemistry for discovering that the rate constant k depends exponentially on temperature and activation energy via k = A·e^(-Ea/RT)."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/chemical-kinetics-integrated-rate-laws.html"
+  },
+
+  // 26. PHYSICS / OPTICS & WAVES: 3D Wave Polarization Lab & Simulation
+  {
+    id: "sim-3d-wave-polarization-lab",
+    title: "3D Wave Polarization Lab & Simulation",
+    tagline: "Interactive 3D electromagnetic wave polarization: Malus's Law, 3-filter paradox, circular states, and electric/magnetic vector fields",
+    discipline: "physics",
+    gradeLevel: ["High School (9-12)", "AP / IB STEM", "Undergraduate"],
+    standards: ["NGSS HS-PS4-1", "NGSS HS-PS4-3", "AP Physics 2 Unit 6", "IB Physics Topic 4 & 9"],
+    description: "A high-fidelity 3D WebGL electromagnetic wave simulator exploring transverse wave polarization, Malus's law (I = I₀ cos²Δθ), and quantum-adjacent optical paradoxes. Manipulate natural unpolarized light, linearly polarized beams, and circular polarization with quarter-wave phase shifts in a dynamic 3D space with OrbitControls camera navigation. Position and rotate multiple polarizing sheet filters (θ₁, θ_mid, θ₂ analyzer), inspect real-time electric (E) and magnetic (B) vector field arrows, verify Malus's law with live intensity bar readouts, and solve the famous 3-Filter Paradox where inserting a 45° diagonal filter between crossed 90° polarizers restores transmitted light.",
+    learningObjectives: [
+      "Demonstrate that electromagnetic waves are transverse waves whose electric field vectors vibrate perpendicular to propagation direction",
+      "Apply Malus's Law (I = I₀ · cos²Δθ) to quantitatively predict transmitted beam intensity through single and cascaded polarizing filters",
+      "Observe total light extinction when transmission axes of two polarizing filters are crossed at 90° (Δθ = 90°, cos 90° = 0)",
+      "Resolve the Three-Filter Paradox by demonstrating how an intermediate 45° filter re-projects the E-field vector to transmit light through crossed polarizers",
+      "Compare linear and circular polarization states, visualizing orthogonal phase shifts and Poynting vector propagation"
+    ],
+    thumbnailGradient: "from-cyan-600 via-indigo-700 to-slate-950",
+    badgeColor: "bg-indigo-500/10 text-indigo-300 border-indigo-500/20",
+    iconName: "Waves",
+    rating: 4.98,
+    reviewCount: 88,
+    teacherCount: 390,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 200,
+      districtUnlimited: 400
+    },
+    features: [
+      "Real-time 3D WebGL wave renderer with OrbitControls free-orbit camera and camera reset",
+      "Interactive Electric (E-field) and Magnetic (B-field) vector field visualization with toggleable vectors and propagation grids",
+      "Cascaded polarizer controls: Filter 1 (θ₁), Middle Filter (θ_mid), and Analyzer Filter (θ₂)",
+      "Preset experiments: Unpolarized natural light, Malus's Law, Crossed polarizers extinction, 3-Filter paradox, and Circular polarization",
+      "Quantitative Malus's law telemetry: multi-stage intensity progress meters (I₀, I₁, I_mid, I_final) with live math readouts",
+      "Inquiry mode with guided tasks, real-time target intensity matching, and instant feedback"
+    ],
+    parameterDefaults: {
+      sourceType: 0,
+      f1Angle: 0,
+      f2Angle: 45,
+      f3Angle: 90,
+      frequency: 0.8,
+      amplitude: 1.2
+    },
+    parameterControls: [
+      {
+        key: "sourceType",
+        label: "Source Type (0=Unpol, 1=Linear, 2=Circular)",
+        min: 0,
+        max: 2,
+        step: 1,
+        unit: "",
+        description: "0 = Unpolarized Natural Light, 1 = Linearly Polarized, 2 = Circularly Polarized"
+      },
+      {
+        key: "f1Angle",
+        label: "Filter 1 Angle (θ₁)",
+        min: 0,
+        max: 180,
+        step: 1,
+        unit: "°",
+        description: "Transmission optical axis angle of the first polarizing sheet at x = -2"
+      },
+      {
+        key: "f2Angle",
+        label: "Middle Filter Angle (θ_mid)",
+        min: 0,
+        max: 180,
+        step: 1,
+        unit: "°",
+        description: "Transmission optical axis angle of the optional middle polarizing filter at x = 0"
+      },
+      {
+        key: "f3Angle",
+        label: "Analyzer Filter Angle (θ₂)",
+        min: 0,
+        max: 180,
+        step: 1,
+        unit: "°",
+        description: "Transmission optical axis angle of the final analyzing filter at x = +2"
+      },
+      {
+        key: "frequency",
+        label: "Wave Frequency",
+        min: 0.2,
+        max: 2.0,
+        step: 0.1,
+        unit: "Hz",
+        description: "Electromagnetic wave propagation frequency"
+      },
+      {
+        key: "amplitude",
+        label: "Wave Amplitude",
+        min: 0.5,
+        max: 2.0,
+        step: 0.1,
+        unit: "a.u.",
+        description: "Source electric field amplitude vector length"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-polarization-1",
+        title: "Target 25% Intensity with Malus's Law",
+        instruction: "Starting from an unpolarized source through Filter 1 (I₁ = 50%), adjust the Analyzer Filter (θ₂) until the final transmitted intensity equals exactly 25.0%.",
+        targetMetric: "Transmitted Intensity",
+        targetValue: 25,
+        tolerance: 1.5,
+        currentValueKey: "i3_pct",
+        rewardBadge: "Malus's Law Optician"
+      },
+      {
+        id: "ch-polarization-2",
+        title: "Resolve the 3-Filter Paradox",
+        instruction: "Cross Filter 1 at 0° and Analyzer Filter at 90° to reach total extinction (0%). Enable the middle filter at 45° and observe transmitted light recover to positive intensity.",
+        targetMetric: "3-Filter Transmission",
+        targetValue: 1,
+        tolerance: 0,
+        currentValueKey: "three_filter_success",
+        rewardBadge: "Quantum Optics Pioneer"
+      }
+    ],
+    previewFacts: [
+      "Polaroid sunglasses use microscopically aligned polyvinyl alcohol polymer chains to selectively absorb horizontally polarized light reflected from roads and water surfaces, eliminating glare.",
+      "Étienne-Louis Malus discovered light polarization by reflection in 1808 while looking at sunlight reflected from the windows of the Palais du Luxembourg in Paris through a calcite crystal."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/3d-wave-polarization-lab.html"
   }
 ];

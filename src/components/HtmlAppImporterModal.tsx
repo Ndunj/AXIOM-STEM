@@ -230,14 +230,50 @@ export const HtmlAppImporterModal: React.FC<HtmlAppImporterModalProps> = ({
 
         // Auto-extract title from <title> tag if title is not yet set
         const titleMatch = content.match(/<title[^>]*>([^<]+)<\/title>/i);
-        if (titleMatch && titleMatch[1] && (!title || title.trim() === "")) {
-          setTitle(titleMatch[1].trim());
+        const extractedTitle = titleMatch && titleMatch[1] ? titleMatch[1].trim() : "";
+        if (extractedTitle && (!title || title.trim() === "")) {
+          setTitle(extractedTitle);
         } else if (!title || title.trim() === "") {
           const cleanName = file.name
             .replace(/\.[^/.]+$/, "")
             .replace(/[-_]/g, " ")
             .replace(/\b\w/g, (c) => c.toUpperCase());
           setTitle(cleanName);
+        }
+
+        // Auto-detect STEM discipline from title and content
+        const searchCorpus = (extractedTitle + " " + file.name + " " + content.slice(0, 3000)).toLowerCase();
+        if (
+          searchCorpus.includes("kinetics") ||
+          searchCorpus.includes("rate law") ||
+          searchCorpus.includes("titration") ||
+          searchCorpus.includes("acid-base") ||
+          searchCorpus.includes("chemical") ||
+          searchCorpus.includes("nernst") ||
+          searchCorpus.includes("le chatelier") ||
+          searchCorpus.includes("vsepr") ||
+          searchCorpus.includes("reaction rate") ||
+          searchCorpus.includes("molecular geometry")
+        ) {
+          setDiscipline("chemistry");
+        } else if (
+          searchCorpus.includes("dna") ||
+          searchCorpus.includes("genetics") ||
+          searchCorpus.includes("mitosis") ||
+          searchCorpus.includes("meiosis") ||
+          searchCorpus.includes("osmosis") ||
+          searchCorpus.includes("photosynthesis")
+        ) {
+          setDiscipline("biology");
+        } else if (
+          searchCorpus.includes("calculus") ||
+          searchCorpus.includes("riemann") ||
+          searchCorpus.includes("matrix") ||
+          searchCorpus.includes("trigonometr") ||
+          searchCorpus.includes("pythagorean") ||
+          searchCorpus.includes("venn")
+        ) {
+          setDiscipline("mathematics");
         }
       }
     };

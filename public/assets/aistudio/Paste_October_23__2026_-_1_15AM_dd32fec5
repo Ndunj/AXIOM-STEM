@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Wave Polarization Lab & Simulation</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- OrbitControls for Three.js -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Custom Scrollbar for Dashboard */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 h-screen w-screen overflow-hidden flex flex-col md:flex-row">
+
+    <!-- LEFT / TOP: 3D WebGL Viewport Container -->
+    <div class="relative w-full md:w-2/3 lg:w-3/4 h-1/2 md:h-full bg-black flex-1" id="canvas-container">
+        <!-- 3D Canvas will be injected here -->
+        
+        <!-- Viewport Overlays / Floating HUD -->
+        <div class="absolute top-4 left-4 z-10 flex flex-wrap gap-2">
+            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-cyan-900/80 text-cyan-200 border border-cyan-500/30 flex items-center gap-1.5 shadow-lg">
+                <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                Interactive 3D Viewport
+            </span>
+            <span id="current-state-badge" class="px-3 py-1 text-xs font-semibold rounded-full bg-indigo-900/80 text-indigo-200 border border-indigo-500/30 shadow-lg">
+                Unpolarized Source
+            </span>
+        </div>
+
+        <!-- Camera Controls & Overlay Helpers -->
+        <div class="absolute bottom-4 left-4 z-10 flex items-center gap-2 glass-panel p-2 rounded-xl border border-gray-800">
+            <button id="btn-reset-cam" title="Reset Camera View" class="p-2 bg-gray-800 hover:bg-gray-700 text-cyan-400 rounded-lg transition text-xs flex items-center gap-1">
+                <i class="fa-solid fa-video"></i> Reset Cam
+            </button>
+            <button id="btn-play-pause" title="Play/Pause Wave" class="p-2 bg-gray-800 hover:bg-gray-700 text-green-400 rounded-lg transition text-xs flex items-center gap-1">
+                <i class="fa-solid fa-pause" id="play-pause-icon"></i> <span id="play-pause-text">Pause</span>
+            </button>
+            <div class="h-4 w-[1px] bg-gray-700 mx-1"></div>
+            <label class="text-xs text-gray-300 flex items-center gap-1 cursor-pointer select-none">
+                <input type="checkbox" id="chk-bfield" class="rounded bg-gray-900 border-gray-700 text-blue-500 focus:ring-0">
+                <span class="text-blue-400 font-medium">B-Field (Mag)</span>
+            </label>
+            <label class="text-xs text-gray-300 flex items-center gap-1 cursor-pointer select-none ml-2">
+                <input type="checkbox" id="chk-vectors" checked class="rounded bg-gray-900 border-gray-700 text-cyan-500 focus:ring-0">
+                <span class="text-cyan-400 font-medium">Vectors</span>
+            </label>
+            <label class="text-xs text-gray-300 flex items-center gap-1 cursor-pointer select-none ml-2">
+                <input type="checkbox" id="chk-grid" checked class="rounded bg-gray-900 border-gray-700 text-gray-400 focus:ring-0">
+                <span class="text-gray-400 font-medium">Grid</span>
+            </label>
+        </div>
+
+        <!-- 3D Legend HUD -->
+        <div class="absolute top-4 right-4 z-10 glass-panel p-3 rounded-xl border border-gray-800 text-xs flex flex-col gap-1.5 shadow-xl hidden sm:flex">
+            <div class="font-semibold text-gray-300 border-b border-gray-800 pb-1 mb-0.5">3D Legend</div>
+            <div class="flex items-center gap-2"><span class="w-3 h-0.5 bg-cyan-400 rounded"></span> <span class="text-cyan-300">Electric Field (E)</span></div>
+            <div class="flex items-center gap-2"><span class="w-3 h-0.5 bg-blue-500 rounded"></span> <span class="text-blue-300">Magnetic Field (B)</span></div>
+            <div class="flex items-center gap-2"><span class="w-3 h-0.5 bg-red-400 rounded"></span> <span class="text-red-300">Absorbed Component</span></div>
+            <div class="flex items-center gap-2"><span class="w-3 h-0.5 bg-amber-400 rounded"></span> <span class="text-amber-300">Transmission Axis</span></div>
+        </div>
+
+        <!-- Tooltip Overlay -->
+        <div id="3d-tooltip" class="absolute pointer-events-none hidden glass-panel px-3 py-2 rounded-lg text-xs z-30 shadow-2xl border border-cyan-500/50 text-cyan-100">
+            Tooltip Info
+        </div>
+    </div>
+
+    <!-- RIGHT / BOTTOM: Control & Educational Dashboard -->
+    <div class="w-full md:w-1/3 lg:w-1/4 h-1/2 md:h-full bg-gray-900 border-l border-gray-800 flex flex-col overflow-y-auto">
+        
+        <!-- Header & Mode Switcher -->
+        <div class="p-4 border-b border-gray-800 bg-gray-950/60 sticky top-0 z-20 backdrop-blur-md">
+            <div class="flex items-center justify-between mb-3">
+                <h1 class="text-base font-bold bg-gradient-to-r from-cyan-400 to-indigo-400 bg-clip-text text-transparent flex items-center gap-2">
+                    <i class="fa-solid fa-wave-square text-cyan-400"></i> Polarization Lab
+                </h1>
+                <span class="text-[10px] text-gray-400 bg-gray-800 px-2 py-0.5 rounded border border-gray-700">Physics 3D</span>
+            </div>
+            
+            <!-- Mode Toggle Tabs -->
+            <div class="grid grid-cols-2 gap-1 bg-gray-950 p-1 rounded-xl border border-gray-800">
+                <button id="mode-demo" class="py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition flex items-center justify-center gap-1 shadow">
+                    <i class="fa-solid fa-chalkboard-user"></i> Demo Mode
+                </button>
+                <button id="mode-inquiry" class="py-1.5 text-xs font-semibold rounded-lg text-gray-400 hover:text-gray-200 transition flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-flask"></i> Inquiry Lab
+                </button>
+            </div>
+        </div>
+
+        <div class="p-4 space-y-6 flex-1">
+
+            <!-- DEMO MODE PANEL -->
+            <div id="panel-demo" class="space-y-5">
+                <!-- Preset Buttons -->
+                <div>
+                    <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">Preset Experiments</label>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <button class="preset-btn bg-gray-800 hover:bg-gray-700 text-gray-200 p-2 rounded-lg border border-gray-700 text-left transition flex flex-col gap-0.5" data-preset="unpolarized">
+                            <span class="font-medium text-cyan-300">1. Unpolarized</span>
+                            <span class="text-[10px] text-gray-400">Natural light emission</span>
+                        </button>
+                        <button class="preset-btn bg-gray-800 hover:bg-gray-700 text-gray-200 p-2 rounded-lg border border-gray-700 text-left transition flex flex-col gap-0.5" data-preset="malus">
+                            <span class="font-medium text-indigo-300">2. Malus's Law</span>
+                            <span class="text-[10px] text-gray-400">Single rotating filter</span>
+                        </button>
+                        <button class="preset-btn bg-gray-800 hover:bg-gray-700 text-gray-200 p-2 rounded-lg border border-gray-700 text-left transition flex flex-col gap-0.5" data-preset="crossed">
+                            <span class="font-medium text-red-300">3. Crossed (90°)</span>
+                            <span class="text-[10px] text-gray-400">Total extinction state</span>
+                        </button>
+                        <button class="preset-btn bg-gray-800 hover:bg-gray-700 text-gray-200 p-2 rounded-lg border border-gray-700 text-left transition flex flex-col gap-0.5" data-preset="three-filters">
+                            <span class="font-medium text-emerald-300">4. 3-Filter Paradox</span>
+                            <span class="text-[10px] text-gray-400">Insert 45° middle filter</span>
+                        </button>
+                        <button class="preset-btn col-span-2 bg-gray-800 hover:bg-gray-700 text-gray-200 p-2 rounded-lg border border-gray-700 text-left transition flex items-center justify-between" data-preset="circular">
+                            <div>
+                                <span class="font-medium text-amber-300">5. Circular Polarization</span>
+                                <span class="text-[10px] text-gray-400 block">Quarter-wave plate (90^\circ phase shift)</span>
+                            </div>
+                            <i class="fa-solid fa-arrows-spin text-amber-400 text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Input Wave Config -->
+                <div class="glass-panel p-3 rounded-xl space-y-3">
+                    <div class="text-xs font-semibold text-cyan-300 flex items-center gap-1.5">
+                        <i class="fa-solid fa-sliders"></i> Source Wave Controls
+                    </div>
+                    
+                    <div class="space-y-1">
+                        <label class="text-xs text-gray-400 flex justify-between">
+                            <span>Source Polarization Type:</span>
+                        </label>
+                        <select id="source-type-select" class="w-full bg-gray-950 border border-gray-700 rounded-lg p-1.5 text-xs text-gray-200 focus:ring-1 focus:ring-cyan-500 outline-none">
+                            <option value="unpolarized">Unpolarized Light</option>
+                            <option value="linear">Linearly Polarized</option>
+                            <option value="circular">Circularly Polarized</option>
+                        </select>
+                    </div>
+
+                    <div id="source-angle-container" class="space-y-1 hidden">
+                        <div class="flex justify-between text-xs text-gray-400">
+                            <span>Initial Polarization Angle (θ_0):</span>
+                            <span id="source-angle-val" class="font-mono text-cyan-400">0°</span>
+                        </div>
+                        <input type="range" id="slider-source-angle" min="0" max="360" value="0" class="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-400">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[11px] text-gray-400 block mb-1">Frequency (f)</label>
+                            <input type="range" id="slider-freq" min="0.2" max="2" step="0.1" value="0.8" class="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-400">
+                        </div>
+                        <div>
+                            <label class="text-[11px] text-gray-400 block mb-1">Amplitude (A)</label>
+                            <input type="range" id="slider-amp" min="0.5" max="2" step="0.1" value="1.2" class="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-400">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter Axis Controls -->
+                <div class="glass-panel p-3 rounded-xl space-y-3 border-indigo-900/40">
+                    <div class="text-xs font-semibold text-indigo-300 flex items-center justify-between">
+                        <span class="flex items-center gap-1.5"><i class="fa-solid fa-filter"></i> Polarizer Filters Config</span>
+                    </div>
+
+                    <!-- Filter 1 -->
+                    <div class="space-y-1 border-b border-gray-800 pb-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-gray-300 font-medium">Filter 1 (θ_1) at x = -2</span>
+                            <span id="f1-angle-val" class="font-mono text-indigo-400 font-bold">0°</span>
+                        </div>
+                        <input type="range" id="slider-f1-angle" min="0" max="180" value="0" class="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                    </div>
+
+                    <!-- Middle Filter 2 (Optional) -->
+                    <div class="space-y-1 border-b border-gray-800 pb-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <label class="text-gray-300 font-medium flex items-center gap-1.5 cursor-pointer">
+                                <input type="checkbox" id="chk-f2-enable" class="rounded bg-gray-900 border-gray-700 text-emerald-500 focus:ring-0">
+                                <span>Middle Filter (θ_m) at x = 0</span>
+                            </label>
+                            <span id="f2-angle-val" class="font-mono text-emerald-400 font-bold">45°</span>
+                        </div>
+                        <input type="range" id="slider-f2-angle" min="0" max="180" value="45" disabled class="w-full h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 opacity-50" id="range-f2">
+                    </div>
+
+                    <!-- Analyzer Filter 3 -->
+                    <div class="space-y-1">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-gray-300 font-medium">Analyzer Filter (θ_2) at x = +2</span>
+                            <span id="f3-angle-val" class="font-mono text-purple-400 font-bold">90°</span>
+                        </div>
+                        <input type="range" id="slider-f3-angle" min="0" max="180" value="90" class="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500">
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- INQUIRY MODE PANEL -->
+            <div id="panel-inquiry" class="space-y-4 hidden">
+                <div class="bg-indigo-950/50 border border-indigo-800/60 p-3 rounded-xl text-xs space-y-2">
+                    <div class="font-semibold text-indigo-300 flex items-center justify-between">
+                        <span><i class="fa-solid fa-graduation-cap"></i> Interactive Physics Challenges</span>
+                        <span id="challenge-step-badge" class="px-2 py-0.5 bg-indigo-900 text-indigo-200 rounded text-[10px]">Task 1/3</span>
+                    </div>
+                    <p id="challenge-desc" class="text-gray-300 leading-relaxed">
+                        Adjust Analyzer Filter (θ_2) to achieve exactly **25% transmitted intensity** (I_2 = 0.25 I_0) starting from an initial I_1 = 100\% vertically polarized beam.
+                    </p>
+                    <div class="bg-gray-950 p-2 rounded border border-gray-800 text-[11px] font-mono text-cyan-300 flex justify-between">
+                        <span>Target: <strong id="target-val">25.0%</strong></span>
+                        <span>Current I_2: <strong id="current-val" class="text-amber-400">0.0%</strong></span>
+                    </div>
+                    <button id="btn-check-task" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg transition shadow">
+                        Check Answer
+                    </button>
+                    <div id="task-feedback" class="text-center font-medium text-xs hidden p-1.5 rounded"></div>
+                </div>
+
+                <!-- Guided Questions -->
+                <div class="glass-panel p-3 rounded-xl space-y-2">
+                    <div class="text-xs font-semibold text-gray-300">Quick Knowledge Checks</div>
+                    <details class="text-xs group bg-gray-950/60 rounded-lg p-2 border border-gray-800">
+                        <summary class="font-medium text-cyan-300 cursor-pointer flex justify-between items-center">
+                            <span>What happens when Δθ = 90ͦ ?</span>
+                            <i class="fa-solid fa-chevron-down text-[10px] group-open:rotate-180 transition"></i>
+                        </summary>
+                        <p class="mt-2 text-gray-400 text-[11px] leading-relaxed">
+                            When transmission axes are perpendicular (\cos 90^\circ = 0), no electric field component can pass through, resulting in total light extinction (I = 0).
+                        </p>
+                    </details>
+                    <details class="text-xs group bg-gray-950/60 rounded-lg p-2 border border-gray-800">
+                        <summary class="font-medium text-cyan-300 cursor-pointer flex justify-between items-center">
+                            <span>Why does 3rd filter add light back?</span>
+                            <i class="fa-solid fa-chevron-down text-[10px] group-open:rotate-180 transition"></i>
+                        </summary>
+                        <p class="mt-2 text-gray-400 text-[11px] leading-relaxed">
+                            The middle filter at 45° re-project the E-field vector onto a diagonal axis. This new diagonal vector now has a non-zero projection component onto the final 90° analyzer!
+                        </p>
+                    </details>
+                </div>
+            </div>
+
+            <!-- MALUS'S LAW QUANTITATIVE METERS (SHARED) -->
+            <div class="glass-panel p-3 rounded-xl space-y-3">
+                <div class="text-xs font-semibold text-gray-300 flex items-center justify-between border-b border-gray-800 pb-1.5">
+                    <span class="flex items-center gap-1.5"><i class="fa-solid fa-square-root-variable text-indigo-400"></i> Malus's Law & Intensity</span>
+                    <span class="text-[10px] font-mono text-gray-400">I = I₀ · cos²(Δθ)</span>
+                </div>
+
+                <!-- Animated Intensity Bars -->
+                <div class="space-y-2 text-xs">
+                    <div>
+                        <div class="flex justify-between text-[11px] text-gray-400 mb-0.5">
+                            <span>Input Source (I_0)</span>
+                            <span id="meter-i0-text" class="font-mono text-cyan-400 font-bold">100%</span>
+                        </div>
+                        <div class="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+                            <div id="meter-i0-bar" class="h-full bg-cyan-400 transition-all duration-300" style="width: 100%;"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-[11px] text-gray-400 mb-0.5">
+                            <span>After Filter 1 (I_1)</span>
+                            <span id="meter-i1-text" class="font-mono text-indigo-400 font-bold">50.0%</span>
+                        </div>
+                        <div class="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+                            <div id="meter-i1-bar" class="h-full bg-indigo-500 transition-all duration-300" style="width: 50%;"></div>
+                        </div>
+                    </div>
+
+                    <div id="meter-i2-container" class="hidden">
+                        <div class="flex justify-between text-[11px] text-gray-400 mb-0.5">
+                            <span>After Mid Filter (I_m)</span>
+                            <span id="meter-i2-text" class="font-mono text-emerald-400 font-bold">25.0%</span>
+                        </div>
+                        <div class="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+                            <div id="meter-i2-bar" class="h-full bg-emerald-500 transition-all duration-300" style="width: 25%;"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-[11px] text-gray-400 mb-0.5">
+                            <span>Final Transmitted (I_final)</span>
+                            <span id="meter-i3-text" class="font-mono text-purple-400 font-bold">0.0%</span>
+                        </div>
+                        <div class="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+                            <div id="meter-i3-bar" class="h-full bg-purple-500 transition-all duration-300" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Equation Readout Box -->
+                <div class="bg-gray-950 p-2 rounded-lg border border-gray-800 text-[11px] font-mono text-gray-300 text-center space-y-1">
+                    <div id="math-formula-step1" class="text-indigo-300">I₁ = I₀ × 0.5 (Unpolarized)</div>
+                    <div id="math-formula-step2" class="text-purple-300">I_final = I₁ × cos²(90°) = 0%</div>
+                </div>
+            </div>
+
+            <!-- Curriculum Context Tooltips Box -->
+            <div class="text-[11px] text-gray-400 glass-panel p-3 rounded-xl space-y-1">
+                <div class="font-semibold text-gray-300 flex items-center gap-1">
+                    <i class="fa-solid fa-circle-info text-cyan-400"></i> Physics Insight
+                </div>
+                <p id="insight-text" class="leading-relaxed">
+                    Unpolarized light consists of electric fields vibrating in all directions perpendicular to propagation. Passing through a linear filter transmits only vector components aligned with its optical axis.
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MAIN JAVASCRIPT LOGIC -->
+    <script>
+        // --- STATE MANAGEMENT ---
+        const state = {
+            mode: 'demo', // 'demo' or 'inquiry'
+            sourceType: 'unpolarized', // 'unpolarized', 'linear', 'circular'
+            sourceAngle: 0, // degrees
+            frequency: 0.8,
+            amplitude: 1.2,
+            
+            // Filter configurations
+            f1Enabled: true,
+            f1Angle: 0, // degrees
+            
+            f2Enabled: false,
+            f2Angle: 45, // degrees
+            
+            f3Enabled: true,
+            f3Angle: 90, // degrees
+
+            // Render options
+            showBField: false,
+            showVectors: true,
+            showGrid: true,
+            isPlaying: true,
+
+            // Calculated Intensities (Relative to I0 = 1.0)
+            I0: 1.0,
+            I1: 0.5,
+            I2: 0.25,
+            I3: 0.0,
+
+            // Inquiry Challenge State
+            challengeStep: 1,
+            targetIntensity: 0.25
+        };
+
+        // --- THREE.JS GLOBALS ---
+        let scene, camera, renderer, controls;
+        let waveGroup, filtersGroup, gridHelper;
+        let eFieldLines = [], bFieldLines = [], vectorArrows = [];
+        let filterMeshes = [];
+        let clock = new THREE.Clock();
+        let animationTime = 0;
+
+        // Colors
+        const COLOR_EFIELD = 0x22d3ee; // Cyan
+        const COLOR_BFIELD = 0x3b82f6; // Blue
+        const COLOR_ABSORBED = 0xf87171; // Red
+        const COLOR_AXIS = 0xf59e0b; // Amber
+
+        // Initialize Application
+        window.addEventListener('DOMContentLoaded', () => {
+            initThreeJS();
+            buildSceneObjects();
+            setupUIEventListeners();
+            updateCalculationsAndUI();
+            animate();
+        });
+
+        // --- THREE.JS INITIALIZATION ---
+        function initThreeJS() {
+            const container = document.getElementById('canvas-container');
+            
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x030712); // Gray 950
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(6, 4, 9);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            // Orbit Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxDistance = 25;
+            controls.minDistance = 2;
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(10, 15, 10);
+            scene.add(dirLight);
+
+            // Axis & Grid Helpers
+            gridHelper = new THREE.GridHelper(20, 20, 0x374151, 0x1f2937);
+            gridHelper.position.y = -2.5;
+            scene.add(gridHelper);
+
+            // Direction Arrow (X-axis Propagation)
+            const dirArrow = new THREE.ArrowHelper(
+                new THREE.Vector3(1, 0, 0),
+                new THREE.Vector3(-6, -2.4, 0),
+                12,
+                0x6b7280,
+                0.4,
+                0.3
+            );
+            scene.add(dirArrow);
+
+            // Groups
+            waveGroup = new THREE.Group();
+            filtersGroup = new THREE.Group();
+            scene.add(waveGroup);
+            scene.add(filtersGroup);
+
+            // Resize Handler
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        // --- SCENE BUILDER ---
+        function buildSceneObjects() {
+            createFilterDisks();
+            updateWaveGeometry();
+        }
+
+        // Create 3D Translucent Polarizer Disks
+        function createFilterDisks() {
+            // Clear existing
+            filterMeshes.forEach(m => filtersGroup.remove(m));
+            filterMeshes = [];
+
+            const filterPositions = [
+                { id: 1, x: -2, angle: state.f1Angle, enabled: state.f1Enabled, color: 0x6366f1 }, // Indigo
+                { id: 2, x: 0, angle: state.f2Angle, enabled: state.f2Enabled, color: 0x10b981 },  // Emerald
+                { id: 3, x: 2, angle: state.f3Angle, enabled: state.f3Enabled, color: 0xa855f7 }   // Purple
+            ];
+
+            filterPositions.forEach(f => {
+                const group = new THREE.Group();
+                group.position.x = f.x;
+
+                if (f.enabled) {
+                    // Disk Ring Frame
+                    const ringGeo = new THREE.TorusGeometry(1.8, 0.06, 16, 64);
+                    const ringMat = new THREE.MeshStandardMaterial({ color: 0x374151, metalness: 0.8, roughness: 0.2 });
+                    const ring = new THREE.Mesh(ringGeo, ringMat);
+                    ring.rotation.y = Math.PI / 2;
+                    group.add(ring);
+
+                    // Translucent Glass Filter Area
+                    const glassGeo = new THREE.CylinderGeometry(1.8, 1.8, 0.04, 64);
+                    const glassMat = new THREE.MeshPhysicalMaterial({
+                        color: f.color,
+                        transparent: true,
+                        opacity: 0.35,
+                        roughness: 0.1,
+                        transmission: 0.6,
+                        thickness: 0.5
+                    });
+                    const glass = new THREE.Mesh(glassGeo, glassMat);
+                    glass.rotation.z = Math.PI / 2;
+                    group.add(glass);
+
+                    // Optical Axis Line (Transmission Axis Marker)
+                    const axisGroup = new THREE.Group();
+                    const lineGeo = new THREE.CylinderGeometry(0.03, 0.03, 3.5, 16);
+                    const lineMat = new THREE.MeshBasicMaterial({ color: COLOR_AXIS });
+                    const axisLine = new THREE.Mesh(lineGeo, lineMat);
+                    axisGroup.add(axisLine);
+
+                    // Axis Tip Arrows
+                    const arrowTop = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.2, 16), lineMat);
+                    arrowTop.position.y = 1.75;
+                    const arrowBottom = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.2, 16), lineMat);
+                    arrowBottom.position.y = -1.75;
+                    arrowBottom.rotation.z = Math.PI;
+                    axisGroup.add(arrowTop);
+                    axisGroup.add(arrowBottom);
+
+                    // Rotate optical axis according to angle
+                    axisGroup.rotation.x = THREE.MathUtils.degToRad(f.angle);
+                    group.add(axisGroup);
+
+                    // Label Tag
+                    group.userData = { id: f.id, angle: f.angle, axisGroup: axisGroup };
+                }
+
+                filtersGroup.add(group);
+                filterMeshes.push(group);
+            });
+        }
+
+        // Dynamically compute wave components along X-axis
+        function updateWaveGeometry() {
+            // Remove old meshes in waveGroup
+            while(waveGroup.children.length > 0){ 
+                const obj = waveGroup.children[0];
+                waveGroup.remove(obj); 
+            }
+
+            const xStart = -5.5;
+            const xEnd = 5.5;
+            const step = 0.08;
+            const pointsCount = Math.floor((xEnd - xStart) / step);
+
+            // Pre-allocate geometry points
+            const ePoints = [];
+            const bPoints = [];
+
+            let currentPolarization = state.sourceType; // 'unpolarized', 'linear', 'circular'
+            let currentAngle = THREE.MathUtils.degToRad(state.sourceAngle); // radians
+            let currentAmp = state.amplitude;
+
+            for (let i = 0; i <= pointsCount; i++) {
+                const x = xStart + i * step;
+
+                // Check filter boundaries and apply transformations
+                if (state.f1Enabled && x >= -2.0) {
+                    const f1Rad = THREE.MathUtils.degToRad(state.f1Angle);
+                    if (currentPolarization === 'unpolarized') {
+                        currentPolarization = 'linear';
+                        currentAngle = f1Rad;
+                        currentAmp = state.amplitude * Math.sqrt(state.I1);
+                    } else if (currentPolarization === 'linear') {
+                        const dTh = f1Rad - currentAngle;
+                        currentAmp = currentAmp * Math.abs(Math.cos(dTh));
+                        currentAngle = f1Rad;
+                    }
+                }
+
+                if (state.f2Enabled && x >= 0.0) {
+                    const f2Rad = THREE.MathUtils.degToRad(state.f2Angle);
+                    const dTh = f2Rad - currentAngle;
+                    currentAmp = currentAmp * Math.abs(Math.cos(dTh));
+                    currentAngle = f2Rad;
+                }
+
+                if (state.f3Enabled && x >= 2.0) {
+                    const f3Rad = THREE.MathUtils.degToRad(state.f3Angle);
+                    const dTh = f3Rad - currentAngle;
+                    currentAmp = currentAmp * Math.abs(Math.cos(dTh));
+                    currentAngle = f3Rad;
+                }
+
+                // Compute wave phase
+                const k = 2.0; // Wave number
+                const omega = state.frequency * 4.0;
+                const phase = k * x - animationTime * omega;
+
+                let ey = 0, ez = 0;
+
+                if (currentPolarization === 'unpolarized' && x < -2.0) {
+                    // Unpolarized: Superposition/rapidly changing vector angle based on position & time
+                    const randAngle = Math.sin(x * 5.0 + animationTime * 3.0) * Math.PI;
+                    ey = currentAmp * Math.cos(phase) * Math.cos(randAngle);
+                    ez = currentAmp * Math.cos(phase) * Math.sin(randAngle);
+                } else if (currentPolarization === 'circular') {
+                    // Circular Polarization: Phase shift between Y and Z components
+                    ey = currentAmp * Math.cos(phase);
+                    ez = currentAmp * Math.sin(phase);
+                } else {
+                    // Linearly Polarized at currentAngle
+                    const waveVal = currentAmp * Math.cos(phase);
+                    ey = waveVal * Math.cos(currentAngle);
+                    ez = waveVal * Math.sin(currentAngle);
+                }
+
+                ePoints.push(new THREE.Vector3(x, ey, ez));
+
+                // B-Field is perpendicular to E-Field
+                if (state.showBField) {
+                    bPoints.push(new THREE.Vector3(x, -ez, ey));
+                }
+
+                // Render Vector Field Arrows at discrete steps
+                if (state.showVectors && i % 3 === 0 && Math.abs(ey) + Math.abs(ez) > 0.05) {
+                    // Electric Field Arrow
+                    const eDir = new THREE.Vector3(0, ey, ez).normalize();
+                    const eLen = Math.sqrt(ey * ey + ez * ez);
+                    const arrowE = new THREE.ArrowHelper(eDir, new THREE.Vector3(x, 0, 0), eLen, COLOR_EFIELD, 0.15, 0.1);
+                    waveGroup.add(arrowE);
+
+                    // Optional Magnetic Field Arrow
+                    if (state.showBField) {
+                        const bDir = new THREE.Vector3(0, -ez, ey).normalize();
+                        const bLen = eLen;
+                        const arrowB = new THREE.ArrowHelper(bDir, new THREE.Vector3(x, 0, 0), bLen, COLOR_BFIELD, 0.12, 0.08);
+                        waveGroup.add(arrowB);
+                    }
+                }
+            }
+
+            // Continuous Wave Line (E-Field)
+            if (ePoints.length > 1) {
+                const eGeo = new THREE.BufferGeometry().setFromPoints(ePoints);
+                const eMat = new THREE.LineBasicMaterial({ color: COLOR_EFIELD, linewidth: 2 });
+                const eLine = new THREE.Line(eGeo, eMat);
+                waveGroup.add(eLine);
+            }
+
+            // Continuous Wave Line (B-Field)
+            if (state.showBField && bPoints.length > 1) {
+                const bGeo = new THREE.BufferGeometry().setFromPoints(bPoints);
+                const bMat = new THREE.LineBasicMaterial({ color: COLOR_BFIELD, linewidth: 1.5 });
+                const bLine = new THREE.Line(bGeo, bMat);
+                waveGroup.add(bLine);
+            }
+        }
+
+        // --- CALCULATIONS & UI SYNCHRONIZATION ---
+        function updateCalculationsAndUI() {
+            // 1. Calculate Intensity progression based on Malus's Law
+            state.I0 = 1.0; // Normalized 100%
+
+            // Stage 1: Filter 1
+            if (state.sourceType === 'unpolarized') {
+                state.I1 = 0.5; // Natural unpolarized light through linear filter drops to 50%
+            } else if (state.sourceType === 'circular') {
+                state.I1 = 0.5;
+            } else {
+                // Linearly polarized input
+                const dTh1 = THREE.MathUtils.degToRad(state.f1Angle - state.sourceAngle);
+                state.I1 = Math.pow(Math.cos(dTh1), 2);
+            }
+
+            // Stage 2: Middle Filter (Optional)
+            if (state.f2Enabled) {
+                const dTh2 = THREE.MathUtils.degToRad(state.f2Angle - state.f1Angle);
+                state.I2 = state.I1 * Math.pow(Math.cos(dTh2), 2);
+            } else {
+                state.I2 = state.I1;
+            }
+
+            // Stage 3: Analyzer Filter
+            const lastAngle = state.f2Enabled ? state.f2Angle : state.f1Angle;
+            const dTh3 = THREE.MathUtils.degToRad(state.f3Angle - lastAngle);
+            state.I3 = state.I2 * Math.pow(Math.cos(dTh3), 2);
+
+            // 2. Update Meters UI
+            const pct = (val) => (val * 100).toFixed(1) + '%';
+            
+            document.getElementById('meter-i0-bar').style.width = '100%';
+            document.getElementById('meter-i1-bar').style.width = (state.I1 * 100) + '%';
+            document.getElementById('meter-i1-text').innerText = pct(state.I1);
+
+            const i2Container = document.getElementById('meter-i2-container');
+            if (state.f2Enabled) {
+                i2Container.classList.remove('hidden');
+                document.getElementById('meter-i2-bar').style.width = (state.I2 * 100) + '%';
+                document.getElementById('meter-i2-text').innerText = pct(state.I2);
+            } else {
+                i2Container.classList.add('hidden');
+            }
+
+            document.getElementById('meter-i3-bar').style.width = (state.I3 * 100) + '%';
+            document.getElementById('meter-i3-text').innerText = pct(state.I3);
+
+            // 3. Update Formula Readouts
+            const f1A = state.f1Angle, f2A = state.f2Angle, f3A = state.f3Angle;
+            document.getElementById('math-formula-step1').innerText = state.sourceType === 'unpolarized' 
+                ? `I₁ = ½ I₀ = 50.0%`
+                : `I₁ = I₀ × cos²(${Math.abs(f1A - state.sourceAngle)}°) = ${pct(state.I1)}`;
+
+            if (state.f2Enabled) {
+                document.getElementById('math-formula-step2').innerText = 
+                    `I_mid = I₁ × cos²(${Math.abs(f2A - f1A)}°) = ${pct(state.I2)} | I_final = ${pct(state.I3)}`;
+            } else {
+                document.getElementById('math-formula-step2').innerText = 
+                    `I_final = I₁ × cos²(${Math.abs(f3A - f1A)}°) = ${pct(state.I3)}`;
+            }
+
+            // 4. Update Badge & Text Insights
+            const badge = document.getElementById('current-state-badge');
+            if (state.I3 < 0.001) {
+                badge.innerText = "State: Total Extinction (0%)";
+                badge.className = "px-3 py-1 text-xs font-semibold rounded-full bg-red-900/80 text-red-200 border border-red-500/30 shadow-lg";
+            } else {
+                badge.innerText = `State: Transmitting (${pct(state.I3)})`;
+                badge.className = "px-3 py-1 text-xs font-semibold rounded-full bg-emerald-900/80 text-emerald-200 border border-emerald-500/30 shadow-lg";
+            }
+
+            // 5. Inquiry Challenge Verification Update
+            if (state.mode === 'inquiry') {
+                document.getElementById('current-val').innerText = pct(state.I3);
+            }
+
+            // 6. Refresh 3D Filter Meshes Rotations
+            createFilterDisks();
+        }
+
+        // --- EVENT LISTENERS & INTERACTION ---
+        function setupUIEventListeners() {
+            // Mode Toggle
+            document.getElementById('mode-demo').addEventListener('click', () => setMode('demo'));
+            document.getElementById('mode-inquiry').addEventListener('click', () => setMode('inquiry'));
+
+            // Viewport Controls
+            document.getElementById('btn-reset-cam').addEventListener('click', () => {
+                camera.position.set(6, 4, 9);
+                controls.target.set(0, 0, 0);
+                controls.update();
+            });
+
+            const playPauseBtn = document.getElementById('btn-play-pause');
+            playPauseBtn.addEventListener('click', () => {
+                state.isPlaying = !state.isPlaying;
+                document.getElementById('play-pause-icon').className = state.isPlaying ? "fa-solid fa-pause" : "fa-solid fa-play";
+                document.getElementById('play-pause-text').innerText = state.isPlaying ? "Pause" : "Play";
+            });
+
+            document.getElementById('chk-bfield').addEventListener('change', (e) => {
+                state.showBField = e.target.checked;
+            });
+
+            document.getElementById('chk-vectors').addEventListener('change', (e) => {
+                state.showVectors = e.target.checked;
+            });
+
+            document.getElementById('chk-grid').addEventListener('change', (e) => {
+                gridHelper.visible = e.target.checked;
+            });
+
+            // Sliders & Selects
+            const sourceTypeSel = document.getElementById('source-type-select');
+            const sourceAngleContainer = document.getElementById('source-angle-container');
+            
+            sourceTypeSel.addEventListener('change', (e) => {
+                state.sourceType = e.target.value;
+                sourceAngleContainer.style.display = state.sourceType === 'linear' ? 'block' : 'none';
+                updateCalculationsAndUI();
+            });
+
+            document.getElementById('slider-source-angle').addEventListener('input', (e) => {
+                state.sourceAngle = parseInt(e.target.value);
+                document.getElementById('source-angle-val').innerText = state.sourceAngle + '°';
+                updateCalculationsAndUI();
+            });
+
+            document.getElementById('slider-freq').addEventListener('input', (e) => state.frequency = parseFloat(e.target.value));
+            document.getElementById('slider-amp').addEventListener('input', (e) => state.amplitude = parseFloat(e.target.value));
+
+            // Filters Sliders
+            document.getElementById('slider-f1-angle').addEventListener('input', (e) => {
+                state.f1Angle = parseInt(e.target.value);
+                document.getElementById('f1-angle-val').innerText = state.f1Angle + '°';
+                updateCalculationsAndUI();
+            });
+
+            const f2Check = document.getElementById('chk-f2-enable');
+            const f2Slider = document.getElementById('slider-f2-angle');
+            f2Check.addEventListener('change', (e) => {
+                state.f2Enabled = e.target.checked;
+                f2Slider.disabled = !state.f2Enabled;
+                f2Slider.className = state.f2Enabled 
+                    ? "w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" 
+                    : "w-full h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 opacity-50";
+                updateCalculationsAndUI();
+            });
+
+            f2Slider.addEventListener('input', (e) => {
+                state.f2Angle = parseInt(e.target.value);
+                document.getElementById('f2-angle-val').innerText = state.f2Angle + '°';
+                updateCalculationsAndUI();
+            });
+
+            document.getElementById('slider-f3-angle').addEventListener('input', (e) => {
+                state.f3Angle = parseInt(e.target.value);
+                document.getElementById('f3-angle-val').innerText = state.f3Angle + '°';
+                updateCalculationsAndUI();
+            });
+
+            // Presets Buttons
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const preset = btn.getAttribute('data-preset');
+                    applyPreset(preset);
+                });
+            });
+
+            // Inquiry Challenge Check
+            document.getElementById('btn-check-task').addEventListener('click', checkInquiryAnswer);
+        }
+
+        // Apply Pedagogical Presets
+        function applyPreset(preset) {
+            if (preset === 'unpolarized') {
+                state.sourceType = 'unpolarized';
+                state.f1Angle = 0;
+                state.f2Enabled = false;
+                state.f3Angle = 0;
+            } else if (preset === 'malus') {
+                state.sourceType = 'unpolarized';
+                state.f1Angle = 0;
+                state.f2Enabled = false;
+                state.f3Angle = 45;
+            } else if (preset === 'crossed') {
+                state.sourceType = 'unpolarized';
+                state.f1Angle = 0;
+                state.f2Enabled = false;
+                state.f3Angle = 90;
+            } else if (preset === 'three-filters') {
+                state.sourceType = 'unpolarized';
+                state.f1Angle = 0;
+                state.f2Enabled = true;
+                state.f2Angle = 45;
+                state.f3Angle = 90;
+            } else if (preset === 'circular') {
+                state.sourceType = 'circular';
+                state.f1Angle = 0;
+                state.f2Enabled = false;
+                state.f3Angle = 0;
+            }
+
+            // Sync Controls Controls DOM
+            document.getElementById('source-type-select').value = state.sourceType;
+            document.getElementById('source-angle-container').style.display = state.sourceType === 'linear' ? 'block' : 'none';
+            document.getElementById('slider-f1-angle').value = state.f1Angle;
+            document.getElementById('f1-angle-val').innerText = state.f1Angle + '°';
+            
+            document.getElementById('chk-f2-enable').checked = state.f2Enabled;
+            const f2Slider = document.getElementById('slider-f2-angle');
+            f2Slider.disabled = !state.f2Enabled;
+            f2Slider.value = state.f2Angle;
+            document.getElementById('f2-angle-val').innerText = state.f2Angle + '°';
+
+            document.getElementById('slider-f3-angle').value = state.f3Angle;
+            document.getElementById('f3-angle-val').innerText = state.f3Angle + '°';
+
+            updateCalculationsAndUI();
+        }
+
+        // Mode Switcher Logic
+        function setMode(mode) {
+            state.mode = mode;
+            const demoBtn = document.getElementById('mode-demo');
+            const inquiryBtn = document.getElementById('mode-inquiry');
+            const demoPanel = document.getElementById('panel-demo');
+            const inquiryPanel = document.getElementById('panel-inquiry');
+
+            if (mode === 'demo') {
+                demoBtn.className = "py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition flex items-center justify-center gap-1 shadow";
+                inquiryBtn.className = "py-1.5 text-xs font-semibold rounded-lg text-gray-400 hover:text-gray-200 transition flex items-center justify-center gap-1";
+                demoPanel.classList.remove('hidden');
+                inquiryPanel.classList.add('hidden');
+            } else {
+                inquiryBtn.className = "py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition flex items-center justify-center gap-1 shadow";
+                demoBtn.className = "py-1.5 text-xs font-semibold rounded-lg text-gray-400 hover:text-gray-200 transition flex items-center justify-center gap-1";
+                inquiryPanel.classList.remove('hidden');
+                demoPanel.classList.add('hidden');
+            }
+        }
+
+        // Inquiry Answer Checking
+        function checkInquiryAnswer() {
+            const feedback = document.getElementById('task-feedback');
+            feedback.classList.remove('hidden', 'bg-emerald-950', 'text-emerald-300', 'bg-red-950', 'text-red-300');
+
+            const currentI3Pct = state.I3 * 100;
+            const targetPct = state.targetIntensity * 100;
+
+            if (Math.abs(currentI3Pct - targetPct) < 1.5) {
+                feedback.classList.add('bg-emerald-950', 'text-emerald-300', 'border', 'border-emerald-800');
+                feedback.innerText = "🎉 Excellent! You found the correct orientation angle satisfying Malus's Law!";
+            } else {
+                feedback.classList.add('bg-red-950', 'text-red-300', 'border', 'border-red-800');
+                feedback.innerText = `❌ Not quite. Current intensity is ${currentI3Pct.toFixed(1)}%, but target is ${targetPct.toFixed(1)}%. Try rotating Filter 3.`;
+            }
+        }
+
+        // Window Resize Handler
+        function onWindowResize() {
+            const container = document.getElementById('canvas-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        // --- MAIN ANIMATION LOOP ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (state.isPlaying) {
+                animationTime += clock.getDelta();
+            } else {
+                clock.getDelta(); // keep clock delta updated
+            }
+
+            // Re-render dynamic wave geometries
+            updateWaveGeometry();
+
+            // Update Orbit Controls
+            controls.update();
+
+            // Render 3D Scene
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>

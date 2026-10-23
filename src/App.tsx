@@ -220,11 +220,20 @@ export default function App() {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
           // Keep only truly custom user-created items (not default simulations)
-          const customUserAdded = parsed.filter(
-            (p: SimulationItem) =>
-              (p.id.startsWith("app-sim-") || p.id.startsWith("custom-")) &&
-              !STEM_SIMULATIONS.some((stem) => stem.id === p.id)
-          );
+          // And ensure Chemical Kinetics & Rate Laws simulations are categorized as Chemistry
+          const customUserAdded = parsed
+            .filter(
+              (p: SimulationItem) =>
+                (p.id.startsWith("app-sim-") || p.id.startsWith("custom-")) &&
+                !STEM_SIMULATIONS.some((stem) => stem.id === p.id)
+            )
+            .map((p: SimulationItem) => {
+              const lower = (p.title + " " + p.id).toLowerCase();
+              if (lower.includes("chemical kinetics") || lower.includes("rate law") || lower.includes("kinetics")) {
+                return { ...p, discipline: "chemistry" as const };
+              }
+              return p;
+            });
           return [...STEM_SIMULATIONS, ...customUserAdded];
         }
       }
@@ -233,6 +242,40 @@ export default function App() {
       return STEM_SIMULATIONS;
     }
   });
+
+  // Ensure Chemical Kinetics simulations are categorized under Chemistry and differentiate duplicates
+  useEffect(() => {
+    setCustomSimulations((prev) => {
+      let hasChanges = false;
+      let kineticsRateLawTitleCount = 0;
+      const updated = prev.map((sim) => {
+        let updatedSim = sim;
+        const lower = (sim.title + " " + sim.id).toLowerCase();
+        if (
+          (lower.includes("chemical kinetics") || lower.includes("rate law") || lower.includes("kinetics") || lower.includes("collision dynamics")) &&
+          updatedSim.discipline !== "chemistry"
+        ) {
+          hasChanges = true;
+          updatedSim = { ...updatedSim, discipline: "chemistry" as const };
+        }
+
+        // Differentiate duplicate simulations named "Chemical Kinetics & Integrated Rate Laws Simulation"
+        // Change only the name of the first one; leave the second one with its title
+        const isExactTitle =
+          sim.title.trim().toLowerCase() === "chemical kinetics & integrated rate laws simulation";
+        if (isExactTitle) {
+          kineticsRateLawTitleCount++;
+          if (kineticsRateLawTitleCount === 1) {
+            hasChanges = true;
+            updatedSim = { ...updatedSim, title: "Chemical Kinetics & Collision Dynamics Lab" };
+          }
+        }
+
+        return updatedSim;
+      });
+      return hasChanges ? updated : prev;
+    });
+  }, []);
 
   // Save simulations to localStorage
   useEffect(() => {

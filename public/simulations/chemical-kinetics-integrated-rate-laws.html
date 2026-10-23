@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chemical Kinetics & Integrated Rate Laws Simulation</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .font-mono-code { font-family: 'JetBrains Mono', monospace; }
+    input[type=range] { accent-color: #06b6d4; }
+    
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(51, 65, 85, 0.6);
+    }
+    
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+<body class="h-full flex flex-col overflow-hidden select-none bg-slate-950 text-slate-100">
+
+  <!-- Main Navigation Header -->
+  <header class="border-b border-slate-800/80 bg-slate-900/90 backdrop-blur px-5 py-3 flex flex-wrap items-center justify-between gap-4 z-30 shrink-0">
+    <div class="flex items-center gap-3">
+      <div class="p-2 bg-teal-500/10 border border-teal-500/30 rounded-xl text-teal-400">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+        </svg>
+      </div>
+      <div>
+        <h1 class="font-bold text-lg leading-tight text-slate-100 tracking-wide">Chemical Kinetics & Integrated Rate Laws</h1>
+        <p class="text-xs text-slate-400">AP / IB Chemistry Virtual Reaction Laboratory</p>
+      </div>
+    </div>
+
+    <!-- Live Telemetry Dashboard Quick Pills -->
+    <div class="flex items-center flex-wrap gap-2 text-xs font-mono-code">
+      <div class="bg-slate-800/80 border border-slate-700/60 px-3 py-1.5 rounded-lg flex items-center gap-2">
+        <span class="text-slate-400">[A] Conc:</span>
+        <span id="pill-conc" class="text-cyan-400 font-semibold">1.000 M</span>
+      </div>
+      <div class="bg-slate-800/80 border border-slate-700/60 px-3 py-1.5 rounded-lg flex items-center gap-2">
+        <span class="text-slate-400">Rate:</span>
+        <span id="pill-rate" class="text-emerald-400 font-semibold">0.050 M/s</span>
+      </div>
+      <div class="bg-slate-800/80 border border-slate-700/60 px-3 py-1.5 rounded-lg flex items-center gap-2">
+        <span class="text-slate-400">Half-Life (t½):</span>
+        <span id="pill-halflife" class="text-amber-400 font-semibold">13.86 s</span>
+      </div>
+      <div class="bg-slate-800/80 border border-slate-700/60 px-3 py-1.5 rounded-lg flex items-center gap-2">
+        <span class="text-slate-400">Time (t):</span>
+        <span id="pill-time" class="text-rose-400 font-semibold">0.0 s</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Viewport Layout -->
+  <div class="flex-1 flex flex-col lg:flex-row min-h-0 relative overflow-hidden">
+
+    <!-- Interactive Visualization Canvases (Left) -->
+    <main class="flex-1 flex flex-col p-4 gap-4 overflow-y-auto min-h-0 bg-slate-950">
+      
+      <!-- Top: Microscopic Collision Chamber Card -->
+      <div class="relative bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col min-h-[260px] lg:min-h-[290px]">
+        <div class="px-4 py-2.5 bg-slate-900/90 border-b border-slate-800/80 flex flex-wrap justify-between items-center text-xs text-slate-400 gap-2">
+          <div class="flex items-center gap-2 font-medium">
+            <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+            <span class="text-slate-200 font-semibold">Microscopic Collision Chamber (Molecular Dynamics: A → B)</span>
+          </div>
+          <div class="flex items-center gap-4 text-xs font-mono-code">
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-cyan-400 inline-block"></span> Reactant [A]</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-amber-400 inline-block"></span> Product [B]</span>
+            <span id="label-collision-stats" class="text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">Eff. Collisions: 0</span>
+          </div>
+        </div>
+
+        <div class="relative flex-1 w-full bg-slate-950 min-h-[200px]" id="chamber-container">
+          <canvas id="chamberCanvas" class="w-full h-full block"></canvas>
+          
+          <!-- Catalyst Badge Overlay -->
+          <div id="badge-catalyst" class="hidden absolute top-3 left-3 bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 px-3 py-1 rounded-xl text-xs font-semibold backdrop-blur flex items-center gap-1.5 shadow-lg">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span>Platinum Catalyst Active (Ea reduced by 25 kJ/mol)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom: Integrated Rate Law Multi-Plot Diagnostic Oscilloscope / Graph -->
+      <div class="relative bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col min-h-[300px] lg:min-h-[340px] flex-1">
+        <div class="px-4 py-2.5 bg-slate-900/90 border-b border-slate-800/80 flex flex-wrap justify-between items-center text-xs text-slate-400 gap-2">
+          <div class="flex items-center gap-2 font-medium">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="text-slate-200 font-semibold">Integrated Rate Law Diagnostic Graph: Linearization Analysis</span>
+          </div>
+
+          <!-- Plot Selector Tabs -->
+          <div class="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+            <button data-plot="conc" class="plot-tab active px-2.5 py-1 rounded-lg text-xs font-mono-code bg-cyan-600/30 text-cyan-300 border border-cyan-500/50">
+              [A] vs t (0-Order)
+            </button>
+            <button data-plot="ln" class="plot-tab px-2.5 py-1 rounded-lg text-xs font-mono-code text-slate-400 hover:text-slate-200">
+              ln[A] vs t (1st-Order)
+            </button>
+            <button data-plot="inv" class="plot-tab px-2.5 py-1 rounded-lg text-xs font-mono-code text-slate-400 hover:text-slate-200">
+              1/[A] vs t (2nd-Order)
+            </button>
+          </div>
+        </div>
+
+        <div class="relative flex-1 w-full bg-slate-950 min-h-[220px]" id="graph-container">
+          <canvas id="graphCanvas" class="w-full h-full block"></canvas>
+          
+          <!-- Corner Diagnostic HUD -->
+          <div class="absolute bottom-3 left-3 bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl backdrop-blur text-[11px] font-mono-code text-slate-300 space-y-1 shadow-lg pointer-events-none">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+              <span id="hud-equation">Equation: [A]t = -k·t + [A]0</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span id="hud-slope">Slope: -k = -0.050 M/s</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+              <span id="hud-r2">Linear Fit (R²): 1.0000 (Exact Match)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Right Sidebar Controls & Educational Settings Panel -->
+    <aside class="w-full lg:w-96 border-t lg:border-t-0 lg:border-l border-slate-800/80 bg-slate-900/95 p-5 flex flex-col gap-5 overflow-y-auto z-20 shrink-0">
+      
+      <!-- Section 1: Reaction Order Selector -->
+      <div class="space-y-2.5">
+        <label class="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+          <span>1. Reaction Order</span>
+          <span class="text-[10px] bg-teal-500/10 text-teal-400 border border-teal-500/20 px-2 py-0.5 rounded font-mono-code">Rate Law</span>
+        </label>
+        
+        <div class="grid grid-cols-3 gap-2 font-mono-code text-xs">
+          <button data-order="0" class="order-btn active p-2.5 rounded-xl border border-cyan-500 bg-cyan-600/20 text-cyan-300 font-bold transition flex flex-col items-center gap-0.5">
+            <span>Zero (0)</span>
+            <span class="text-[10px] font-normal text-slate-400">Rate = k</span>
+          </button>
+          <button data-order="1" class="order-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800/60 text-slate-300 font-bold transition flex flex-col items-center gap-0.5 hover:border-slate-600">
+            <span>First (1st)</span>
+            <span class="text-[10px] font-normal text-slate-400">Rate = k[A]</span>
+          </button>
+          <button data-order="2" class="order-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800/60 text-slate-300 font-bold transition flex flex-col items-center gap-0.5 hover:border-slate-600">
+            <span>Second (2nd)</span>
+            <span class="text-[10px] font-normal text-slate-400">Rate = k[A]²</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Section 2: Reaction Parameters Sliders -->
+      <div class="space-y-4 border-t border-slate-800 pt-4">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">2. Kinetic Parameters</span>
+          
+          <!-- Run / Pause & Reset Controls -->
+          <div class="flex items-center gap-1.5">
+            <button id="btn-play" class="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold rounded-lg text-xs transition flex items-center gap-1">
+              <span id="play-text">Pause</span>
+            </button>
+            <button id="btn-reset" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs transition">
+              Reset
+            </button>
+          </div>
+        </div>
+
+        <!-- Initial Concentration [A]0 Slider -->
+        <div class="space-y-1">
+          <div class="flex justify-between text-xs">
+            <label for="slider-a0" class="text-slate-300 font-medium">Initial Concentration [A]₀</label>
+            <span id="val-a0" class="font-mono-code text-cyan-400 font-semibold">1.00 M</span>
+          </div>
+          <input type="range" id="slider-a0" min="0.2" max="2.0" step="0.05" value="1.0" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+        </div>
+
+        <!-- Rate Constant k Slider -->
+        <div class="space-y-1">
+          <div class="flex justify-between text-xs">
+            <label for="slider-k" class="text-slate-300 font-medium">Rate Constant (k)</label>
+            <span id="val-k" class="font-mono-code text-emerald-400 font-semibold">0.050</span>
+          </div>
+          <input type="range" id="slider-k" min="0.01" max="0.20" step="0.005" value="0.05" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+          <div class="flex justify-between text-[10px] text-slate-400 font-mono-code">
+            <span id="k-units">Units: M·s⁻¹</span>
+            <span>Temperature Dependent</span>
+          </div>
+        </div>
+
+        <!-- Temperature T Slider -->
+        <div class="space-y-1">
+          <div class="flex justify-between text-xs">
+            <label for="slider-temp" class="text-slate-300 font-medium">Temperature (T)</label>
+            <span id="val-temp" class="font-mono-code text-amber-400 font-semibold">298 K (25°C)</span>
+          </div>
+          <input type="range" id="slider-temp" min="273" max="450" step="5" value="298" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+        </div>
+
+        <!-- Catalyst Toggle -->
+        <label class="flex items-center justify-between cursor-pointer p-2.5 rounded-xl bg-slate-800/40 border border-slate-800 hover:bg-slate-800/70 transition">
+          <div>
+            <div class="text-xs text-slate-300 font-medium">Add Catalyst (Pt / Surface)</div>
+            <div class="text-[10px] text-slate-400">Lowers Ea barrier, accelerates reaction</div>
+          </div>
+          <input type="checkbox" id="toggle-catalyst" class="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500/20 accent-emerald-500">
+        </label>
+      </div>
+
+      <!-- Section 3: Educational Guided Discovery Drawer -->
+      <div class="mt-auto border-t border-slate-800 pt-4">
+        <details class="group bg-slate-800/30 border border-slate-800 rounded-xl overflow-hidden text-xs" open>
+          <summary class="p-3 font-semibold text-slate-300 cursor-pointer flex justify-between items-center group-open:bg-slate-800/60 transition">
+            <span class="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+              Integrated Rate Law Principles
+            </span>
+            <svg class="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </summary>
+          <div class="p-3 space-y-2 text-slate-300 leading-relaxed border-t border-slate-800" id="guide-content">
+            <p><strong>Zero Order:</strong> Rate = k. Rate is independent of reactant concentration. Linear plot: <code>[A] vs t</code> with slope = -k. Half-life: <code>t½ = [A]₀ / 2k</code> (decreases over time).</p>
+            <p><strong>First Order:</strong> Rate = k[A]. Linear plot: <code>ln[A] vs t</code> with slope = -k. Half-life: <code>t½ = ln(2) / k = 0.693 / k</code> (constant, independent of [A]₀!).</p>
+            <p><strong>Second Order:</strong> Rate = k[A]². Linear plot: <code>1/[A] vs t</code> with positive slope = +k. Half-life: <code>t½ = 1 / (k·[A]₀)</code> (increases over time).</p>
+          </div>
+        </details>
+      </div>
+
+    </aside>
+
+  </div>
+
+  <!-- JavaScript Simulation Logic -->
+  <script>
+    // --- State Definition ---
+    const state = {
+      order: 0,           // 0: Zero-order, 1: First-order, 2: Second-order
+      plotType: 'conc',   // 'conc': [A] vs t, 'ln': ln[A] vs t, 'inv': 1/[A] vs t
+      a0: 1.0,            // Initial concentration [A]0 (M)
+      baseK: 0.05,        // User-set rate constant base
+      k: 0.05,            // Temperature-adjusted rate constant
+      tempK: 298,         // Temperature in Kelvin
+      hasCatalyst: false, // Lowers activation energy
+      time: 0,            // Elapsed reaction time in seconds
+      isRunning: true,
+      dataPoints: [],     // Historic time-series data
+      particles: [],
+      effectiveCollisions: 0,
+      totalCollisions: 0
+    };
+
+    // DOM Elements
+    const chamberCanvas = document.getElementById('chamberCanvas');
+    const cCtx = chamberCanvas.getContext('2d');
+    const graphCanvas = document.getElementById('graphCanvas');
+    const gCtx = graphCanvas.getContext('2d');
+
+    const chamberContainer = document.getElementById('chamber-container');
+    const graphContainer = document.getElementById('graph-container');
+
+    const pillConc = document.getElementById('pill-conc');
+    const pillRate = document.getElementById('pill-rate');
+    const pillHalflife = document.getElementById('pill-halflife');
+    const pillTime = document.getElementById('pill-time');
+
+    const sliderA0 = document.getElementById('slider-a0');
+    const sliderK = document.getElementById('slider-k');
+    const sliderTemp = document.getElementById('slider-temp');
+    const valA0 = document.getElementById('val-a0');
+    const valK = document.getElementById('val-k');
+    const valTemp = document.getElementById('val-temp');
+    const kUnits = document.getElementById('k-units');
+    const toggleCatalyst = document.getElementById('toggle-catalyst');
+    const badgeCatalyst = document.getElementById('badge-catalyst');
+
+    const btnPlay = document.getElementById('btn-play');
+    const playText = document.getElementById('play-text');
+    const btnReset = document.getElementById('btn-reset');
+
+    const hudEquation = document.getElementById('hud-equation');
+    const hudSlope = document.getElementById('hud-slope');
+    const hudR2 = document.getElementById('hud-r2');
+    const labelCollisionStats = document.getElementById('label-collision-stats');
+
+    // --- Particle Physics in Chamber ---
+    const MAX_PARTICLES = 100;
+
+    function initParticles() {
+      state.particles = [];
+      const width = chamberCanvas.width;
+      const height = chamberCanvas.height;
+      const speedScale = Math.sqrt(state.tempK / 300) * 1.6;
+
+      const totalA = Math.round(state.a0 * 45); // Scale count with concentration
+      for (let i = 0; i < totalA; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = (0.6 + Math.random() * 0.8) * speedScale;
+        state.particles.push({
+          id: i,
+          x: 20 + Math.random() * (width - 40),
+          y: 20 + Math.random() * (height - 40),
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          type: 'A',
+          radius: 5.5
+        });
+      }
+    }
+
+    function calculateCurrentConcentration(t) {
+      const k = state.k;
+      const a0 = state.a0;
+
+      if (state.order === 0) {
+        // [A]t = [A]0 - kt
+        return Math.max(0.0001, a0 - k * t);
+      } else if (state.order === 1) {
+        // [A]t = [A]0 * e^(-kt)
+        return Math.max(0.0001, a0 * Math.exp(-k * t));
+      } else {
+        // 1/[A]t = 1/[A]0 + kt => [A]t = 1 / (1/[A]0 + kt)
+        return Math.max(0.0001, 1.0 / (1.0 / a0 + k * t));
+      }
+    }
+
+    function calculateInstantRate(conc) {
+      const k = state.k;
+      if (state.order === 0) {
+        return conc > 0.001 ? k : 0;
+      } else if (state.order === 1) {
+        return k * conc;
+      } else {
+        return k * conc * conc;
+      }
+    }
+
+    function calculateHalfLife() {
+      const k = state.k;
+      const a0 = state.a0;
+      if (k <= 0) return Infinity;
+
+      if (state.order === 0) {
+        return a0 / (2 * k);
+      } else if (state.order === 1) {
+        return Math.LN2 / k;
+      } else {
+        return 1.0 / (k * a0);
+      }
+    }
+
+    function updateKValue() {
+      // Arrhenius temperature scaling: k(T) = k_base * exp(-Ea/R * (1/T - 1/298))
+      const R = 8.314;
+      const Ea = state.hasCatalyst ? 25000 : 50000; // J/mol
+      const factor = Math.exp((-Ea / R) * (1 / state.tempK - 1 / 298));
+      state.k = Math.max(0.001, state.baseK * factor);
+    }
+
+    // --- Canvas Resizing ---
+    function resizeCanvases() {
+      const cRect = chamberContainer.getBoundingClientRect();
+      chamberCanvas.width = cRect.width;
+      chamberCanvas.height = cRect.height;
+
+      const gRect = graphContainer.getBoundingClientRect();
+      graphCanvas.width = gRect.width;
+      graphCanvas.height = gRect.height;
+
+      initParticles();
+    }
+
+    // --- Render Collision Chamber ---
+    function renderChamber(dt) {
+      const width = chamberCanvas.width;
+      const height = chamberCanvas.height;
+
+      cCtx.clearRect(0, 0, width, height);
+
+      // Boundary outline
+      cCtx.strokeStyle = state.hasCatalyst ? '#10b981' : '#334155';
+      cCtx.lineWidth = 2.5;
+      cCtx.strokeRect(10, 10, width - 20, height - 20);
+
+      // Current concentration dictates particle population ratio
+      const currentConc = calculateCurrentConcentration(state.time);
+      const fractionRemaining = currentConc / state.a0;
+
+      // Update particle positions
+      const speedScale = Math.sqrt(state.tempK / 300) * (state.isRunning ? 1 : 0);
+
+      for (let i = 0; i < state.particles.length; i++) {
+        const p = state.particles[i];
+        p.x += p.vx * speedScale;
+        p.y += p.vy * speedScale;
+
+        // Bounce off walls
+        if (p.x - p.radius < 10) { p.x = 10 + p.radius; p.vx = -p.vx; }
+        else if (p.x + p.radius > width - 10) { p.x = width - 10 - p.radius; p.vx = -p.vx; }
+
+        if (p.y - p.radius < 10) { p.y = 10 + p.radius; p.vy = -p.vy; }
+        else if (p.y + p.radius > height - 10) { p.y = height - 10 - p.radius; p.vy = -p.vy; }
+
+        // Transition particle type based on fraction remaining
+        const thresholdIndex = Math.round(state.particles.length * fractionRemaining);
+        if (i >= thresholdIndex && p.type === 'A') {
+          p.type = 'B';
+          state.effectiveCollisions++;
+          // Flash effect
+          cCtx.fillStyle = 'rgba(251, 191, 36, 0.4)';
+          cCtx.beginPath();
+          cCtx.arc(p.x, p.y, p.radius * 3, 0, Math.PI * 2);
+          cCtx.fill();
+        } else if (i < thresholdIndex && p.type === 'B') {
+          p.type = 'A';
+        }
+      }
+
+      // Draw Particles
+      for (const p of state.particles) {
+        cCtx.beginPath();
+        cCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        if (p.type === 'A') {
+          cCtx.fillStyle = '#22d3ee'; // Cyan Reactant A
+          cCtx.shadowColor = '#06b6d4';
+        } else {
+          cCtx.fillStyle = '#f59e0b'; // Amber Product B
+          cCtx.shadowColor = '#d97706';
+        }
+        cCtx.shadowBlur = 4;
+        cCtx.fill();
+        cCtx.shadowBlur = 0;
+
+        cCtx.strokeStyle = '#ffffff';
+        cCtx.lineWidth = 1;
+        cCtx.stroke();
+      }
+
+      labelCollisionStats.textContent = `Reacted: ${state.particles.filter(p => p.type === 'B').length} / ${state.particles.length} molecules`;
+    }
+
+    // --- Render Diagnostic Graph ---
+    function renderGraph() {
+      const width = graphCanvas.width;
+      const height = graphCanvas.height;
+
+      gCtx.clearRect(0, 0, width, height);
+
+      // Margins
+      const padL = 60;
+      const padR = 25;
+      const padT = 25;
+      const padB = 40;
+
+      const plotW = width - padL - padR;
+      const plotH = height - padT - padB;
+
+      // Draw Grid Lines
+      gCtx.strokeStyle = '#1e293b';
+      gCtx.lineWidth = 1;
+
+      for (let x = 0; x <= 6; x++) {
+        const px = padL + (x / 6) * plotW;
+        gCtx.beginPath();
+        gCtx.moveTo(px, padT);
+        gCtx.lineTo(px, padT + plotH);
+        gCtx.stroke();
+      }
+
+      for (let y = 0; y <= 5; y++) {
+        const py = padT + (y / 5) * plotH;
+        gCtx.beginPath();
+        gCtx.moveTo(padL, py);
+        gCtx.lineTo(padL + plotW, py);
+        gCtx.stroke();
+      }
+
+      // Axes
+      gCtx.strokeStyle = '#64748b';
+      gCtx.lineWidth = 1.5;
+      gCtx.beginPath();
+      gCtx.moveTo(padL, padT);
+      gCtx.lineTo(padL, padT + plotH);
+      gCtx.lineTo(padL + plotW, padT + plotH);
+      gCtx.stroke();
+
+      // Axis Labels & Title
+      gCtx.fillStyle = '#94a3b8';
+      gCtx.font = '10px JetBrains Mono, monospace';
+      gCtx.textAlign = 'center';
+      gCtx.fillText('Time t (seconds) →', padL + plotW / 2, height - 10);
+
+      const maxTime = Math.max(30, state.time * 1.25);
+
+      // Y-axis range based on plotType
+      let yMin = 0, yMax = 2.0, yLabel = '[A] (M)';
+      if (state.plotType === 'conc') {
+        yMin = 0;
+        yMax = Math.max(2.0, state.a0 * 1.1);
+        yLabel = '[A] (M)';
+      } else if (state.plotType === 'ln') {
+        yMin = -4.5;
+        yMax = Math.max(1.0, Math.log(state.a0) + 0.5);
+        yLabel = 'ln[A]';
+      } else {
+        yMin = 0;
+        yMax = 12.0;
+        yLabel = '1/[A] (M⁻¹)';
+      }
+
+      gCtx.save();
+      gCtx.translate(16, padT + plotH / 2);
+      gCtx.rotate(-Math.PI / 2);
+      gCtx.textAlign = 'center';
+      gCtx.fillText(yLabel, 0, 0);
+      gCtx.restore();
+
+      // Y-axis tick marks
+      gCtx.textAlign = 'right';
+      for (let i = 0; i <= 5; i++) {
+        const val = yMin + ((5 - i) / 5) * (yMax - yMin);
+        const py = padT + (i / 5) * plotH;
+        gCtx.fillText(val.toFixed(state.plotType === 'ln' ? 1 : 2), padL - 8, py + 3);
+      }
+
+      // Function to transform (t, value) to pixel coords
+      function toPixel(t, val) {
+        const px = padL + (t / maxTime) * plotW;
+        const py = padT + plotH - ((val - yMin) / (yMax - yMin)) * plotH;
+        return { px, py };
+      }
+
+      // Draw Theoretical Trendline (Curve or Straight Line)
+      gCtx.save();
+      gCtx.lineWidth = 2.5;
+
+      const isCurrentOrderLinear =
+        (state.order === 0 && state.plotType === 'conc') ||
+        (state.order === 1 && state.plotType === 'ln') ||
+        (state.order === 2 && state.plotType === 'inv');
+
+      if (isCurrentOrderLinear) {
+        gCtx.strokeStyle = '#10b981'; // Emerald Green for Linear Signature
+        gCtx.shadowColor = '#10b981';
+      } else {
+        gCtx.strokeStyle = '#38bdf8'; // Sky Blue for Non-Linear Curves
+        gCtx.shadowColor = '#38bdf8';
+      }
+      gCtx.shadowBlur = 6;
+      gCtx.beginPath();
+
+      const numSteps = 100;
+      for (let s = 0; s <= numSteps; s++) {
+        const t = (s / numSteps) * maxTime;
+        const c = calculateCurrentConcentration(t);
+        let val = c;
+        if (state.plotType === 'ln') val = Math.log(Math.max(1e-5, c));
+        else if (state.plotType === 'inv') val = 1.0 / Math.max(1e-5, c);
+
+        const { px, py } = toPixel(t, Math.max(yMin, Math.min(yMax, val)));
+        if (s === 0) gCtx.moveTo(px, py);
+        else gCtx.lineTo(px, py);
+      }
+      gCtx.stroke();
+      gCtx.restore();
+
+      // Draw Progressing Real-time Point Marker
+      const currConc = calculateCurrentConcentration(state.time);
+      let currVal = currConc;
+      if (state.plotType === 'ln') currVal = Math.log(Math.max(1e-5, currConc));
+      else if (state.plotType === 'inv') currVal = 1.0 / Math.max(1e-5, currConc);
+
+      const marker = toPixel(state.time, Math.max(yMin, Math.min(yMax, currVal)));
+      gCtx.fillStyle = '#f43f5e';
+      gCtx.beginPath();
+      gCtx.arc(marker.px, marker.py, 5, 0, Math.PI * 2);
+      gCtx.fill();
+      gCtx.strokeStyle = '#ffffff';
+      gCtx.lineWidth = 2;
+      gCtx.stroke();
+    }
+
+    // --- UI Telemetry Updates ---
+    function updateTelemetry() {
+      const conc = calculateCurrentConcentration(state.time);
+      const rate = calculateInstantRate(conc);
+      const halfLife = calculateHalfLife();
+
+      pillConc.textContent = `${conc.toFixed(3)} M`;
+      pillRate.textContent = `${rate.toFixed(4)} M/s`;
+      pillHalflife.textContent = halfLife === Infinity ? 'Undefined' : `${halfLife.toFixed(2)} s`;
+      pillTime.textContent = `${state.time.toFixed(1)} s`;
+
+      valA0.textContent = `${state.a0.toFixed(2)} M`;
+      valK.textContent = state.baseK.toFixed(3);
+      valTemp.textContent = `${state.tempK} K (${(state.tempK - 273.15).toFixed(0)}°C)`;
+
+      if (state.order === 0) {
+        kUnits.textContent = 'Units: M·s⁻¹';
+      } else if (state.order === 1) {
+        kUnits.textContent = 'Units: s⁻¹';
+      } else {
+        kUnits.textContent = 'Units: M⁻¹·s⁻¹';
+      }
+
+      // Update Diagnostic HUD text
+      const isLinear =
+        (state.order === 0 && state.plotType === 'conc') ||
+        (state.order === 1 && state.plotType === 'ln') ||
+        (state.order === 2 && state.plotType === 'inv');
+
+      if (state.plotType === 'conc') {
+        hudEquation.textContent = 'Plot: [A] vs t | Form: [A]t = -k·t + [A]0';
+        hudSlope.textContent = `Slope = ${state.order === 0 ? '-k = -' + state.k.toFixed(3) : 'Variable (Curved)'}`;
+      } else if (state.plotType === 'ln') {
+        hudEquation.textContent = 'Plot: ln[A] vs t | Form: ln[A]t = -k·t + ln[A]0';
+        hudSlope.textContent = `Slope = ${state.order === 1 ? '-k = -' + state.k.toFixed(3) : 'Variable (Curved)'}`;
+      } else {
+        hudEquation.textContent = 'Plot: 1/[A] vs t | Form: 1/[A]t = k·t + 1/[A]0';
+        hudSlope.textContent = `Slope = ${state.order === 2 ? '+k = +' + state.k.toFixed(3) : 'Variable (Curved)'}`;
+      }
+
+      if (isLinear) {
+        hudR2.textContent = 'Linear Fit (R²): 1.0000 (Exact Straight Line Signature)';
+        hudR2.className = 'text-emerald-400 font-semibold';
+      } else {
+        hudR2.textContent = 'Linear Fit (R²): < 0.9400 (Non-Linear Quadratic / Exponential Curve)';
+        hudR2.className = 'text-rose-400 font-semibold';
+      }
+    }
+
+    // --- Event Listeners ---
+    document.querySelectorAll('.order-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.order-btn').forEach(b => {
+          b.classList.remove('active', 'border-cyan-500', 'bg-cyan-600/20', 'text-cyan-300');
+          b.classList.add('border-slate-700', 'bg-slate-800/60', 'text-slate-300');
+        });
+
+        const target = e.currentTarget;
+        target.classList.add('active', 'border-cyan-500', 'bg-cyan-600/20', 'text-cyan-300');
+        target.classList.remove('border-slate-700', 'bg-slate-800/60', 'text-slate-300');
+
+        state.order = parseInt(target.dataset.order);
+        state.time = 0;
+        initParticles();
+        updateKValue();
+        updateTelemetry();
+      });
+    });
+
+    document.querySelectorAll('.plot-tab').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.plot-tab').forEach(b => {
+          b.classList.remove('active', 'bg-cyan-600/30', 'text-cyan-300', 'border', 'border-cyan-500/50');
+          b.classList.add('text-slate-400');
+        });
+
+        const target = e.currentTarget;
+        target.classList.add('active', 'bg-cyan-600/30', 'text-cyan-300', 'border', 'border-cyan-500/50');
+        target.classList.remove('text-slate-400');
+
+        state.plotType = target.dataset.plot;
+        updateTelemetry();
+      });
+    });
+
+    sliderA0.addEventListener('input', (e) => {
+      state.a0 = parseFloat(e.target.value);
+      state.time = 0;
+      initParticles();
+      updateTelemetry();
+    });
+
+    sliderK.addEventListener('input', (e) => {
+      state.baseK = parseFloat(e.target.value);
+      updateKValue();
+      updateTelemetry();
+    });
+
+    sliderTemp.addEventListener('input', (e) => {
+      state.tempK = parseFloat(e.target.value);
+      updateKValue();
+      updateTelemetry();
+    });
+
+    toggleCatalyst.addEventListener('change', (e) => {
+      state.hasCatalyst = e.target.checked;
+      badgeCatalyst.classList.toggle('hidden', !state.hasCatalyst);
+      updateKValue();
+      updateTelemetry();
+    });
+
+    btnPlay.addEventListener('click', () => {
+      state.isRunning = !state.isRunning;
+      playText.textContent = state.isRunning ? 'Pause' : 'Resume';
+    });
+
+    btnReset.addEventListener('click', () => {
+      state.time = 0;
+      initParticles();
+      updateTelemetry();
+    });
+
+    // --- Animation Loop ---
+    let lastTime = performance.now();
+
+    function loop(currentTime) {
+      const dt = (currentTime - lastTime) / 1000;
+      lastTime = currentTime;
+
+      if (state.isRunning) {
+        state.time += dt;
+      }
+
+      renderChamber(dt);
+      renderGraph();
+      updateTelemetry();
+
+      requestAnimationFrame(loop);
+    }
+
+    // --- Initialization ---
+    window.addEventListener('resize', resizeCanvases);
+    window.addEventListener('load', () => {
+      resizeCanvases();
+      updateKValue();
+      updateTelemetry();
+      requestAnimationFrame(loop);
+    });
+  </script>
+</body>
+</html>
