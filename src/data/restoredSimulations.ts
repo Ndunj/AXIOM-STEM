@@ -2229,5 +2229,293 @@ export const RESTORED_SIMULATIONS: SimulationItem[] = [
     ],
     isHtmlApp: true,
     htmlUrl: "/simulations/3d-wave-polarization-lab.html"
+  },
+
+  // 27. PHYSICS / OPTICS: 3D Optics Prism Lab - Full Dynamic Angles & Motion Controls
+  {
+    id: "sim-3d-optics-prism-lab",
+    title: "3D Optics Prism Lab: Dispersion & Dynamic Angles",
+    tagline: "Triangular glass prism optics: Snell's Law, chromatic dispersion spectrum, angle of emergence (θe), and total deviation (δ)",
+    discipline: "physics",
+    gradeLevel: ["Middle School (6-8)", "High School (9-12)", "AP / IB STEM"],
+    standards: ["NGSS MS-PS4-2", "NGSS HS-PS4-1", "AP Physics 2 Unit 6", "IB Physics Topic 4"],
+    description: "An interactive 3D and ray-tracing optics laboratory exploring light refraction and chromatic dispersion through triangular prisms. Manipulate the incidence angle (θi), prism apex angle (A), and glass medium (Crown Glass n=1.52, Dense Flint Glass n=1.62, Diamond n=2.42). Inspect real-time multi-wavelength dispersion (Red 700nm to Violet 400nm), angle of emergence (θe), total deviation angle (δ = θi + θe - A), normal incidence at θi = 0°, minimum deviation geometry, and Total Internal Reflection (TIR) conditions.",
+    learningObjectives: [
+      "Demonstrate Snell's Law of refraction across dual non-parallel glass interfaces of a triangular prism",
+      "Calculate angle of emergence (θe) and total ray deviation (δ = θi + θe - A) as functions of incidence angle and apex angle",
+      "Explain chromatic dispersion using wavelength-dependent refractive indices n(λ) (Cauchy dispersion)",
+      "Identify the conditions for minimum deviation where the light ray traverses the prism symmetrically (r₁ = r₂ = A/2)",
+      "Observe and explain Total Internal Reflection (TIR) when the internal angle r₂ exceeds the critical angle θc"
+    ],
+    thumbnailGradient: "from-sky-600 via-indigo-700 to-slate-950",
+    badgeColor: "bg-sky-500/10 text-sky-300 border-sky-500/20",
+    iconName: "Sparkles",
+    rating: 4.99,
+    reviewCount: 76,
+    teacherCount: 340,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 200,
+      districtUnlimited: 400
+    },
+    features: [
+      "Dynamic ray-tracing canvas with continuous pulse propagation and slow-motion speed control",
+      "Interactive angle of incidence (0°-75°) and prism apex angle (30°-80°) sliders with normal line references",
+      "Multi-material optical media: Crown Glass (1.52), Dense Flint Glass (1.62), and Diamond (2.42)",
+      "Real-time Fraunhofer spectral table: 7 wavelengths (Red to Violet) with individual refractive indices and deviation angles",
+      "Live telemetry overlays for emergence angle θe, total deviation δ, and Total Internal Reflection alerts"
+    ],
+    parameterDefaults: {
+      thetaI: 0,
+      apexAngle: 60,
+      baseN: 1.62,
+      speed: 0.3
+    },
+    parameterControls: [
+      {
+        key: "thetaI",
+        label: "Angle of Incidence (θi)",
+        min: 0,
+        max: 75,
+        step: 1,
+        unit: "°",
+        description: "Angle between incident light ray and the left face normal"
+      },
+      {
+        key: "apexAngle",
+        label: "Prism Apex Angle (A)",
+        min: 30,
+        max: 80,
+        step: 1,
+        unit: "°",
+        description: "Vertex angle of the triangular glass prism"
+      },
+      {
+        key: "speed",
+        label: "Light Propagation Speed",
+        min: 0.05,
+        max: 1.0,
+        step: 0.05,
+        unit: "x",
+        description: "Wavefront pulse animation velocity multiplier"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-prism-1",
+        title: "Normal Incidence Verification",
+        instruction: "Set angle of incidence θi = 0° and observe how the light ray passes through Face 1 without initial bending (r₁ = 0°).",
+        targetMetric: "Incident Refraction Angle",
+        targetValue: 0,
+        tolerance: 0.1,
+        currentValueKey: "r1_deg",
+        rewardBadge: "Normal Ray Master"
+      },
+      {
+        id: "ch-prism-2",
+        title: "Total Internal Reflection Trap",
+        instruction: "Select Dense Flint Glass (n = 1.62) or Diamond (n = 2.42) with Apex Angle A = 60° to induce Total Internal Reflection at Face 2.",
+        targetMetric: "Total Internal Reflection",
+        targetValue: 1,
+        tolerance: 0,
+        currentValueKey: "tir_active",
+        rewardBadge: "Critical Angle Explorer"
+      }
+    ],
+    previewFacts: [
+      "Isaac Newton demonstrated in 1666 that white light is a composite of all spectral colors by using a second inverted prism to recombine the dispersed spectrum back into pure white light.",
+      "Prisms are used in binoculars (Porro and roof prisms) instead of flat mirrors because Total Internal Reflection offers 100% light reflectivity without silvering degradation."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/3d-optics-prism-lab.html"
+  },
+
+  // 28. PHYSICS / WAVES & OPTICS: Physics Ripple Tank Simulation
+  {
+    id: "sim-physics-ripple-tank-simulation",
+    title: "Physics Ripple Tank: 2D Wave Propagation Lab",
+    tagline: "2D finite-difference wave tank: single/double-slit diffraction, refraction lenses, parabolic reflectors, and dynamic obstacle drawing",
+    discipline: "physics",
+    gradeLevel: ["Middle School (6-8)", "High School (9-12)", "AP / IB STEM"],
+    standards: ["NGSS MS-PS4-2", "NGSS HS-PS4-1", "AP Physics 1 Unit 10", "IB Physics Topic 4 & 9"],
+    description: "A high-performance real-time 2D wave mechanics ripple tank solving the wave equation via a discrete 5-point Laplacian stencil with Verlet time integration and absorbing boundary conditions. Interactive tools allow drawing reflective barrier walls, placing oscillating point/plane sources, creating refractor zones (slower wave velocity medium for Snell's Law), and erasing obstacles. Explore classic wave presets including Single-Slit Diffraction (Huygens-Fresnel principle), Double-Slit Interference (nodal/antinodal fringes), Refraction through a convex lens, and Parabolic Mirror focal reflections with customizable color palettes (Cyan realistic, Rainbow, Grayscale shadowgraph, Thermal heatmap).",
+    learningObjectives: [
+      "Model 2D wave propagation, wave interference, and superposition using numerical solution of the wave equation",
+      "Demonstrate Huygens' principle and diffraction through narrow apertures (single-slit) and around obstacle edges",
+      "Observe constructive and destructive interference fringes (antinodal and nodal lines) from coherent double-point and double-slit sources",
+      "Verify wave refraction and wave speed reduction (v = f·λ) across medium boundaries with curved convex lens geometries",
+      "Analyze parabolic reflection, focal point convergence, and plane wave collimation"
+    ],
+    thumbnailGradient: "from-cyan-600 via-blue-700 to-slate-950",
+    badgeColor: "bg-cyan-500/10 text-cyan-300 border-cyan-500/20",
+    iconName: "Waves",
+    rating: 4.99,
+    reviewCount: 92,
+    teacherCount: 410,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 200,
+      districtUnlimited: 400
+    },
+    features: [
+      "2D discrete Laplacian wave equation solver with Verlet integration and absorbing boundary damping",
+      "Interactive brush tools: Pulse Source, Reflective Wall, Refractor Zone (shallow water slow medium), and Eraser",
+      "Preset environments: Empty Tank, Single Slit Diffraction, Double Slit Interference, Refraction (Convex Lens), and Parabolic Reflector",
+      "Source configurations: Single Point, Coherent Double Point, Continuous Plane Wave, and Out-of-Phase Dipole",
+      "Adjustable wave physics sliders: Frequency (0.1-4.0 Hz), Damping loss (0.950-0.999), and Wave Speed (0.2-2.0)",
+      "Multi-palette visualization: Cyan realistic water, Rainbow spectrum, Grayscale shadowgraph, and Thermal heatmap"
+    ],
+    parameterDefaults: {
+      frequency: 1.5,
+      damping: 0.992,
+      waveSpeed: 1.0,
+      tool: "source",
+      palette: "cyan"
+    },
+    parameterControls: [
+      {
+        key: "frequency",
+        label: "Wave Frequency",
+        min: 0.1,
+        max: 4.0,
+        step: 0.1,
+        unit: "Hz",
+        description: "Oscillation frequency of continuous wave sources"
+      },
+      {
+        key: "damping",
+        label: "Damping Factor (Energy Loss)",
+        min: 0.950,
+        max: 0.999,
+        step: 0.001,
+        unit: "",
+        description: "Boundary and fluid viscous attenuation factor"
+      },
+      {
+        key: "waveSpeed",
+        label: "Wave Propagation Speed",
+        min: 0.2,
+        max: 2.0,
+        step: 0.1,
+        unit: "x",
+        description: "Base wave phase velocity multiplier"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-ripple-1",
+        title: "Observe Double-Slit Nodal Lines",
+        instruction: "Select Double Slit Interference preset and identify the dark nodal lines where crests meet troughs in destructive interference.",
+        targetMetric: "Double Slit Active",
+        targetValue: 1,
+        tolerance: 0,
+        currentValueKey: "double_slit_preset",
+        rewardBadge: "Interference Investigator"
+      },
+      {
+        id: "ch-ripple-2",
+        title: "Focal Convergence in Parabolic Mirror",
+        instruction: "Select Parabolic Mirror preset and observe how reflected wave crests focus into a single intense focal point.",
+        targetMetric: "Parabolic Focus Active",
+        targetValue: 1,
+        tolerance: 0,
+        currentValueKey: "parabola_preset",
+        rewardBadge: "Acoustic Optics Specialist"
+      }
+    ],
+    previewFacts: [
+      "Physical ripple tanks use shallow water illuminated from above; light refracted through wave crests (acting as miniature cylindrical lenses) casts bright lines onto a frosted glass screen below.",
+      "Christian Huygens proposed in 1678 that every point on a wavefront acts as a secondary source of spherical wavelets, explaining why water waves spread out radially when passing through narrow harbor gaps."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/physics-ripple-tank-simulation.html"
+  },
+
+  // 29. PHYSICS / ELECTROMAGNETISM: Gold-Leaf Electroscope Simulator
+  {
+    id: "sim-gold-leaf-electroscope",
+    title: "Gold-Leaf Electroscope: Electrostatic Induction & Conduction Lab",
+    tagline: "Interactive electrostatics: electrostatic induction, contact conduction, grounding, Coulomb repulsion, and gold-leaf deflection",
+    discipline: "physics",
+    gradeLevel: ["Middle School (6-8)", "High School (9-12)", "AP / IB STEM"],
+    standards: ["NGSS MS-PS2-3", "NGSS HS-PS2-4", "AP Physics 2 Unit 7", "IB Physics Topic 5 & 10"],
+    description: "A high-fidelity electrostatic laboratory simulating a gold-leaf electroscope. Explore charge detection, contact conduction, electrostatic induction, and grounding. Charge glass rods (+) by rubbing silk or rubber rods (-) by rubbing fur, drag charged rods near or touch the metal cap, observe free electron migration and Coulomb repulsive force balancing gravitational torque on the delicate gold leaf. Features interactive grounding touch tools, proof planes, real-time electric field line overlays, protractor angular scale, force vectors (Fe vs Fg), and live telemetry for leaf deflection angle (°), net charge (nC), and cap voltage (V).",
+    learningObjectives: [
+      "Distinguish between charging by contact (conduction) versus charging by proximity (electrostatic induction)",
+      "Explain how free electrons redistribute within conducting brass components when influenced by external electric fields",
+      "Demonstrate permanent inductive charging via grounding touch while an external charged rod remains in proximity",
+      "Model how Coulomb's repulsive force between like charges on the brass stem and gold leaf balances gravitational restoring torque",
+      "Use proof planes and electroscopes to verify charge polarity, charge distribution, and shielding effects"
+    ],
+    thumbnailGradient: "from-amber-600 via-yellow-700 to-slate-950",
+    badgeColor: "bg-amber-500/10 text-amber-300 border-amber-500/20",
+    iconName: "Zap",
+    rating: 4.99,
+    reviewCount: 84,
+    teacherCount: 370,
+    licenseType: "Academic STEM Classroom & Institutional License",
+    pricing: {
+      singleTeacher: 19,
+      schoolDepartment: 200,
+      districtUnlimited: 400
+    },
+    features: [
+      "Interactive draggable charged rods (Glass positive, Rubber negative) and proof plane tool",
+      "Friction charging station: Rub silk (positive) or fur (negative) with adjustable charge magnitude (-25 to +25 nC)",
+      "One-click grounding finger tool to touch cap, bleed charge, and demonstrate induction charging",
+      "Full electrostatic visualization: subatomic charge icons (+/-), electric field lines, angular protractor, and force vectors",
+      "Guided demonstration presets: Electrostatic Induction, Charge Transfer (Conduction), and Permanent Inductive Charging",
+      "Live telemetry readouts: leaf deflection angle (°), electroscope net charge (nC), and cap potential (V)"
+    ],
+    parameterDefaults: {
+      rodCharge: 10.0,
+      activeTool: "rodGlass",
+      showCharges: true,
+      showEField: true,
+      showProtractor: true,
+      showVectors: true,
+      shieldGrounded: true
+    },
+    parameterControls: [
+      {
+        key: "rodCharge",
+        label: "Rod Charge Magnitude",
+        min: -25.0,
+        max: 25.0,
+        step: 0.5,
+        unit: "nC",
+        description: "Static electric charge accumulated on the excitation rod"
+      }
+    ],
+    sampleChallenges: [
+      {
+        id: "ch-electroscope-1",
+        title: "Permanent Charging by Induction",
+        instruction: "Bring a negatively charged rubber rod near the cap, touch the cap with the grounding finger, remove the finger, then remove the rod to leave the electroscope permanently positive.",
+        targetMetric: "Permanent Positive Charge",
+        targetValue: 1,
+        tolerance: 0,
+        currentValueKey: "inductive_positive_charge",
+        rewardBadge: "Induction Specialist"
+      },
+      {
+        id: "ch-electroscope-2",
+        title: "Conduction Charge Transfer",
+        instruction: "Touch a positively charged glass rod directly to the brass cap to transfer net charge and achieve a steady deflection angle > 30°.",
+        targetMetric: "Conduction Deflection Angle",
+        targetValue: 30,
+        tolerance: 5,
+        currentValueKey: "conduction_leaf_angle",
+        rewardBadge: "Electrostatics Master"
+      }
+    ],
+    previewFacts: [
+      "Abraham Bennet invented the gold-leaf electroscope in 1787; its sensitivity was crucial for early discoveries in static electricity, radioactivity, and cosmic rays (Victor Hess in 1912).",
+      "Gold is used for the leaves because it can be hammered into sheets only 100 nanometers thick (gold leaf), allowing minute electrostatic forces to easily overcome gravitational weight."
+    ],
+    isHtmlApp: true,
+    htmlUrl: "/simulations/gold-leaf-electroscope-simulation.html"
   }
 ];

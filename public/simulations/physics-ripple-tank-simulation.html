@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Physics Ripple Tank Simulation</title>
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --panel-bg: rgba(30, 41, 59, 0.85);
+      --panel-border: rgba(255, 255, 255, 0.1);
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      display: flex;
+    }
+
+    #app-container {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    #viewport-container {
+      flex-grow: 1;
+      height: 100%;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #050b14;
+    }
+
+    canvas {
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      cursor: crosshair;
+      border-radius: 4px;
+    }
+
+    #sidebar {
+      width: 340px;
+      height: 100%;
+      background: var(--panel-bg);
+      backdrop-filter: blur(12px);
+      border-left: 1px solid var(--panel-border);
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+      overflow-y: auto;
+    }
+
+    .header {
+      padding: 20px;
+      border-bottom: 1px solid var(--panel-border);
+    }
+
+    .header h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.5px;
+    }
+
+    .header p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .section {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--panel-border);
+    }
+
+    .section-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .control-group {
+      margin-bottom: 14px;
+    }
+
+    .control-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .label-val {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+    }
+
+    .value-display {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 5px;
+      border-radius: 3px;
+      background: #334155;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .btn-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .btn {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--panel-border);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn.active {
+      background: var(--accent);
+      color: #0f172a;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+    }
+
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+    select {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: 6px;
+      background: #1e293b;
+      border: 1px solid var(--panel-border);
+      color: var(--text-main);
+      font-size: 0.85rem;
+      outline: none;
+      cursor: pointer;
+    }
+
+    #overlay-info {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(8px);
+      padding: 10px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--panel-border);
+      font-size: 0.8rem;
+      pointer-events: none;
+    }
+
+    #overlay-info p {
+      margin-bottom: 4px;
+    }
+
+    #overlay-info p:last-child {
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app-container">
+    <div id="viewport-container">
+      <canvas id="rippleCanvas"></canvas>
+      <div id="overlay-info">
+        <p><strong>FPS:</strong> <span id="fpsVal">60</span></p>
+        <p><strong>Mode:</strong> <span id="modeVal">Pulse Source</span></p>
+        <p><strong>Instruction:</strong> Click/Drag on tank to interact</p>
+      </div>
+    </div>
+
+    <div id="sidebar">
+      <div class="header">
+        <h1>Ripple Tank Simulation</h1>
+        <p>2D Wave Propagation Lab</p>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Interaction Tool</div>
+        <div class="btn-grid">
+          <button class="btn active" id="tool-source" onclick="setTool('source')">Pulse Source</button>
+          <button class="btn" id="tool-wall" onclick="setTool('wall')">Draw Wall</button>
+          <button class="btn" id="tool-refractor" onclick="setTool('refractor')">Refractor Zone</button>
+          <button class="btn" id="tool-erase" onclick="setTool('erase')">Eraser</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Source Presets</div>
+        <div class="btn-grid">
+          <button class="btn" onclick="setSourcePreset('point')">Single Point</button>
+          <button class="btn" onclick="setSourcePreset('double')">Two Points</button>
+          <button class="btn" onclick="setSourcePreset('plane')">Plane Wave</button>
+          <button class="btn" onclick="setSourcePreset('dipole')">Dipole</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Wave Physics</div>
+        
+        <div class="control-group">
+          <div class="label-val">
+            <span>Frequency</span>
+            <span class="value-display" id="freqVal">1.5 Hz</span>
+          </div>
+          <input type="range" id="freqSlider" min="0.1" max="4.0" step="0.1" value="1.5">
+        </div>
+
+        <div class="control-group">
+          <div class="label-val">
+            <span>Damping (Loss)</span>
+            <span class="value-display" id="dampVal">0.992</span>
+          </div>
+          <input type="range" id="dampSlider" min="0.950" max="0.999" step="0.001" value="0.992">
+        </div>
+
+        <div class="control-group">
+          <div class="label-val">
+            <span>Wave Speed</span>
+            <span class="value-display" id="speedVal">1.0</span>
+          </div>
+          <input type="range" id="speedSlider" min="0.2" max="2.0" step="0.1" value="1.0">
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Presets & Environments</div>
+        <div class="control-group">
+          <select id="presetSelect" onchange="loadPreset(this.value)">
+            <option value="empty">Empty Tank</option>
+            <option value="single-slit">Single Slit Diffraction</option>
+            <option value="double-slit">Double Slit Interference</option>
+            <option value="refraction">Refraction (Lens)</option>
+            <option value="parabola">Parabolic Mirror</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Display Options</div>
+        <div class="control-group">
+          <label class="label-val">Color Palette</label>
+          <select id="paletteSelect" onchange="setPalette(this.value)">
+            <option value="cyan">Cyan / Blue (Realistic)</option>
+            <option value="rainbow">Rainbow Spectrum</option>
+            <option value="grayscale">Grayscale Shadowgraph</option>
+            <option value="thermal">Thermal Heatmap</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section" style="margin-top: auto;">
+        <div class="btn-grid">
+          <button class="btn" id="pauseBtn" onclick="togglePause()">Pause</button>
+          <button class="btn btn-danger" onclick="clearTank()">Clear All</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('rippleCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Simulation Grid Size
+    const SIM_WIDTH = 300;
+    const SIM_HEIGHT = 200;
+
+    // Canvas Display Dimensions
+    let width, height;
+
+    // Wave Equations State Buffers
+    let uCurr = new Float32Array(SIM_WIDTH * SIM_HEIGHT);
+    let uPrev = new Float32Array(SIM_WIDTH * SIM_HEIGHT);
+    let uNext = new Float32Array(SIM_WIDTH * SIM_HEIGHT);
+    
+    // Media Maps
+    let dampingMap = new Float32Array(SIM_WIDTH * SIM_HEIGHT);
+    let v2Map = new Float32Array(SIM_WIDTH * SIM_HEIGHT); // Wave speed squared
+    let isWall = new Uint8Array(SIM_WIDTH * SIM_HEIGHT);
+
+    // Image Output Buffer
+    let imgData;
+
+    // Simulation Parameters
+    let dampingFactor = 0.992;
+    let baseWaveSpeed = 1.0;
+    let sourceFrequency = 1.5;
+    let isPaused = false;
+    let currentTool = 'source'; // 'source', 'wall', 'refractor', 'erase'
+    let currentPalette = 'cyan';
+
+    // Sources List
+    let sources = [];
+
+    // User Input Tracking
+    let isMouseDown = false;
+
+    // Performance Measurement
+    let lastTime = performance.now();
+    let frameCount = 0;
+
+    function initCanvas() {
+      const container = document.getElementById('viewport-container');
+      const aspect = SIM_WIDTH / SIM_HEIGHT;
+      
+      let w = container.clientWidth - 40;
+      let h = container.clientHeight - 40;
+
+      if (w / h > aspect) {
+        w = h * aspect;
+      } else {
+        h = w / aspect;
+      }
+
+      canvas.width = SIM_WIDTH;
+      canvas.height = SIM_HEIGHT;
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+
+      imgData = ctx.createImageData(SIM_WIDTH, SIM_HEIGHT);
+    }
+
+    function resetMaps() {
+      for (let i = 0; i < SIM_WIDTH * SIM_HEIGHT; i++) {
+        dampingMap[i] = dampingFactor;
+        v2Map[i] = 0.25 * baseWaveSpeed; // Courant Stability limit check: v^2 * dt^2 / dx^2 <= 0.5
+        isWall[i] = 0;
+        uCurr[i] = 0;
+        uPrev[i] = 0;
+        uNext[i] = 0;
+      }
+      sources = [];
+    }
+
+    function setTool(tool) {
+      currentTool = tool;
+      document.querySelectorAll('.section .btn').forEach(btn => {
+        if (btn.id.startsWith('tool-')) btn.classList.remove('active');
+      });
+      document.getElementById(`tool-${tool}`).classList.add('active');
+      document.getElementById('modeVal').innerText = tool.charAt(0).toUpperCase() + tool.slice(1);
+    }
+
+    function setPalette(pal) {
+      currentPalette = pal;
+    }
+
+    function togglePause() {
+      isPaused = !isPaused;
+      document.getElementById('pauseBtn').innerText = isPaused ? 'Resume' : 'Pause';
+    }
+
+    function clearTank() {
+      resetMaps();
+    }
+
+    // Physics Engine Loop - Wave Equation Finite Difference Scheme
+    function stepSimulation() {
+      if (isPaused) return;
+
+      const dt = 1.0;
+      const t = performance.now() * 0.001;
+
+      // Inject Sources
+      for (let s of sources) {
+        if (s.type === 'point') {
+          const val = Math.sin(2 * Math.PI * sourceFrequency * t) * 2.0;
+          uCurr[s.y * SIM_WIDTH + s.x] = val;
+        } else if (s.type === 'plane') {
+          const val = Math.sin(2 * Math.PI * sourceFrequency * t) * 2.0;
+          for (let y = 5; y < SIM_HEIGHT - 5; y++) {
+            uCurr[y * SIM_WIDTH + s.x] = val;
+          }
+        }
+      }
+
+      // Laplacian Solver Core Loop
+      for (let y = 1; y < SIM_HEIGHT - 1; y++) {
+        let idx = y * SIM_WIDTH + 1;
+        for (let x = 1; x < SIM_WIDTH - 1; x++, idx++) {
+          if (isWall[idx]) {
+            uNext[idx] = 0;
+            continue;
+          }
+
+          // Discrete 5-point Laplacian stencil
+          const laplacian = 
+            uCurr[idx - 1] + 
+            uCurr[idx + 1] + 
+            uCurr[idx - SIM_WIDTH] + 
+            uCurr[idx + SIM_WIDTH] - 
+            4 * uCurr[idx];
+
+          const v2 = v2Map[idx];
+          const damp = dampingMap[idx];
+
+          // Verlet Integration for Wave Equation: u_next = 2*u - u_prev + (v^2)*laplacian
+          uNext[idx] = (2 * uCurr[idx] - uPrev[idx] + v2 * laplacian) * damp;
+        }
+      }
+
+      // Absorbing Boundary Conditions (Dampen edges to prevent artificial reflection)
+      for (let x = 0; x < SIM_WIDTH; x++) {
+        uNext[x] *= 0.8;
+        uNext[(SIM_HEIGHT - 1) * SIM_WIDTH + x] *= 0.8;
+      }
+      for (let y = 0; y < SIM_HEIGHT; y++) {
+        uNext[y * SIM_WIDTH] *= 0.8;
+        uNext[y * SIM_WIDTH + SIM_WIDTH - 1] *= 0.8;
+      }
+
+      // Swap State Buffers
+      let temp = uPrev;
+      uPrev = uCurr;
+      uCurr = uNext;
+      uNext = temp;
+    }
+
+    // Render Canvas Pixels
+    function render() {
+      const data = imgData.data;
+      let pIdx = 0;
+
+      for (let i = 0; i < SIM_WIDTH * SIM_HEIGHT; i++) {
+        if (isWall[i]) {
+          data[pIdx] = 100;
+          data[pIdx + 1] = 116;
+          data[pIdx + 2] = 139;
+          data[pIdx + 3] = 255;
+        } else {
+          const val = uCurr[i];
+          let r = 0, g = 0, b = 0;
+
+          if (currentPalette === 'cyan') {
+            const intensity = Math.min(255, Math.max(0, val * 120 + 128));
+            r = intensity * 0.1;
+            g = intensity * 0.7;
+            b = intensity;
+          } else if (currentPalette === 'rainbow') {
+            r = Math.min(255, Math.max(0, 128 + val * 200));
+            g = Math.min(255, Math.max(0, 128 - Math.abs(val) * 150));
+            b = Math.min(255, Math.max(0, 128 - val * 200));
+          } else if (currentPalette === 'grayscale') {
+            const intensity = Math.min(255, Math.max(0, val * 128 + 128));
+            r = g = b = intensity;
+          } else if (currentPalette === 'thermal') {
+            r = Math.min(255, Math.max(0, val * 255));
+            g = Math.min(255, Math.max(0, Math.abs(val) * 128));
+            b = Math.min(255, Math.max(0, -val * 255));
+          }
+
+          // Visual overlay for refractors (Slower wave medium)
+          if (v2Map[i] < 0.25 * baseWaveSpeed) {
+            r = r * 0.8 + 40;
+            g = g * 0.8 + 40;
+          }
+
+          data[pIdx] = r;
+          data[pIdx + 1] = g;
+          data[pIdx + 2] = b;
+          data[pIdx + 3] = 255;
+        }
+        pIdx += 4;
+      }
+
+      ctx.putImageData(imgData, 0, 0);
+    }
+
+    // Animation Frame Loop
+    function loop() {
+      stepSimulation();
+      render();
+
+      // FPS Counter calculation
+      frameCount++;
+      const now = performance.now();
+      if (now - lastTime >= 1000) {
+        document.getElementById('fpsVal').innerText = frameCount;
+        frameCount = 0;
+        lastTime = now;
+      }
+
+      requestAnimationFrame(loop);
+    }
+
+    // Input Handling
+    function handleInput(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.floor((e.clientX - rect.left) * (SIM_WIDTH / rect.width));
+      const y = Math.floor((e.clientY - rect.top) * (SIM_HEIGHT / rect.height));
+
+      if (x < 0 || x >= SIM_WIDTH || y < 0 || y >= SIM_HEIGHT) return;
+
+      const radius = 3;
+
+      for (let dy = -radius; dy <= radius; dy++) {
+        for (let dx = -radius; dx <= radius; dx++) {
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx >= 0 && nx < SIM_WIDTH && ny >= 0 && ny < SIM_HEIGHT) {
+            const idx = ny * SIM_WIDTH + nx;
+
+            if (currentTool === 'source' && dx === 0 && dy === 0) {
+              sources = sources.filter(s => Math.hypot(s.x - x, s.y - y) > 5);
+              sources.push({ x, y, type: 'point' });
+            } else if (currentTool === 'wall') {
+              isWall[idx] = 1;
+            } else if (currentTool === 'refractor') {
+              v2Map[idx] = 0.05 * baseWaveSpeed; // Slower velocity inside medium
+            } else if (currentTool === 'erase') {
+              isWall[idx] = 0;
+              v2Map[idx] = 0.25 * baseWaveSpeed;
+              sources = sources.filter(s => Math.hypot(s.x - x, s.y - y) > 5);
+            }
+          }
+        }
+      }
+    }
+
+    // Presets Loader
+    function setSourcePreset(preset) {
+      sources = [];
+      if (preset === 'point') {
+        sources.push({ x: Math.floor(SIM_WIDTH / 2), y: Math.floor(SIM_HEIGHT / 2), type: 'point' });
+      } else if (preset === 'double') {
+        sources.push({ x: Math.floor(SIM_WIDTH / 2), y: Math.floor(SIM_HEIGHT / 2) - 25, type: 'point' });
+        sources.push({ x: Math.floor(SIM_WIDTH / 2), y: Math.floor(SIM_HEIGHT / 2) + 25, type: 'point' });
+      } else if (preset === 'plane') {
+        sources.push({ x: 10, y: 0, type: 'plane' });
+      } else if (preset === 'dipole') {
+        sources.push({ x: Math.floor(SIM_WIDTH / 2) - 10, y: Math.floor(SIM_HEIGHT / 2), type: 'point' });
+        sources.push({ x: Math.floor(SIM_WIDTH / 2) + 10, y: Math.floor(SIM_HEIGHT / 2), type: 'point' });
+      }
+    }
+
+    function loadPreset(presetName) {
+      resetMaps();
+      if (presetName === 'single-slit') {
+        setSourcePreset('plane');
+        const slitX = 60;
+        const slitSize = 12;
+        for (let y = 0; y < SIM_HEIGHT; y++) {
+          if (Math.abs(y - SIM_HEIGHT / 2) > slitSize / 2) {
+            isWall[y * SIM_WIDTH + slitX] = 1;
+          }
+        }
+      } else if (presetName === 'double-slit') {
+        setSourcePreset('plane');
+        const slitX = 60;
+        const slitGap = 16;
+        const slitWidth = 6;
+        for (let y = 0; y < SIM_HEIGHT; y++) {
+          const distFromCenter = Math.abs(y - SIM_HEIGHT / 2);
+          if (distFromCenter > slitGap / 2 + slitWidth || distFromCenter < slitGap / 2) {
+            isWall[y * SIM_WIDTH + slitX] = 1;
+          }
+        }
+      } else if (presetName === 'refraction') {
+        setSourcePreset('plane');
+        // Convex Lens Boundary
+        for (let y = 0; y < SIM_HEIGHT; y++) {
+          for (let x = 120; x < 180; x++) {
+            const dy = (y - SIM_HEIGHT / 2) / (SIM_HEIGHT / 2);
+            const thickness = Math.max(0, (1 - dy * dy) * 25);
+            if (Math.abs(x - 150) < thickness) {
+              v2Map[y * SIM_WIDTH + x] = 0.05 * baseWaveSpeed;
+            }
+          }
+        }
+      } else if (presetName === 'parabola') {
+        sources.push({ x: 220, y: Math.floor(SIM_HEIGHT / 2), type: 'point' });
+        // Parabolic Reflector Wall
+        const focus = 220;
+        const a = 0.01;
+        for (let y = 10; y < SIM_HEIGHT - 10; y++) {
+          const dy = y - SIM_HEIGHT / 2;
+          const x = Math.floor(focus - a * dy * dy);
+          if (x > 0 && x < SIM_WIDTH) {
+            isWall[y * SIM_WIDTH + x] = 1;
+          }
+        }
+      }
+    }
+
+    // Event Listeners
+    canvas.addEventListener('mousedown', (e) => { isMouseDown = true; handleInput(e); });
+    canvas.addEventListener('mousemove', (e) => { if (isMouseDown) handleInput(e); });
+    window.addEventListener('mouseup', () => { isMouseDown = false; });
+
+    document.getElementById('freqSlider').addEventListener('input', (e) => {
+      sourceFrequency = parseFloat(e.target.value);
+      document.getElementById('freqVal').innerText = sourceFrequency.toFixed(1) + ' Hz';
+    });
+
+    document.getElementById('dampSlider').addEventListener('input', (e) => {
+      dampingFactor = parseFloat(e.target.value);
+      document.getElementById('dampVal').innerText = dampingFactor.toFixed(3);
+      for (let i = 0; i < SIM_WIDTH * SIM_HEIGHT; i++) dampingMap[i] = dampingFactor;
+    });
+
+    document.getElementById('speedSlider').addEventListener('input', (e) => {
+      baseWaveSpeed = parseFloat(e.target.value);
+      document.getElementById('speedVal').innerText = baseWaveSpeed.toFixed(1);
+      for (let i = 0; i < SIM_WIDTH * SIM_HEIGHT; i++) {
+        if (v2Map[i] >= 0.25) v2Map[i] = 0.25 * baseWaveSpeed;
+      }
+    });
+
+    window.addEventListener('resize', initCanvas);
+
+    // Entry Point Initialization
+    initCanvas();
+    resetMaps();
+    setSourcePreset('point');
+    loop();
+  </script>
+</body>
+</html>

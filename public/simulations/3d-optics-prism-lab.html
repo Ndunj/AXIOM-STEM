@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Optics Prism Lab - Full Dynamic Angles & Motion Controls</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #050811;
+      color: #F8FAFC;
+    }
+
+    #opticsCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    #controlPanel {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 320px;
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+      background: rgba(15, 23, 42, 0.94);
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 16px;
+      z-index: 10;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    #controlPanel::-webkit-scrollbar {
+      width: 6px;
+    }
+    #controlPanel::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    button {
+      flex: 1;
+      padding: 12px 8px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      cursor: pointer;
+      text-align: center;
+      letter-spacing: 0.3px;
+      transition: all 0.2s ease;
+    }
+
+    #triggerBtn {
+      background: #10B981;
+      color: #FFFFFF;
+      border: 2px solid #34D399;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+    }
+
+    #triggerBtn:hover {
+      background: #059669;
+    }
+
+    #triggerBtn.active {
+      background: #EF4444;
+      border-color: #F87171;
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+    }
+
+    #pauseBtn {
+      background: #3B82F6;
+      color: #FFFFFF;
+      border: 2px solid #60A5FA;
+      box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+    }
+
+    #pauseBtn:hover {
+      background: #2563EB;
+    }
+
+    #pauseBtn.paused {
+      background: #F59E0B;
+      border-color: #FBBF24;
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      box-shadow: none !important;
+    }
+
+    .group {
+      background: #162032;
+      border: 1px solid #1E293B;
+      padding: 10px 12px;
+      border-radius: 8px;
+    }
+
+    .group-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #38BDF8;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.82rem;
+      margin-bottom: 4px;
+      color: #CBD5E1;
+    }
+
+    .val-display {
+      font-family: monospace;
+      color: #38BDF8;
+      font-weight: bold;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 4px;
+      background: #334155;
+      outline: none;
+      accent-color: #38BDF8;
+      border-radius: 2px;
+      cursor: pointer;
+    }
+
+    select {
+      width: 100%;
+      padding: 6px;
+      background: #1E293B;
+      color: #F8FAFC;
+      border: 1px solid #475569;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      outline: none;
+      cursor: pointer;
+    }
+
+    #dataOverlay {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 340px;
+      background: rgba(15, 23, 42, 0.94);
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 12px 16px;
+      z-index: 10;
+      backdrop-filter: blur(8px);
+    }
+
+    .metric-card {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      background: #0F172A;
+      border: 1px solid #1E293B;
+      border-radius: 6px;
+      padding: 8px;
+      margin-bottom: 8px;
+    }
+
+    .metric-box {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .metric-lbl {
+      font-size: 0.65rem;
+      color: #94A3B8;
+      text-transform: uppercase;
+    }
+
+    .metric-val {
+      font-size: 0.95rem;
+      font-family: monospace;
+      font-weight: bold;
+      color: #FACC15;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 4px;
+      font-family: monospace;
+      font-size: 0.72rem;
+    }
+
+    th, td {
+      padding: 3px 6px 3px 0;
+      text-align: left;
+    }
+
+    th {
+      color: #94A3B8;
+      border-bottom: 1px solid #334155;
+    }
+
+    .swatch {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+    }
+
+    #explanationCard {
+      position: absolute;
+      bottom: 20px;
+      right: 360px;
+      width: 380px;
+      background: rgba(15, 23, 42, 0.94);
+      border: 1px solid #38BDF8;
+      border-radius: 12px;
+      padding: 14px 16px;
+      z-index: 10;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    }
+
+    .explain-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #38BDF8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .explain-body {
+      font-size: 0.8rem;
+      line-height: 1.45;
+      color: #E2E8F0;
+    }
+
+    .explain-highlight {
+      color: #FACC15;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="opticsCanvas"></canvas>
+
+  <div id="dataOverlay">
+    <div style="font-weight: bold; color: #38BDF8; margin-bottom: 6px; font-size: 0.85rem;">Prism Optics Metrics</div>
+    
+    <div class="metric-card">
+      <div class="metric-box">
+        <span class="metric-lbl">Emergence (θe)</span>
+        <span class="metric-val" id="dispEmergence">--</span>
+      </div>
+      <div class="metric-box">
+        <span class="metric-lbl">Total Deviation (δ)</span>
+        <span class="metric-val" id="dispDeviation">--</span>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Color</th>
+          <th>λ (nm)</th>
+          <th>Index (n)</th>
+          <th>Dev. Angle (δ)</th>
+        </tr>
+      </thead>
+      <tbody id="metricsBody">
+        <tr><td colspan="4" style="color: #64748B;">Beam Inactive</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div id="explanationCard">
+    <div class="explain-title">💡 Physics Note</div>
+    <div class="explain-body" id="explainText">
+      Press <span class="explain-highlight">⚡ TRIGGER</span> to start light propagation. Set <span class="explain-highlight">θi = 0°</span> to see light enter normally without initial refraction!
+    </div>
+  </div>
+
+  <div id="controlPanel">
+    <div class="btn-row">
+      <button id="triggerBtn">⚡ TRIGGER BEAM</button>
+      <button id="pauseBtn" disabled>⏸ PAUSE</button>
+    </div>
+
+    <div class="group">
+      <div class="row">
+        <span>Light Velocity (Slow Mo)</span>
+        <span class="val-display" id="speedVal">0.3x</span>
+      </div>
+      <input type="range" id="speedSlider" min="0.05" max="1.0" step="0.05" value="0.3">
+    </div>
+
+    <div class="group">
+      <div class="row">
+        <span>Angle of Incidence (θi)</span>
+        <span class="val-display" id="angleVal">0°</span>
+      </div>
+      <input type="range" id="angleSlider" min="0" max="75" value="0">
+    </div>
+
+    <div class="group">
+      <div class="group-title">3D Glass Properties</div>
+      <div class="row">
+        <span>Apex Angle (A)</span>
+        <span class="val-display" id="apexVal">60°</span>
+      </div>
+      <input type="range" id="apexSlider" min="30" max="80" value="60">
+
+      <div class="row" style="margin-top: 8px; margin-bottom: 2px;">
+        <span>Material Medium</span>
+      </div>
+      <select id="materialSelect">
+        <option value="1.52">Crown Glass (n = 1.52)</option>
+        <option value="1.62" selected>Dense Flint Glass (n = 1.62)</option>
+        <option value="2.42">Diamond (n = 2.42)</option>
+      </select>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('opticsCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const triggerBtn = document.getElementById('triggerBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const speedSlider = document.getElementById('speedSlider');
+    const angleSlider = document.getElementById('angleSlider');
+    const apexSlider = document.getElementById('apexSlider');
+    const materialSelect = document.getElementById('materialSelect');
+    const metricsBody = document.getElementById('metricsBody');
+    const explainText = document.getElementById('explainText');
+    const dispEmergence = document.getElementById('dispEmergence');
+    const dispDeviation = document.getElementById('dispDeviation');
+    const speedVal = document.getElementById('speedVal');
+    const angleVal = document.getElementById('angleVal');
+    const apexVal = document.getElementById('apexVal');
+
+    // Spectral definition with Fraunhofer wavelengths and hex colors
+    const SPECTRUM = [
+      { name: 'Red', wavelength: 700, color: '#EF4444', deltaN: -0.016 },
+      { name: 'Orange', wavelength: 620, color: '#F97316', deltaN: -0.008 },
+      { name: 'Yellow', wavelength: 580, color: '#EAB308', deltaN: 0.000 },
+      { name: 'Green', wavelength: 530, color: '#22C55E', deltaN: +0.008 },
+      { name: 'Cyan', wavelength: 490, color: '#06B6D4', deltaN: +0.016 },
+      { name: 'Blue', wavelength: 450, color: '#3B82F6', deltaN: +0.024 },
+      { name: 'Violet', wavelength: 400, color: '#A855F7', deltaN: +0.035 }
+    ];
+
+    // Simulation State
+    const state = {
+      isTriggered: false,
+      isPaused: false,
+      speed: 0.3,
+      thetaI: 0, // Incidence angle in degrees (0 to 75)
+      apexAngle: 60, // Prism apex angle in degrees (30 to 80)
+      baseN: 1.62,
+      progress: 0, // 0 to 3: 0..1 incident, 1..2 inside prism, 2..3 emergent
+      pulsePhase: 0
+    };
+
+    function resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
+      ctx.scale(dpr, dpr);
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Event Listeners
+    triggerBtn.addEventListener('click', () => {
+      state.isTriggered = !state.isTriggered;
+      if (state.isTriggered) {
+        triggerBtn.textContent = '⏹ STOP BEAM';
+        triggerBtn.classList.add('active');
+        pauseBtn.disabled = false;
+        state.progress = 0;
+      } else {
+        triggerBtn.textContent = '⚡ TRIGGER BEAM';
+        triggerBtn.classList.remove('active');
+        pauseBtn.disabled = true;
+        state.isPaused = false;
+        pauseBtn.textContent = '⏸ PAUSE';
+        pauseBtn.classList.remove('paused');
+      }
+      updateMetrics();
+    });
+
+    pauseBtn.addEventListener('click', () => {
+      if (!state.isTriggered) return;
+      state.isPaused = !state.isPaused;
+      if (state.isPaused) {
+        pauseBtn.textContent = '▶ RESUME';
+        pauseBtn.classList.add('paused');
+      } else {
+        pauseBtn.textContent = '⏸ PAUSE';
+        pauseBtn.classList.remove('paused');
+      }
+    });
+
+    speedSlider.addEventListener('input', (e) => {
+      state.speed = parseFloat(e.target.value);
+      speedVal.textContent = state.speed.toFixed(2) + 'x';
+    });
+
+    angleSlider.addEventListener('input', (e) => {
+      state.thetaI = parseFloat(e.target.value);
+      angleVal.textContent = state.thetaI + '°';
+      updateMetrics();
+    });
+
+    apexSlider.addEventListener('input', (e) => {
+      state.apexAngle = parseFloat(e.target.value);
+      apexVal.textContent = state.apexAngle + '°';
+      updateMetrics();
+    });
+
+    materialSelect.addEventListener('change', (e) => {
+      state.baseN = parseFloat(e.target.value);
+      updateMetrics();
+    });
+
+    // Optical Calculations
+    function computeOptics() {
+      const A = (state.apexAngle * Math.PI) / 180;
+      const thetaI_rad = (state.thetaI * Math.PI) / 180;
+
+      let yellowEmergence = null;
+      let yellowDeviation = null;
+      let anyTIR = false;
+
+      const spectralResults = SPECTRUM.map((spec) => {
+        const n = Math.max(1.05, state.baseN + spec.deltaN);
+
+        // Snell's Law at Face 1: sin(thetaI) = n * sin(r1)
+        const sinR1 = Math.sin(thetaI_rad) / n;
+        const r1 = Math.asin(Math.min(1.0, sinR1));
+
+        // Geometry: r1 + r2 = A => r2 = A - r1
+        const r2 = A - r1;
+
+        // Snell's Law at Face 2: n * sin(r2) = sin(thetaE)
+        const sinThetaE = n * Math.sin(r2);
+        let thetaE = null;
+        let isTIR = false;
+        let deviation = null;
+
+        if (Math.abs(sinThetaE) > 1.0) {
+          isTIR = true;
+          anyTIR = true;
+        } else {
+          thetaE = Math.asin(sinThetaE);
+          // Total deviation angle: delta = thetaI + thetaE - A
+          deviation = thetaI_rad + thetaE - A;
+        }
+
+        const devDeg = deviation !== null ? (deviation * 180) / Math.PI : null;
+        const eDeg = thetaE !== null ? (thetaE * 180) / Math.PI : null;
+
+        if (spec.name === 'Yellow') {
+          yellowEmergence = eDeg;
+          yellowDeviation = devDeg;
+        }
+
+        return {
+          ...spec,
+          n,
+          r1,
+          r2,
+          isTIR,
+          thetaE,
+          deviation,
+          devDeg,
+          eDeg
+        };
+      });
+
+      return {
+        A,
+        thetaI_rad,
+        yellowEmergence,
+        yellowDeviation,
+        anyTIR,
+        results: spectralResults
+      };
+    }
+
+    function updateMetrics() {
+      if (!state.isTriggered) {
+        dispEmergence.textContent = '--';
+        dispDeviation.textContent = '--';
+        metricsBody.innerHTML = '<tr><td colspan="4" style="color: #64748B;">Beam Inactive</td></tr>';
+        explainText.innerHTML = 'Press <span class="explain-highlight">⚡ TRIGGER</span> to start light propagation. Set <span class="explain-highlight">θi = 0°</span> to see light enter normally without initial refraction!';
+        return;
+      }
+
+      const optics = computeOptics();
+
+      if (optics.anyTIR) {
+        dispEmergence.textContent = 'TIR (Trapped)';
+        dispDeviation.textContent = 'TIR Internal';
+      } else if (optics.yellowEmergence !== null && optics.yellowDeviation !== null) {
+        dispEmergence.textContent = optics.yellowEmergence.toFixed(1) + '°';
+        dispDeviation.textContent = optics.yellowDeviation.toFixed(1) + '°';
+      }
+
+      // Build Table Rows
+      let tableHtml = '';
+      optics.results.forEach((r) => {
+        const devStr = r.isTIR ? '<span style="color: #F87171;">TIR (Total Extinction)</span>' : `${r.devDeg.toFixed(2)}°`;
+        tableHtml += `
+          <tr>
+            <td><span class="swatch" style="background: ${r.color};"></span>${r.name}</td>
+            <td>${r.wavelength}</td>
+            <td>${r.n.toFixed(3)}</td>
+            <td style="color: ${r.isTIR ? '#F87171' : '#38BDF8'};">${devStr}</td>
+          </tr>
+        `;
+      });
+      metricsBody.innerHTML = tableHtml;
+
+      // Update Physics Explanation
+      if (optics.anyTIR) {
+        explainText.innerHTML = `⚠️ <span class="explain-highlight" style="color: #F87171;">Total Internal Reflection (TIR)</span> occurred at the second interface! Angle of incidence inside the glass exceeded the critical angle (θc = ${(Math.asin(1 / state.baseN) * 180 / Math.PI).toFixed(1)}°). Lower the apex angle (A) or increase angle of incidence (θi) to transmit emergent beams!`;
+      } else if (state.thetaI === 0) {
+        explainText.innerHTML = `✨ <b>Normal Incidence (θi = 0°):</b> Light enters Face 1 perpendicular to the surface without bending (r₁ = 0°). All angular refraction and chromatic dispersion occur exclusively at Face 2 (r₂ = A = ${state.apexAngle}°)!`;
+      } else if (Math.abs(optics.yellowDeviation - Math.min(...optics.results.filter(r => r.devDeg !== null).map(r => r.devDeg))) < 0.5) {
+        explainText.innerHTML = `🎯 <b>Minimum Deviation Geometry:</b> The light ray passes symmetrically through the prism (r₁ = r₂ = A/2). At minimum deviation, the refractive index satisfies: n = sin((A + δm)/2) / sin(A/2).`;
+      } else {
+        explainText.innerHTML = `🌈 <b>Chromatic Dispersion:</b> Shorter wavelengths (Violet 400nm, n = ${optics.results[6].n.toFixed(3)}) travel slower in glass and bend more acutely than longer wavelengths (Red 700nm, n = ${optics.results[0].n.toFixed(3)}), resolving white light into a brilliant continuous spectrum!`;
+      }
+    }
+
+    // Main Canvas Render Loop
+    function render() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // 1. Draw Subtle Technological Coordinate Grid
+      ctx.strokeStyle = '#0F172A';
+      ctx.lineWidth = 1;
+      const gridSize = 40;
+      for (let x = 0; x < w; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+      }
+      for (let y = 0; y < h; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+      }
+
+      // 2. Prism Geometric Configuration
+      const optics = computeOptics();
+      const A_rad = optics.A;
+
+      const prismHeight = Math.min(320, h * 0.45);
+      const halfApex = A_rad / 2;
+      const prismSide = prismHeight / Math.cos(halfApex);
+      const halfBase = prismHeight * Math.tan(halfApex);
+
+      const prismCenterX = w * 0.46;
+      const prismCenterY = h * 0.52;
+
+      // Prism Vertices (Apex, Bottom-Left, Bottom-Right)
+      const apex = { x: prismCenterX, y: prismCenterY - prismHeight * 0.55 };
+      const baseLeft = { x: prismCenterX - halfBase, y: apex.y + prismHeight };
+      const baseRight = { x: prismCenterX + halfBase, y: apex.y + prismHeight };
+
+      // Face 1: Left face (apex to baseLeft)
+      // Normal vector of Face 1 pointing outward to the left:
+      const face1Angle = Math.atan2(baseLeft.y - apex.y, baseLeft.x - apex.x); // along face
+      const norm1Angle = face1Angle - Math.PI / 2; // outward normal
+
+      // Face 2: Right face (apex to baseRight)
+      const face2Angle = Math.atan2(baseRight.y - apex.y, baseRight.x - apex.x);
+      const norm2Angle = face2Angle + Math.PI / 2; // outward normal
+
+      // Midpoint on Face 1 where beam enters
+      const enterFrac = 0.52;
+      const hitFace1 = {
+        x: apex.x + (baseLeft.x - apex.x) * enterFrac,
+        y: apex.y + (baseLeft.y - apex.y) * enterFrac
+      };
+
+      // 3. Draw 3D Shaded Glass Prism with Highlights
+      ctx.save();
+      
+      // Prism Shadow / Glow
+      ctx.shadowColor = 'rgba(56, 189, 248, 0.25)';
+      ctx.shadowBlur = 35;
+      
+      // Prism Body Fill
+      const prismGrad = ctx.createLinearGradient(apex.x, apex.y, prismCenterX, baseLeft.y);
+      prismGrad.addColorStop(0, 'rgba(56, 189, 248, 0.18)');
+      prismGrad.addColorStop(0.5, 'rgba(30, 58, 138, 0.22)');
+      prismGrad.addColorStop(1, 'rgba(15, 23, 42, 0.4)');
+
+      ctx.beginPath();
+      ctx.moveTo(apex.x, apex.y);
+      ctx.lineTo(baseRight.x, baseRight.y);
+      ctx.lineTo(baseLeft.x, baseLeft.y);
+      ctx.closePath();
+      ctx.fillStyle = prismGrad;
+      ctx.fill();
+
+      // Prism Internal 3D Edge Beveling
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.65)';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      // Front Face Glass Reflection Sheen
+      ctx.beginPath();
+      ctx.moveTo(apex.x, apex.y);
+      ctx.lineTo(apex.x + 8, apex.y + 15);
+      ctx.lineTo(baseLeft.x + 20, baseLeft.y - 10);
+      ctx.lineTo(baseLeft.x, baseLeft.y);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.fill();
+
+      ctx.restore();
+
+      // Draw Normal Line at Face 1 (Dashed Cyan)
+      const norm1Len = 65;
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(hitFace1.x - Math.cos(norm1Angle) * norm1Len, hitFace1.y - Math.sin(norm1Angle) * norm1Len);
+      ctx.lineTo(hitFace1.x + Math.cos(norm1Angle) * norm1Len, hitFace1.y + Math.sin(norm1Angle) * norm1Len);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Normal Label
+      ctx.fillStyle = '#64748B';
+      ctx.font = '10px monospace';
+      ctx.fillText('Normal N₁', hitFace1.x + Math.cos(norm1Angle) * (norm1Len + 6) - 15, hitFace1.y + Math.sin(norm1Angle) * (norm1Len + 6));
+
+      // Apex Angle Label Arc
+      ctx.strokeStyle = '#FACC15';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(apex.x, apex.y, 35, face1Angle, face2Angle);
+      ctx.stroke();
+      ctx.fillStyle = '#FACC15';
+      ctx.font = 'bold 11px monospace';
+      ctx.fillText(`A = ${state.apexAngle}°`, apex.x - 22, apex.y + 50);
+
+      // 4. Incident Beam Ray Calculation
+      // Direction of incident beam towards hitFace1:
+      // Incident angle thetaI is relative to the normal norm1Angle (directed into the prism)
+      // When thetaI = 0, ray travels exactly along normal into prism: angle = norm1Angle - PI (towards hitFace1)
+      const rayInAngle = norm1Angle - Math.PI + optics.thetaI_rad;
+      const raySourceDist = 280;
+      const sourcePoint = {
+        x: hitFace1.x - Math.cos(rayInAngle) * raySourceDist,
+        y: hitFace1.y - Math.sin(rayInAngle) * raySourceDist
+      };
+
+      // Draw Laser Emitter Unit on Left
+      ctx.save();
+      ctx.translate(sourcePoint.x, sourcePoint.y);
+      ctx.rotate(rayInAngle);
+      ctx.fillStyle = '#1E293B';
+      ctx.strokeStyle = '#38BDF8';
+      ctx.lineWidth = 2;
+      ctx.fillRect(-35, -14, 35, 28);
+      ctx.strokeRect(-35, -14, 35, 28);
+
+      // Laser Nozzle
+      ctx.fillStyle = '#10B981';
+      ctx.fillRect(0, -7, 8, 14);
+
+      // Laser Aperture Glow
+      if (state.isTriggered) {
+        ctx.shadowColor = '#F8FAFC';
+        ctx.shadowBlur = 15;
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath();
+        ctx.arc(8, 0, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      // Incident Ray Angle Arc
+      if (state.thetaI > 1) {
+        ctx.strokeStyle = '#38BDF8';
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([2, 2]);
+        ctx.beginPath();
+        ctx.arc(hitFace1.x, hitFace1.y, 45, norm1Angle - Math.PI, rayInAngle);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#38BDF8';
+        ctx.font = '10px monospace';
+        ctx.fillText(`θi=${state.thetaI}°`, hitFace1.x - 70, hitFace1.y - 15);
+      }
+
+      // 5. Propagation Logic & Path Drawing
+      if (state.isTriggered) {
+        if (!state.isPaused) {
+          state.progress += state.speed * 0.045;
+          if (state.progress > 3.2) state.progress = 0; // Continuous looping pulse
+          state.pulsePhase += 0.15;
+        }
+
+        // Phase 1: Draw Incident Beam (White Laser)
+        const p1 = Math.min(1.0, state.progress);
+        const curIncX = sourcePoint.x + (hitFace1.x - sourcePoint.x) * p1;
+        const curIncY = sourcePoint.y + (hitFace1.y - sourcePoint.y) * p1;
+
+        ctx.save();
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 3.5;
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.moveTo(sourcePoint.x, sourcePoint.y);
+        ctx.lineTo(curIncX, curIncY);
+        ctx.stroke();
+        ctx.restore();
+
+        // Phase 2 & 3: Inside & Emerging Dispersion Rays
+        if (state.progress > 1.0) {
+          const p2 = Math.min(1.0, state.progress - 1.0);
+          const p3 = Math.max(0.0, state.progress - 2.0);
+
+          optics.results.forEach((r) => {
+            // Ray angle inside the prism:
+            // At Face 1, the ray bends towards normal: angle inside = norm1Angle - r.r1
+            const rayInsideAngle = norm1Angle - r.r1;
+
+            // Find intersection with Face 2 line (apex to baseRight)
+            // Ray: hitFace1 + t * (cos(rayInsideAngle), sin(rayInsideAngle))
+            // Face 2: apex + u * (baseRight - apex)
+            const dx = Math.cos(rayInsideAngle);
+            const dy = Math.sin(rayInsideAngle);
+            const fx = baseRight.x - apex.x;
+            const fy = baseRight.y - apex.y;
+
+            // Solve hitFace1.x + t*dx = apex.x + u*fx and hitFace1.y + t*dy = apex.y + u*fy
+            const det = dx * fy - dy * fx;
+            let hitFace2 = { x: hitFace1.x + dx * 120, y: hitFace1.y + dy * 120 };
+
+            if (Math.abs(det) > 1e-5) {
+              const t = ((apex.x - hitFace1.x) * fy - (apex.y - hitFace1.y) * fx) / det;
+              if (t > 0) {
+                hitFace2 = {
+                  x: hitFace1.x + dx * t,
+                  y: hitFace1.y + dy * t
+                };
+              }
+            }
+
+            // Draw Inside Beam
+            const curInsideX = hitFace1.x + (hitFace2.x - hitFace1.x) * p2;
+            const curInsideY = hitFace1.y + (hitFace2.y - hitFace1.y) * p2;
+
+            ctx.save();
+            ctx.strokeStyle = r.color;
+            ctx.lineWidth = 2.2;
+            ctx.shadowColor = r.color;
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            ctx.moveTo(hitFace1.x, hitFace1.y);
+            ctx.lineTo(curInsideX, curInsideY);
+            ctx.stroke();
+            ctx.restore();
+
+            // Phase 3: Emerging or TIR Ray
+            if (state.progress > 2.0) {
+              let outDirAngle;
+              if (r.isTIR) {
+                // Reflection at Face 2: angle of reflection = angle of incidence r2
+                outDirAngle = norm2Angle - Math.PI - (Math.PI - r.r2);
+              } else {
+                // Refraction out into air: ray angle = norm2Angle + thetaE
+                outDirAngle = norm2Angle + r.thetaE;
+              }
+
+              const emergeDist = 260;
+              const emergeTarget = {
+                x: hitFace2.x + Math.cos(outDirAngle) * emergeDist,
+                y: hitFace2.y + Math.sin(outDirAngle) * emergeDist
+              };
+
+              const curEmergX = hitFace2.x + (emergeTarget.x - hitFace2.x) * Math.min(1.0, p3 * 1.5);
+              const curEmergY = hitFace2.y + (emergeTarget.y - hitFace2.y) * Math.min(1.0, p3 * 1.5);
+
+              ctx.save();
+              ctx.strokeStyle = r.color;
+              ctx.lineWidth = 2.4;
+              ctx.shadowColor = r.color;
+              ctx.shadowBlur = 10;
+              ctx.beginPath();
+              ctx.moveTo(hitFace2.x, hitFace2.y);
+              ctx.lineTo(curEmergX, curEmergY);
+              ctx.stroke();
+              ctx.restore();
+
+              // Draw Spectrum Screen on Far Right
+              if (!r.isTIR && p3 > 0.4) {
+                ctx.fillStyle = r.color;
+                ctx.beginPath();
+                ctx.arc(curEmergX, curEmergY, 4, 0, Math.PI * 2);
+                ctx.fill();
+              }
+            }
+          });
+
+          // Draw Normal Line at Face 2 for Yellow Ray (Dashed Emerald)
+          const yellowRay = optics.results.find((s) => s.name === 'Yellow');
+          if (yellowRay) {
+            ctx.strokeStyle = 'rgba(52, 211, 153, 0.35)';
+            ctx.lineWidth = 1.2;
+            ctx.setLineDash([3, 3]);
+            ctx.beginPath();
+            ctx.moveTo(prismCenterX + 40, prismCenterY);
+            ctx.lineTo(prismCenterX + 40 + Math.cos(norm2Angle) * 50, prismCenterY + Math.sin(norm2Angle) * 50);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
+        }
+      }
+
+      requestAnimationFrame(render);
+    }
+
+    // Initialize simulation
+    updateMetrics();
+    requestAnimationFrame(render);
+  </script>
+</body>
+</html>

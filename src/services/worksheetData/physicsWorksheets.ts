@@ -764,6 +764,118 @@ export const PHYSICS_WORKSHEETS: Record<string, SimulationWorksheetData> = {
       task: "Describe how liquid crystal molecules mimic the Three-Filter Paradox to allow backlights to pass through crossed polarizers, and why wearing polarized sunglasses at certain tilt angles can make your phone screen appear black.",
       exemplarAnswer: "In an unpowered LCD sub-pixel, nematic liquid crystal polymers naturally form a 90° helix that gradually rotates the electric field vector of light by 90°, allowing it to easily pass through the second crossed polarizer (producing a bright pixel). Applying an electric field untwists the crystals, destroying the rotation and causing total extinction (dark pixel). If you wear polarized sunglasses oriented perpendicular to the phone screen's front polarizer, the optical axes are crossed at 90° (cos² 90° = 0), completely extinguishing all screen light until the phone is tilted."
     }
+  },
+
+  "sim-3d-optics-prism-lab": {
+    drivingQuestion: "How do triangular glass prisms refract and disperse polychromatic white light into a visible spectrum, and how do incidence angle (θi) and apex angle (A) determine total ray deviation (δ)?",
+    hypothesisPrompt: "If a collimated beam of white light strikes Face 1 of a triangular glass prism at normal incidence (θi = 0°), predict whether refraction occurs at the first face. As the ray reaches Face 2, which color (Red 700nm or Violet 400nm) will deviate the most, and why?",
+    tableHeaders: ["Spectral Color", "Wavelength λ (nm)", "Refractive Index (n)", "Incident Angle θi", "Prism Apex Angle A", "Internal Angle r₁", "Internal Angle r₂", "Emergence Angle θe", "Total Deviation δ"],
+    tableRows: [
+      ["Red", "700 nm", "1.604", "0° (Normal)", "60° (Equilateral)", "0.0°", "60.0°", "TIR (Critical = 38.5°)", "TIR Trapped"],
+      ["Red", "700 nm", "1.604", "45°", "60°", "26.1°", "33.9°", "63.6°", "48.7°"],
+      ["Yellow (Ref)", "580 nm", "1.620", "45°", "60°", "25.9°", "34.1°", "65.3°", "50.3°"],
+      ["Green", "530 nm", "1.628", "45°", "60°", "25.7°", "34.3°", "66.2°", "51.2°"],
+      ["Cyan", "490 nm", "1.636", "45°", "60°", "25.6°", "34.4°", "67.1°", "52.1°"],
+      ["Blue", "450 nm", "1.644", "45°", "60°", "25.5°", "34.5°", "68.2°", "53.2°"],
+      ["Violet", "400 nm", "1.655", "45°", "60°", "25.3°", "34.7°", "69.8°", "54.8°"]
+    ],
+    criticalQuestions: [
+      {
+        prompt: "1. Normal Incidence at the First Interface (θi = 0°)",
+        subtext: "When light enters a glass prism perpendicular to its first surface (θi = 0°), explain why the ray continues in a straight line without bending, and why all dispersion occurs at the second surface.",
+        exemplarAnswer: "By Snell's Law at Face 1, n_air · sin(θi) = n_glass · sin(r₁). When θi = 0°, sin(0°) = 0, so sin(r₁) = 0 and r₁ = 0°. The light travels along the surface normal without changing direction. Because r₁ + r₂ = A, the angle of incidence at the second face is exactly r₂ = A. Dispersion occurs entirely at the second interface where non-zero refraction separates the wavelengths according to their differing refractive indices n(λ)."
+      },
+      {
+        prompt: "2. The Physical Mechanism of Chromatic Dispersion",
+        subtext: "Why does violet light (λ = 400 nm) bend more sharply than red light (λ = 700 nm) when passing through glass?",
+        exemplarAnswer: "In dielectric media like glass, the speed of light v = c / n is frequency-dependent due to electromagnetic interactions between light and bound electrons in the atoms (described by Cauchy's dispersion equation n(λ) ≈ A + B/λ²). Higher frequency, shorter wavelength light (violet) interacts more strongly with electron resonance states, slowing down more and experiencing a higher refractive index (n_violet > n_red). By Snell's Law, a higher refractive index causes a greater change in wave direction, bending violet light more acutely."
+      },
+      {
+        prompt: "3. Minimum Deviation Angle and Symmetrical Refraction",
+        subtext: "What geometric symmetry occurs inside the prism when total ray deviation δ reaches its minimum value δ_min?",
+        exemplarAnswer: "At the angle of minimum deviation δ_min, the ray path through the prism is completely symmetrical: the angle of incidence equals the angle of emergence (θi = θe) and the internal refracted angles are equal (r₁ = r₂ = A/2). The ray travels parallel to the prism's base. This symmetry allows direct experimental determination of the refractive index using the formula n = sin((A + δ_min) / 2) / sin(A / 2)."
+      }
+    ],
+    realWorldScenario: {
+      title: "Newton's Recombination Experiment & Optical Spectrometers",
+      scenario: "In 1666, Isaac Newton placed a second, inverted prism in the path of the dispersed rainbow spectrum produced by the first prism, successfully recombining the colors back into a single white beam.",
+      task: "Explain how Newton's two-prism experiment disproved the ancient belief that glass 'corrupted' or added color to pure white light, and explain how modern astronomical spectrometers use prisms and diffraction gratings to identify chemical elements in distant stars.",
+      exemplarAnswer: "Aristotelian philosophy posited that clear glass altered pure white light by adding colors. Newton's experiment proved that white light is inherently a mixture of all spectral colors: the first prism separates the constituent wavelengths by differential refraction, while the second inverted prism reverses the deviation, refocusing the rays into white light. In astrophysics, stars emit continuous blackbody radiation crossed by dark Fraunhofer absorption lines where cool outer-atmosphere gases absorb specific wavelengths. Dispersing starlight through a spectrometer reveals these dark spectral fingerprints, identifying hydrogen, helium, sodium, and iron in distant stellar atmospheres."
+    }
+  },
+
+  "sim-physics-ripple-tank-simulation": {
+    drivingQuestion: "How do 2D mechanical water ripples demonstrate fundamental wave behaviors including reflection, refraction, diffraction, and interference?",
+    hypothesisPrompt: "Predict what will happen to a plane wave when it passes through a slit whose width is comparable to its wavelength versus a slit much wider than the wavelength. What patterns emerge when two coherent point sources oscillate simultaneously?",
+    tableHeaders: ["Experiment / Setup", "Source Type", "Obstacle / Boundary", "Frequency (Hz)", "Observed Wavelength (λ)", "Wave Speed (v)", "Key Phenomena", "Interference / Fringe Pattern"],
+    tableRows: [
+      ["1. Single Point Pulse", "Point Source (Center)", "Open Tank (Absorbing Edges)", "1.5 Hz", "Medium", "1.0x (Normal)", "Circular concentric wavefronts", "Uniform radial expansion without interference"],
+      ["2. Continuous Plane Wave", "Plane Line (Left)", "Open Tank (Absorbing Edges)", "1.5 Hz", "Parallel crests", "1.0x (Normal)", "Linear wavefront propagation", "Evenly spaced parallel wave crests"],
+      ["3. Narrow Single Slit", "Plane Wave (Left)", "Barrier with narrow gap", "1.5 Hz", "Diffracted circular arcs", "1.0x (Normal)", "Huygens diffraction spreading", "Radially spreading semicircular wavelets"],
+      ["4. Double Slit Interference", "Plane Wave (Left)", "Dual narrow slits", "1.5 Hz", "Overlapping circular wavelets", "1.0x (Normal)", "Young's double slit interference", "Alternating constructive antinodes and destructive nodes"],
+      ["5. Convex Lens Refraction", "Plane Wave (Left)", "Slow-speed shallow medium zone", "1.5 Hz", "Compressed in lens (shorter λ)", "0.2x in lens", "Snell's Law wave slowing & refraction", "Wavefronts curve and converge to a focal point"],
+      ["6. Parabolic Reflector", "Point Source (Focus)", "Parabolic curved wall", "1.5 Hz", "Reflected parallel crests", "1.0x (Normal)", "Collimated plane wave reflection", "Radial point ripples transform into planar beam"]
+    ],
+    criticalQuestions: [
+      {
+        prompt: "1. Huygens' Principle and Aperture Diffraction",
+        subtext: "Why does a plane wave passing through a very narrow slit spread out in all directions as semicircular ripples rather than continuing straight ahead as a narrow beam?",
+        exemplarAnswer: "According to Huygens' Principle, every point on a wavefront acts as a source of secondary spherical wavelets. When the slit aperture is on the order of the wavelength (d ≈ λ), only a small segment of the wavefront enters, and its secondary wavelets radiate outwards unobstructed into the shadow regions without destructive interference from adjacent wavefront segments, creating circular expanding ripples."
+      },
+      {
+        prompt: "2. Path Difference in Double-Slit Nodal Lines",
+        subtext: "In the double-slit simulation, explain why dark stationary lines (nodal lines) appear where the water surface remains completely undisturbed.",
+        exemplarAnswer: "At points where the distance from one slit differs from the distance to the second slit by an odd half-wavelength (path difference ΔL = (m + ½)λ), the crest from one slit arrives simultaneously with the trough from the other slit. By the principle of superposition, the positive displacement exactly cancels the negative displacement, causing permanent destructive interference and zero net water displacement along these nodal lines."
+      },
+      {
+        prompt: "3. Refraction and Wave Speed Reduction in Shallow Water",
+        subtext: "In physical ripple tanks, a glass plate submerged in water reduces depth. Why do water waves slow down and bend towards the normal when entering shallow water (refractor zone)?",
+        exemplarAnswer: "The phase velocity of shallow water gravity waves depends on water depth h according to v ≈ √(g·h). When waves cross into the shallow refractor zone, depth decreases, so wave speed v drops. Because wave frequency f is fixed by the oscillator, the wavelength must decrease (λ = v / f). As the wavefront enters at an angle, the portion in shallow water slows first while the deeper portion continues at full speed, pivoting the wavefront towards the normal in accordance with Snell's Law (sin θ₁ / sin θ₂ = v₁ / v₂)."
+      }
+    ],
+    realWorldScenario: {
+      title: "Harbor Breakwater Design & Tsunami Wave Mechanics",
+      scenario: "Civil marine engineers design deep-water breakwaters and harbor entrances to shield moored ships from ocean swells and seismic tsunami waves.",
+      task: "Using diffraction and refraction principles from the ripple tank, explain why harbor entrances are engineered with specific gap widths and why curved subsea bathymetry can focus tsunami wave energy into dangerous localized hotspots.",
+      exemplarAnswer: "If a harbor entrance gap is much wider than incoming storm wave wavelengths (d ≫ λ), waves continue straight through into the harbor with little diffraction, allowing tranquil dock areas to remain sheltered on the flanks. Conversely, narrow gaps cause dramatic diffraction spreading that scatters wave energy throughout the entire basin. Furthermore, underwater shoals and sea trenches alter local water depth, refracting incoming tsunamis: convex shallow ridges slow the wavefronts and bend wave energy inward, concentrating destructive wave amplitudes onto specific coastal headlands."
+    }
+  },
+
+  "sim-gold-leaf-electroscope": {
+    drivingQuestion: "How do gold-leaf electroscopes detect minute electrostatic charges, and how do contact conduction, electrostatic induction, and grounding redistribute electrons?",
+    hypothesisPrompt: "If a negatively charged rubber rod is brought near the brass cap without touching, predict the sign of the charge induced on the cap and on the gold leaf. What will happen if you momentarily touch the cap with your finger while the negative rod is still held close?",
+    tableHeaders: ["Step / Investigation", "Tool Used", "Rod Charge (q)", "Cap Distance / Contact", "Grounding Finger", "Cap Charge Sign", "Leaf Charge Sign", "Leaf Deflection θ", "Physical Mechanism"],
+    tableRows: [
+      ["1. Neutral Baseline", "None", "0.0 nC", "Far away (>300px)", "Not grounded", "Neutral (0)", "Neutral (0)", "0.0°", "Equal protons and electrons"],
+      ["2. Proximity Induction (-)", "Rubber Rod (Fur)", "-16.0 nC", "Near cap (40px, no contact)", "Not grounded", "Positive (+ bound)", "Negative (- repelled)", "24.5°", "Electrons repelled down to stem/leaf"],
+      ["3. Proximity Induction (+)", "Glass Rod (Silk)", "+18.0 nC", "Near cap (40px, no contact)", "Not grounded", "Negative (- bound)", "Positive (+ deficit)", "26.8°", "Electrons attracted up to cap"],
+      ["4. Grounding Under Induction", "Rubber Rod (-)", "-16.0 nC", "Near cap (40px)", "Touching Cap (Grounded)", "Positive (+ bound)", "Neutral (0)", "0.0°", "Repelled electrons escape to Earth ground"],
+      ["5. Inductive Charging Result", "None (Rod removed)", "0.0 nC", "Rod removed after ungrounding", "Removed", "Positive (+)", "Positive (+)", "28.4°", "Permanent positive net charge remains"],
+      ["6. Direct Contact Conduction", "Glass Rod (+)", "+20.0 nC", "Physical Contact with Cap", "Not grounded", "Positive (+)", "Positive (+)", "36.2°", "Direct electron transfer into rod; electroscope depleted"]
+    ],
+    criticalQuestions: [
+      {
+        prompt: "1. The Free Electron Migration Model in Electrostatic Induction",
+        subtext: "When a negatively charged rubber rod approaches the neutral brass cap without touching, why does the gold leaf deflect? Explain what happens to the mobile electrons inside the conductor.",
+        exemplarAnswer: "The brass cap, stem, and gold leaf form a single continuous metallic conductor filled with delocalized valence electrons. When a negative rod approaches, its repulsive electric field exerts a force F = -e·E on free electrons, driving them away from the top cap down through the vertical brass stem to the gold leaf. The cap is left with an electron deficiency (net positive bound charge), while the stem and leaf gain excess electrons (net negative charge). Because both the rigid stem and flexible gold leaf acquire negative charges, mutual Coulomb repulsion pushes the light leaf outward."
+      },
+      {
+        prompt: "2. The Grounding Touch Trick (Charging by Induction)",
+        subtext: "To charge an electroscope positively using a negatively charged rod, a student touches the cap with a finger while the rod is nearby, removes the finger, and finally removes the rod. Why must the finger be removed BEFORE the rod?",
+        exemplarAnswer: "While the negative rod is near, it repels mobile electrons. Touching the cap connects the electroscope to Earth (an infinite reservoir of charge), allowing the repelled electrons to escape through the student's body to ground. The leaf collapses to 0° because excess electrons have departed, leaving behind positive bound charge held at the cap by the negative rod's attraction. If the finger is removed first, the escaped electrons cannot return. When the rod is subsequently removed, the remaining positive charge redistributes uniformly throughout the cap, stem, and leaf, resulting in a permanent positive deflection. If the rod were removed first while still grounded, electrons would immediately rush back from Earth, leaving the electroscope neutral."
+      },
+      {
+        prompt: "3. Force Equilibrium: Coulomb Repulsion vs. Gravitational Torque",
+        subtext: "Explain why the gold leaf reaches a stable, non-zero deflection angle θ rather than flying all the way open to 90°.",
+        exemplarAnswer: "The gold leaf is hinged at the top. Two competing torques act upon it: (1) Electrostatic repulsive torque τ_e, directed outwards, caused by Coulomb repulsion between like charges on the stem and leaf (Fe ∝ q_leaf · q_stem / r²); and (2) Gravitational restoring torque τ_g = m·g·(L/2)·sin(θ), directed inwards, pulling the leaf's center of mass back toward the vertical line. As the deflection angle θ increases, the distance r between stem and leaf increases (reducing Fe) while the gravitational torque arm sin(θ) increases. Equilibrium is reached at the exact angle θ where τ_e = τ_g."
+      }
+    ],
+    realWorldScenario: {
+      title: "Cosmic Ray Discovery & Semiconductor Cleanroom Static Control",
+      scenario: "In 1912, Austrian physicist Victor Hess carried insulated gold-leaf electroscopes aloft in a hot-air balloon to 5,300 meters, discovering cosmic rays. In modern cleanrooms, electroscopes monitor electrostatic discharge (ESD) that can destroy microchips.",
+      task: "Explain why a charged electroscope slowly discharges even in complete isolation, and why Victor Hess observed faster discharge rates at high altitudes rather than near the ground.",
+      exemplarAnswer: "A charged electroscope slowly discharges because ambient air contains ions produced by background radiation that collide with the metal cap, neutralizing its charge. Before 1912, scientists assumed Earth's crust was the only source of ionizing radiation, predicting discharge rates would plummet at high altitude. Instead, Hess discovered that electroscopes discharged nearly four times faster at 5,000 meters than at sea level. This proved the ionizing radiation originated from outer space (cosmic rays) rather than terrestrial rocks. Today, electrostatic charge monitoring remains critical in semiconductor fabrication facilities, where a mere 10-volt static discharge can puncture microscopic MOSFET gate oxides."
+    }
   }
 };
 
